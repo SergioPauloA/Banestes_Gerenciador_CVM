@@ -13,9 +13,9 @@ function getDatasReferencia() {
     }
     
     // Tentar ler da linha 17 (onde estão os cálculos)
-    var diaAtual = abaApoio.getRange('A17').getValue(); // HOJE()
-    var diaD1 = abaApoio.getRange('B17').getDisplayValue(); // DIATRABALHO.INTL(A17;-2;1;FERIADOS!A2:A)
-    var diaD2 = abaApoio.getRange('B18').getDisplayValue(); // DIATRABALHO.INTL(A17;-1;1;FERIADOS!A2:A)
+    var diaAtual = abaApoio.getRange('A17').getValue(); // HOJE
+    var diaD1 = abaApoio.getRange('B17').getDisplayValue(); // D-1 útil (OK agora!)
+    var diaD2 = abaApoio.getRange('B18').getDisplayValue(); // D-2 útil
     
     // Se algum valor está vazio, calcular manualmente
     if (!diaD1 || !diaD2 || diaD1 === '' || diaD2 === '') {
@@ -323,7 +323,7 @@ function criarAbaApoioComValores() {
   
   // Linha 17: D-2
   abaApoio.getRange('A17').setValue(formatarData(hoje));
-  abaApoio.getRange('B17').setValue(formatarData(dataD2Uteis));
+  abaApoio.getRange('B17').setValue(formatarData(calcularDiaUtil(hoje, -1, ss)));
   abaApoio.getRange('C17').setValue(dataD2Uteis.getDate() + 1);
   abaApoio.getRange('D17').setValue(dataD2Uteis.getDate() + 1);
   abaApoio.getRange('E17').setValue(formatarData(new Date(dataD2Uteis.getTime() + 86400000)));
@@ -331,6 +331,7 @@ function criarAbaApoioComValores() {
   // Linha 18: D-1
   abaApoio.getRange('A18').setValue(formatarData(dataD1Util));
   abaApoio.getRange('B18').setValue(formatarData(dataD1Util));
+  abaApoio.getRange('B18').setValue(formatarData(calcularDiaUtil(hoje, -2, ss)));
   abaApoio.getRange('C18').setValue(dataD1Util.getDate() + 1);
   
   // ============================================
