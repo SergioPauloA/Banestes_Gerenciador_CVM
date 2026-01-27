@@ -388,14 +388,23 @@
     }
 
     .status-badge-small {
-      display: inline-block;
-      padding: 8px 16px;
+      display: block;                /* Antes era inline-block, isso prejudica com width:100% */
+      width: 100%;
+      max-width: 150px;
+      min-width: 0;
+      box-sizing: border-box;
+      padding: 6px 4px;
       border-radius: 16px;
-      font-size: 0.85rem;
+      font-size: 0.93rem;
       font-weight: 700;
       text-align: center;
-      width: 100%;
-      max-width: 160px; /* ✅ LIMITAR LARGURA MÁXIMA */
+      white-space: normal !important; /* Permite quebrar linha */
+      line-height: 1.3;
+      overflow-wrap: break-word !important; /* Quebra entre palavras */
+      word-break: break-word !important;    /* Se precisar, quebra palavra */
+      transition: font-size 0.2s;
+      overflow: hidden;
+      margin: 0 auto;
     }
 
     /* ✅ CORES PARA BADGES PEQUENOS (DIÁRIAS) */
@@ -428,6 +437,20 @@
       color: #374151;
       border: 2px solid #9ca3af;
     }
+
+    .status-badge-small.very-long-text {
+      font-size: 0.75rem;
+      line-height: 1.1;
+      padding: 6px 2px;
+    }
+
+    .diarias-status-item {
+      overflow: hidden;
+    }
+
+    .status-ok-verde { background: #d1fae5; color: #065f46; border: 2px solid #10b981; }
+    .status-ok-amarelo { background: #fef3c7; color: #92400e; border: 2px solid #f59e0b; }
+    .status-ok-vermelho { background: #fee2e2; color: #991b1b; border: 2px solid #ef4444; }
 
     /* TABS */
     .tabs {
@@ -507,6 +530,13 @@
       display: flex;
       align-items: center;
       gap: 10px;
+    }
+
+    .status-badge-small.long-text,
+    .status-badge-small.very-long-text {
+      font-size: 0.72rem !important;   /* ainda menor que o default */
+      padding: 6px 2px;
+      letter-spacing: -0.5px;
     }
 
     /* TABLES */
@@ -799,11 +829,11 @@
             <div class="status-card-title">Diárias</div>
             <div class="diarias-status-container">
               <div class="diarias-status-item">
-                <div class="diarias-status-label">Status 1</div>
+                <div class="diarias-status-label">Envio 1</div>
                 <div class="status-badge-small status-erro" id="statusDiarias1">Carregando...</div>
               </div>
               <div class="diarias-status-item">
-                <div class="diarias-status-label">Status 2</div>
+                <div class="diarias-status-label">Envio 2</div>
                 <div class="status-badge-small status-erro" id="statusDiarias2">Carregando...</div>
               </div>
             </div>
@@ -847,7 +877,7 @@
               <tr>
                 <th>Fundo</th>
                 <th>Código</th>
-                <th>Retorno</th>
+                <th>Competência</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -872,7 +902,7 @@
               <tr>
                 <th>Fundo</th>
                 <th>Código</th>
-                <th>Retorno</th>
+                <th>Competência</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -897,9 +927,9 @@
               <tr>
                 <th>Fundo</th>
                 <th>Código</th>
-                <th>Retorno 1</th>
+                <th>Envio 1</th>
                 <th>Status 1</th>
-                <th>Retorno 2</th>
+                <th>Envio 2</th>
                 <th>Status 2</th>
               </tr>
             </thead>
@@ -924,7 +954,7 @@
               <tr>
                 <th>Fundo</th>
                 <th>Código</th>
-                <th>Retorno</th>
+                <th>Competência</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -949,7 +979,7 @@
               <tr>
                 <th>Fundo</th>
                 <th>Código</th>
-                <th>Retorno</th>
+                <th>Competência</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -1000,16 +1030,22 @@
         console.log('⚠️ Atualização já em andamento');
         return;
       }
-      
+
       console.log('🔄 Atualização iniciada...');
       atualizando = true;
       mostrarLoading(true, 'Buscando dados da CVM...<br><small>Isso pode levar alguns minutos...</small>');
       desabilitarBotao(true);
-      
+
       google.script.run
-        .withSuccessHandler(onDadosCarregados)
+        .withSuccessHandler(function() {
+          // Após atualizar, recarregar dados do dashboard!
+          google.script.run
+            .withSuccessHandler(onDadosCarregados)
+            .withFailureHandler(onErroCarregamento)
+            .getDashboardDataCompleto();
+        })
         .withFailureHandler(onErroCarregamento)
-        .getDashboardDataCompleto();
+        .atualizarDadosCVMRealCompleto();
     }
 
     // ============================================
@@ -1099,15 +1135,16 @@
     // ATUALIZAÇÃO DE COMPONENTES
     // ============================================
     function atualizarDashboardGeral(dados) {
-      atualizarStatusCard('statusBalancete', dados.balancete.statusGeral);
-      atualizarStatusCard('statusComposicao', dados.composicao.statusGeral);
+      atualizarStatusCard('statusBalancete', dados.balancete.statusGeral, dados.balancete.substatus);
+      atualizarStatusCard('statusComposicao', dados.composicao.statusGeral, dados.composicao.substatus);
       
       // ✅ ATUALIZAR OS 2 STATUS SEPARADOS
       atualizarStatusCard('statusDiarias1', dados.diarias.statusGeral1);
       atualizarStatusCard('statusDiarias2', dados.diarias.statusGeral2);
       
-      atualizarStatusCard('statusLamina', dados.lamina.statusGeral);
-      atualizarStatusCard('statusPerfilMensal', dados.perfilMensal.statusGeral);
+      atualizarStatusCard('statusLamina', dados.lamina.statusGeral, dados.lamina.substatus);
+      atualizarStatusCard('statusPerfilMensal', dados.perfilMensal.statusGeral, dados.perfilMensal.substatus);
+
     }
 
     function atualizarDashboardGeral(dados) {
@@ -1123,21 +1160,32 @@
     }
 
     // ✅ FUNÇÃO PARA BADGES NORMAIS
-    function atualizarStatusCard(elementId, status) {
+    function atualizarStatusCard(elementId, status, substatus) {
       var elemento = document.getElementById(elementId);
       if (!elemento) return;
-      
       elemento.textContent = status || 'SEM DADOS';
-      elemento.className = 'status-badge ' + obterClasseStatus(status);
+
+      let baseClass = 'status-badge ' + obterClasseStatus(status);
+      // append substatus class if "OK"
+      if (status === 'OK' && substatus)
+        baseClass += ' ' + substatus;
+      elemento.className = baseClass;
     }
 
     // ✅ NOVA FUNÇÃO PARA BADGES PEQUENOS (DIÁRIAS)
     function atualizarStatusCardSmall(elementId, status) {
       var elemento = document.getElementById(elementId);
       if (!elemento) return;
-      
       elemento.textContent = status || 'SEM DADOS';
       elemento.className = 'status-badge-small ' + obterClasseStatus(status);
+
+      // Remove classe antes de aplicar
+      elemento.classList.remove('long-text');
+
+      // Se texto for grande, reduz
+      if ((status || '').length > 12) {
+        elemento.classList.add('long-text');
+      }
     }
 
     function obterClasseStatus(status) {
