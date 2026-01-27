@@ -52,11 +52,11 @@ function getDashboardData() {
     var resultado = {
       timestamp: new Date().toISOString(),
       datas: datas,
-      balancete: lerAbaBalancete(ss),
-      composicao: lerAbaComposicao(ss),
+      balancete: lerAbaBalancete(ss, datas),
+      composicao: lerAbaComposicao(ss, datas),
       diarias: lerAbaDiarias(ss),
-      lamina: lerAbaLamina(ss),
-      perfilMensal: lerAbaPerfilMensal(ss)
+      lamina: lerAbaLamina(ss, datas),
+      perfilMensal: lerAbaPerfilMensal(ss, datas)
     };
     
     Logger.log('✅ Dados lidos com sucesso');
@@ -77,7 +77,7 @@ function getDashboardDataCompleto() {
 // FUNÇÕES DE LEITURA POR ABA - ATUALIZADO PARA CÓDIGO BANESTES
 // ============================================
 
-function lerAbaBalancete(ss) {
+function lerAbaBalancete(ss, datas) {
   var aba = ss.getSheetByName('Balancete');
   if (!aba) throw new Error('Aba Balancete não encontrada');
   
@@ -110,11 +110,12 @@ function lerAbaBalancete(ss) {
   return {
     titulo: 'Balancetes de Fundos',
     statusGeral: statusGeral || 'SEM DADOS',
+    substatus: (statusGeral === 'OK') ? calcularCorStatusOk(datas.diasRestantes) : null,
     dados: dados
   };
 }
 
-function lerAbaComposicao(ss) {
+function lerAbaComposicao(ss, datas) {
   var aba = ss.getSheetByName('Composição');
   if (!aba) throw new Error('Aba Composição não encontrada');
   
@@ -147,6 +148,7 @@ function lerAbaComposicao(ss) {
   return {
     titulo: 'Composição da Carteira',
     statusGeral: statusGeral || 'SEM DADOS',
+    substatus: (statusGeral === 'OK') ? calcularCorStatusOk(datas.diasRestantes) : null,
     dados: dados
   };
 }
@@ -192,7 +194,7 @@ function lerAbaDiarias(ss) {
   };
 }
 
-function lerAbaLamina(ss) {
+function lerAbaLamina(ss, datas) {
   var aba = ss.getSheetByName('Lâmina');
   if (!aba) throw new Error('Aba Lâmina não encontrada');
   
@@ -225,11 +227,12 @@ function lerAbaLamina(ss) {
   return {
     titulo: 'Lâmina do Fundo',
     statusGeral: statusGeral || 'SEM DADOS',
+    substatus: (statusGeral === 'OK') ? calcularCorStatusOk(datas.diasRestantes) : null,
     dados: dados
   };
 }
 
-function lerAbaPerfilMensal(ss) {
+function lerAbaPerfilMensal(ss, datas) {
   var aba = ss.getSheetByName('Perfil Mensal');
   if (!aba) throw new Error('Aba Perfil Mensal não encontrada');
   
@@ -262,8 +265,15 @@ function lerAbaPerfilMensal(ss) {
   return {
     titulo: 'Perfil Mensal',
     statusGeral: statusGeral || 'SEM DADOS',
+    substatus: (statusGeral === 'OK') ? calcularCorStatusOk(datas.diasRestantes) : null,
     dados: dados
   };
+}
+
+function calcularCorStatusOk(diasRestantes) {
+  if (diasRestantes > 5) return 'ok-verde';
+  if (diasRestantes >= 3) return 'ok-amarelo';
+  return 'ok-vermelho'; // 1 ou 2 dias restantes
 }
 
 // ============================================
@@ -610,32 +620,41 @@ function atualizarStatusNaPlanilhaAutomatico() {
  * Calcular status individual de um fundo
  */
 function calcularStatusIndividual(retorno, tipo) {
-  if (!retorno || retorno === '-' || retorno === '' || retorno === 'Loading...') {
-    return 'Aguardando...';
+  // Trate vazio, "-", erros e similares como "DESATUALIZADO"
+  if (
+    !retorno ||
+    retorno === '-' ||
+    retorno === '' ||
+    retorno === 'Loading...' ||
+    retorno === 'ERRO' ||
+    retorno === '#N/A' ||
+    retorno === '#REF!' ||
+    retorno === null ||
+    retorno === undefined
+  ) {
+    return 'DESATUALIZADO';
   }
-  
+
   var datas = getDatasReferencia();
-  
+
   if (tipo === 'mensal') {
-    if (retorno === datas.diaMesRef) {
+    if (normalizaData(retorno) === normalizaData(datas.diaMesRef)) {
       return 'OK';
     }
-    
     if (datas.diasRestantes > 0) {
       return 'EM CONFORMIDADE';
     }
-    
     return 'DESATUALIZADO';
   }
-  
+
   if (tipo === 'diario') {
-    if (retorno === datas.diaD1 || retorno === datas.diaD2) {
+    if (normalizaData(retorno) === normalizaData(datas.diaD1)) { // Somente DIADREF1, igual à planilha
       return 'OK';
     }
     return '-';
   }
-  
-  return 'Aguardando...';
+
+  return 'DESATUALIZADO';
 }
 
 /**
@@ -717,6 +736,7 @@ function enviarEmailDesconformidade() {
   if (fundosDesconformes.length > 0) {
     var destinatario = 'seu-email@banestes.com.br'; 
     //* Fundos.administrador@banestes.com.br
+    //* Fabiooliveira@banestes.com.br
     //* Adicionar copia
     var assunto = '⚠️ ALERTA: Fundos em Desconformidade';
     var corpo = 'Os seguintes fundos estão em desconformidade:\n\n' + 
@@ -969,14 +989,24 @@ function atualizarDadosCVMRealCompleto() {
           abaDiarias.getRange(linha, 3).setValue(ultimaData);
           
           // COLUNA D = STATUS 1
-          var status1;
-          if (!ultimaData || ultimaData === '-' || ultimaData === 'ERRO') {
-            status1 = 'DESATUALIZADO';
-          } else if (ultimaData === datas.diaD2) {
-            status1 = 'OK';
+          var diaUtilAnterior = normalizaData(datas.diaD1); // Último dia útil anterior a hoje
+          var valorRetornado = normalizaData(ultimaData);
+
+          if (
+            !valorRetornado ||
+            valorRetornado === '-' ||
+            valorRetornado === 'ERRO' ||
+            valorRetornado === '#N/A' ||
+            valorRetornado === '#REF!' ||
+            valorRetornado === null ||
+            valorRetornado === undefined
+          ) {
+            status1 = "-"; // qualquer erro, vazio, etc.
+          } else if (valorRetornado === diaUtilAnterior) {
+            status1 = "OK";
             contadorOK_Status1++;
           } else {
-            status1 = '-';
+            status1 = "DESATUALIZADO";
           }
           abaDiarias.getRange(linha, 4).setValue(status1);
           
@@ -986,7 +1016,7 @@ function atualizarDadosCVMRealCompleto() {
           // COLUNA F = STATUS 2
           var status2 = 'A ATUALIZAR';
           abaDiarias.getRange(linha, 6).setValue(status2);
-          
+
           Logger.log('  ✅ [' + (index + 1) + '/' + totalFundos + '] ' + ultimaData + ' (' + status1 + ') / #N/A (' + status2 + ')');
           
         } else {
@@ -1374,4 +1404,15 @@ function diagnosticarGetDatasReferencia() {
   Logger.log('   - FundoService.gs');
   Logger.log('   - ConfigData.gs');
   Logger.log('   - onInstall.gs');
+}
+
+function normalizaData(data) {
+  if (!data) return '';
+  var s = String(data).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    var p = s.split('-');
+    return [p[2], p[1], p[0]].join('/');
+  }
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
+  return s.replace(/\s+/g, '');
 }
