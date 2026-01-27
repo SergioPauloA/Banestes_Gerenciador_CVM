@@ -254,7 +254,8 @@ function setupCompletoAutomatico() {
     preencherAbaFeriados(ss);
     
     Logger.log('📦 Etapa 5: Preenchendo APOIO...');
-    preencherAbaApoio(ss);
+    //preencherAbaApoio(ss);
+    criarAbaApoioComValores();
     
     Logger.log('📦 Etapa 6: Definindo nomes...');
     definirNomesApoio(ss);
