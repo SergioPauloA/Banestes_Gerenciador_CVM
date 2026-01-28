@@ -102,7 +102,7 @@ function lerAbaBalancete(ss, datas) {
       return {
         fundo: linha[0],
         codigo: codigoBanestes, // CÓDIGO BANESTES
-        retorno: linha[2] || '-',
+        retorno: formatarCompetencia(linha[2]) || '-',
         status: linha[3] || '-'
       };
     });
@@ -140,7 +140,7 @@ function lerAbaComposicao(ss, datas) {
       return {
         fundo: linha[0],
         codigo: codigoBanestes,
-        retorno: linha[2] || '-',
+        retorno: formatarCompetencia(linha[2]) || '-',
         status: linha[3] || '-'
       };
     });
@@ -219,7 +219,7 @@ function lerAbaLamina(ss, datas) {
       return {
         fundo: linha[0],
         codigo: codigoBanestes,
-        retorno: linha[2] || '-',
+        retorno: formatarCompetencia(linha[2]) || '-',
         status: linha[3] || '-'
       };
     });
@@ -257,7 +257,7 @@ function lerAbaPerfilMensal(ss, datas) {
       return {
         fundo: linha[0],
         codigo: codigoBanestes,
-        retorno: linha[2] || '-',
+        retorno: formatarCompetencia(linha[2]) || '-',
         status: linha[3] || '-'
       };
     });
@@ -1438,4 +1438,17 @@ function normalizaData(data) {
   }
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
   return s.replace(/\s+/g, '');
+}
+
+function formatarCompetencia(dataStr) {
+  // Aceita "DD/MM/AAAA", "MM/AAAA", "-" ou ""
+  if (!dataStr || dataStr === "-") return "-";
+  var partes = String(dataStr).trim().split("/");
+  if (partes.length === 3) { // DD/MM/AAAA
+    return partes[1] + "/" + partes[2];
+  }
+  if (partes.length === 2) { // MM/AAAA
+    return dataStr;
+  }
+  return dataStr;
 }
