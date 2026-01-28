@@ -832,6 +832,34 @@ function atualizarDadosCVMRealCompleto() {
   // ============================================
   Logger.log('\n📊 [1/5] Processando Balancete...');
   var abaBalancete = ss.getSheetByName('Balancete');
+
+  function getFeriadosArray() {
+    var ss = obterPlanilha();
+    var aba = ss.getSheetByName('FERIADOS');
+    if (!aba) return [];
+    var lastRow = aba.getLastRow();
+    if (lastRow < 2) return [];
+    var dados = aba.getRange(2, 1, lastRow - 1, 1).getDisplayValues();
+    return dados.map(function(r) { return normalizaData(r[0]); });
+  }
+
+  function calculaUltimoDiaUtil(dateObj, feriadosArray) {
+    var d = new Date(dateObj);
+    do {
+      d.setDate(d.getDate() - 1);
+    } while (
+      d.getDay() === 0 || // domingo
+      d.getDay() === 6 || // sábado
+      feriadosArray.indexOf(normalizaDataDate(d)) >= 0
+    );
+    return normalizaDataDate(d);
+  }
+  function normalizaDataDate(dateObj) {
+    var dd = String(dateObj.getDate()).padStart(2, '0');
+    var mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+    var yyyy = dateObj.getFullYear();
+    return dd + '/' + mm + '/' + yyyy;
+  }
   
   fundos.forEach(function(fundo, index) {
     try {
@@ -959,71 +987,55 @@ function atualizarDadosCVMRealCompleto() {
   });
   
   // ============================================
-  // 5. DIÁRIAS (COM STATUS GERAL)
+  // 5. DIÁRIAS (COM STATUS GERAL) - ATUALIZADO
   // ============================================
   Logger.log('\n📅 [5/5] Processando Diárias...');
   var abaDiarias = ss.getSheetByName('Diárias');
-  
+
   var contadorOK_Status1 = 0;
   var contadorOK_Status2 = 0;
   var totalFundosValidos = 0;
-  
+
+  // Calcula hoje e dia útil real ANTES do loop!
+  var hojeObj = new Date();
+  var hoje = normalizaDataDate(hojeObj);
+  var feriados = getFeriadosArray();
+  var diaD1 = calculaUltimoDiaUtil(hojeObj, feriados);
+
   fundos.forEach(function(fundo, index) {
     try {
       var linha = index + 4;
       var url = 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/InfDiario/CPublicaInfdiario.aspx?PK_PARTIC=' + fundo.codigoCVM + '&PK_SUBCLASSE=-1';
       var response = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0' }});
-      
+
       if (response.getResponseCode() === 200) {
         var html = response.getContentText();
         var regex = /(\d{2}\/\d{2}\/\d{4})/g;
         var matches = html.match(regex);
-        
-        if (matches && matches.length > 0) {
-          var ultimaData = matches[matches.length - 1];
-          var datas = getDatasReferencia();
-          
-          totalFundosValidos++;
-          
-          // COLUNA C = RETORNO 1
-          abaDiarias.getRange(linha, 3).setValue(ultimaData);
-          
-          // COLUNA D = STATUS 1
-          var diaUtilAnterior = normalizaData(datas.diaD1); // Último dia útil anterior a hoje
-          var valorRetornado = normalizaData(ultimaData);
 
-          if (
-            !valorRetornado ||
-            valorRetornado === '-' ||
-            valorRetornado === 'ERRO' ||
-            valorRetornado === '#N/A' ||
-            valorRetornado === '#REF!' ||
-            valorRetornado === null ||
-            valorRetornado === undefined
-          ) {
-            status1 = "-"; // qualquer erro, vazio, etc.
-          } else if (valorRetornado === diaUtilAnterior) {
-            status1 = "OK";
-            contadorOK_Status1++;
-          } else {
-            status1 = "DESATUALIZADO";
-          }
+        if (matches && matches.length > 0) {
+          var datasExtraidas = matches.map(normalizaData);
+
+          // ENVIO 1 — sempre exibe o D-1 útil se houver, senão a mais recente scrapeada
+          var envio1 = datasExtraidas.includes(diaD1) ? diaD1 : (datasExtraidas[0] || "-");
+          var status1 = envio1 === diaD1 ? "OK" : "DESATUALIZADO";
+          if (status1 === "OK") contadorOK_Status1++;
+
+          // ENVIO 2 — HOJE se encontrar, "-" caso não
+          var envio2 = datasExtraidas.includes(hoje) ? hoje : "-";
+          var status2 = envio2 === hoje ? "OK" : "A ATUALIZAR";
+          if (status2 === "OK") contadorOK_Status2++;
+
+          abaDiarias.getRange(linha, 3).setValue(envio1);
           abaDiarias.getRange(linha, 4).setValue(status1);
-          
-          // COLUNA E = RETORNO 2
-          abaDiarias.getRange(linha, 5).setValue('#N/A');
-          
-          // COLUNA F = STATUS 2
-          var status2 = 'A ATUALIZAR';
+          abaDiarias.getRange(linha, 5).setValue(envio2);
           abaDiarias.getRange(linha, 6).setValue(status2);
 
-          Logger.log('  ✅ [' + (index + 1) + '/' + totalFundos + '] ' + ultimaData + ' (' + status1 + ') / #N/A (' + status2 + ')');
-          
+          Logger.log('  ✅ [' + (index + 1) + '/' + fundos.length + '] Envio1:' + envio1 + ' (' + status1 + ') / Envio2:' + envio2 + ' (' + status2 + ')');
         } else {
-          totalFundosValidos++;
           abaDiarias.getRange(linha, 3).setValue('-');
           abaDiarias.getRange(linha, 4).setValue('DESATUALIZADO');
-          abaDiarias.getRange(linha, 5).setValue('#N/A');
+          abaDiarias.getRange(linha, 5).setValue('-');
           abaDiarias.getRange(linha, 6).setValue('A ATUALIZAR');
         }
       } else {
@@ -1033,9 +1045,9 @@ function atualizarDadosCVMRealCompleto() {
         abaDiarias.getRange(linha, 5).setValue('#N/A');
         abaDiarias.getRange(linha, 6).setValue('A ATUALIZAR');
       }
-      
+
       Utilities.sleep(300);
-      
+
     } catch (error) {
       totalFundosValidos++;
       abaDiarias.getRange(linha, 3).setValue('ERRO');
@@ -1044,6 +1056,16 @@ function atualizarDadosCVMRealCompleto() {
       abaDiarias.getRange(linha, 6).setValue('A ATUALIZAR');
     }
   });
+
+  // Após o loop dos fundos diárias, atualize a aba APOIO:
+  var abaApoio = ss.getSheetByName("APOIO");
+  if (abaApoio) {
+    // Por exemplo, HOJE na célula A11
+    abaApoio.getRange("A11").setValue(new Date());
+    abaApoio.getRange("A11").setNumberFormat("dd/mm/yyyy");
+    // Coloque D-1 útil na célula desejada, se quiser ("A12" por exemplo)
+    abaApoio.getRange("A12").setValue(diaD1);
+  }
   
   // ============================================
   // CALCULAR STATUS GERAL PARA DIÁRIAS
@@ -1052,12 +1074,13 @@ function atualizarDadosCVMRealCompleto() {
   
   // STATUS GERAL 1 (coluna E1)
   var statusGeral1;
-  if (contadorOK_Status1 === totalFundosValidos) {
+  if (contadorOK_Status1 === fundos.length) {
     statusGeral1 = 'OK';
   } else {
     statusGeral1 = 'DESCONFORMIDADE';
   }
   abaDiarias.getRange('E1').setValue(statusGeral1);
+
   Logger.log('  STATUS 1 GERAL: ' + statusGeral1 + ' (' + contadorOK_Status1 + '/' + totalFundosValidos + ' OK)');
   
   // STATUS GERAL 2 (coluna F1)
