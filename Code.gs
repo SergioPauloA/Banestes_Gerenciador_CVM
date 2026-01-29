@@ -1083,11 +1083,15 @@ function atualizarDadosCVMRealCompleto() {
 
   Logger.log('  STATUS 1 GERAL: ' + statusGeral1 + ' (' + contadorOK_Status1 + '/' + totalFundosValidos + ' OK)');
   
-  // STATUS GERAL 2 (coluna F1)
-  // Como todos são "A ATUALIZAR", o geral também é "A ATUALIZAR"
-  var statusGeral2 = 'A ATUALIZAR';
+  // STATUS GERAL 2 (coluna F1) - CORRETO
+  var statusGeral2;
+  if (contadorOK_Status2 === fundos.length) {
+    statusGeral2 = 'OK';
+  } else {
+    statusGeral2 = 'A ATUALIZAR';
+  }
   abaDiarias.getRange('F1').setValue(statusGeral2);
-  Logger.log('  STATUS 2 GERAL: ' + statusGeral2);
+  Logger.log('  STATUS 2 GERAL: ' + statusGeral2 + ' (' + contadorOK_Status2 + '/' + fundos.length + ' OK)');
   
   // ============================================
   // 6. CALCULAR STATUS (APENAS OUTRAS ABAS)
