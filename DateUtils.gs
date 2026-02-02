@@ -138,11 +138,6 @@ function calcularDiaUtil(dataInicial, diasUteis, ss) {
 }
 
 function calcularDiasUteisEntre(dataInicio, dataFim, ss) {
-  // Se a data de fim já passou, retornar 0 (prazo expirado)
-  if (dataFim < dataInicio) {
-    return 0;
-  }
-  
   var diasUteis = 0;
   var dataAtual = new Date(dataInicio);
   
@@ -151,6 +146,24 @@ function calcularDiasUteisEntre(dataInicio, dataFim, ss) {
   var dataFimNormalizada = new Date(dataFim);
   dataFimNormalizada.setHours(0, 0, 0, 0);
   
+  // Se a data de fim já passou, calcular dias negativos (prazo expirado)
+  if (dataFimNormalizada < dataAtual) {
+    // Inverter e retornar negativo
+    var temp = new Date(dataAtual);
+    while (dataFimNormalizada < temp) {
+      temp.setDate(temp.getDate() - 1);
+      var diaSemana = temp.getDay();
+      if (diaSemana !== 0 && diaSemana !== 6) {
+        if (!ehFeriado(temp, ss)) {
+          diasUteis--;
+        }
+      }
+    }
+    return diasUteis;
+  }
+  
+  // Contar dias úteis até a data fim (NÃO incluindo o dia de hoje, MAS incluindo o prazo)
+  dataAtual.setDate(dataAtual.getDate() + 1); // Começar do dia seguinte
   while (dataAtual <= dataFimNormalizada) {
     var diaSemana = dataAtual.getDay();
     // Se não é sábado (6) nem domingo (0)

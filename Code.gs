@@ -642,7 +642,7 @@ function calcularStatusIndividual(retorno, tipo) {
       return 'OK';
     }
     // Verifica se ainda está dentro do prazo (DIADDD <= DIAMESREF2)
-    if (datas.diasRestantes >= 0 || normalizaData(datas.diaDD) <= normalizaData(datas.diaMesRef2)) {
+    if (datas.diasRestantes >= 0) {
       return 'EM CONFORMIDADE';
     }
     return 'DESATUALIZADO';
