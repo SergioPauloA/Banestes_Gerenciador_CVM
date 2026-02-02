@@ -330,7 +330,7 @@ function criarFormulasBalancete(ss) {
   
   // Status Geral
   aba.getRange('E1:E2').merge();
-  aba.getRange('E1').setFormula(FORMULA_STATUS_GERAL)
+  aba.getRange('E1').setValue('AGUARDANDO DADOS')
     .setBackground('#fef3c7').setHorizontalAlignment('center').setVerticalAlignment('middle').setFontWeight('bold');
   
   // Cabeçalhos
@@ -367,7 +367,7 @@ function criarFormulasComposicao(ss) {
     .setHorizontalAlignment('center').setVerticalAlignment('middle');
   
   aba.getRange('E1:E2').merge();
-  aba.getRange('E1').setFormula(FORMULA_STATUS_GERAL)
+  aba.getRange('E1').setValue('AGUARDANDO DADOS')
     .setBackground('#fef3c7').setHorizontalAlignment('center').setVerticalAlignment('middle').setFontWeight('bold');
   
   aba.getRange('A3:D3').setValues([['FUNDO', 'COD', 'RETORNO', 'STATUS']])
@@ -445,7 +445,7 @@ function criarFormulasLamina(ss) {
     .setHorizontalAlignment('center').setVerticalAlignment('middle');
   
   aba.getRange('E1:E2').merge();
-  aba.getRange('E1').setFormula(FORMULA_STATUS_GERAL)
+  aba.getRange('E1').setValue('AGUARDANDO DADOS')
     .setBackground('#fef3c7').setHorizontalAlignment('center').setVerticalAlignment('middle').setFontWeight('bold');
   
   aba.getRange('A3:D3').setValues([['FUNDO', 'COD', 'RETORNO', 'STATUS']])
@@ -480,7 +480,7 @@ function criarFormulasPerfilMensal(ss) {
     .setHorizontalAlignment('center').setVerticalAlignment('middle');
   
   aba.getRange('E1:E2').merge();
-  aba.getRange('E1').setFormula(FORMULA_STATUS_GERAL)
+  aba.getRange('E1').setValue('AGUARDANDO DADOS')
     .setBackground('#fef3c7').setHorizontalAlignment('center').setVerticalAlignment('middle').setFontWeight('bold');
   
   aba.getRange('A3:D3').setValues([['FUNDO', 'COD', 'RETORNO', 'STATUS']])
