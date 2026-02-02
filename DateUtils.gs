@@ -407,6 +407,40 @@ function criarAbaApoioComValores() {
   
   SpreadsheetApp.flush();
   
+  // ============================================
+  // CRIAR NOMES PARA AS DATAS (para uso em fórmulas)
+  // ============================================
+  try {
+    // DIAMESREF = D1 (1º dia do mês anterior)
+    ss.setNamedRange('DIAMESREF', abaApoio.getRange('D1'));
+    Logger.log('  ✅ Nome DIAMESREF criado: APOIO!D1');
+    
+    // DIAMESREF2 = F1 (10º dia útil do mês atual)
+    ss.setNamedRange('DIAMESREF2', abaApoio.getRange('F1'));
+    Logger.log('  ✅ Nome DIAMESREF2 criado: APOIO!F1');
+    
+    // DIADDD = A17 (Hoje)
+    ss.setNamedRange('DIADDD', abaApoio.getRange('A17'));
+    Logger.log('  ✅ Nome DIADDD criado: APOIO!A17');
+  } catch (e) {
+    Logger.log('⚠️ Erro ao criar nomes: ' + e.toString());
+    // Se nomes já existem, removê-los e recriar
+    var nomesExistentes = ss.getNamedRanges();
+    nomesExistentes.forEach(function(nr) {
+      var nome = nr.getName();
+      if (nome === 'DIAMESREF' || nome === 'DIAMESREF2' || nome === 'DIADDD') {
+        nr.remove();
+        Logger.log('  🗑️ Nome removido: ' + nome);
+      }
+    });
+    
+    // Tentar novamente
+    ss.setNamedRange('DIAMESREF', abaApoio.getRange('D1'));
+    ss.setNamedRange('DIAMESREF2', abaApoio.getRange('F1'));
+    ss.setNamedRange('DIADDD', abaApoio.getRange('A17'));
+    Logger.log('  ✅ Nomes recriados com sucesso');
+  }
+  
   Logger.log('\n✅ Aba APOIO preenchida com VALORES calculados!');
   Logger.log('✅ Agora execute: verificarAbaApoio()');
 }
