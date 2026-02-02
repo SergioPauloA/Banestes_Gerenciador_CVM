@@ -638,7 +638,9 @@ function atualizarStatusNaPlanilhaAutomatico() {
     var statusIndividuaisCalculados = [];
     for (var i = 0; i < dadosBalancete.length; i++) {
       var retorno = dadosBalancete[i][0];
-      var status = calcularStatusIndividual(retorno, 'mensal');
+      // Only enable debug logging for first 3 rows
+      var enableDebugLog = (i < 3);
+      var status = calcularStatusIndividual(retorno, 'mensal', enableDebugLog);
       abaBalancete.getRange(i + 4, 4).setValue(status);
       statusIndividuaisCalculados.push(status);
     }
@@ -757,14 +759,12 @@ function atualizarStatusNaPlanilhaAutomatico() {
 
 /**
  * Calcular status individual de um fundo
- */
-/**
- * Calcular status individual de um fundo
  * @param {string} retorno - Data de retorno da coluna C (ex: "01/12/2025")
  * @param {string} tipo - 'mensal' ou 'diario'
+ * @param {boolean} enableDebugLog - Optional: Enable debug logging for this call (default: false)
  * @returns {string} - 'OK', 'EM CONFORMIDADE', 'DESATUALIZADO', ou '-'
  */
-function calcularStatusIndividual(retorno, tipo) {
+function calcularStatusIndividual(retorno, tipo, enableDebugLog) {
   // Se vazio ou com erro, retornar DESATUALIZADO
   if (
     !retorno ||
@@ -788,8 +788,8 @@ function calcularStatusIndividual(retorno, tipo) {
   if (tipo === 'mensal') {
     var dataRefNormalizada = normalizaDataParaComparacao(datas.diaMesRef);
     
-    // Debug logging (controlled by DEBUG_MODE flag)
-    if (DEBUG_MODE) {
+    // Debug logging (only when explicitly enabled and DEBUG_MODE is true)
+    if (DEBUG_MODE && enableDebugLog) {
       Logger.log('🔍 Comparando: "' + retornoNormalizado + '" vs "' + dataRefNormalizada + '"');
     }
     
@@ -905,7 +905,8 @@ function testarCalculoDeStatus() {
   
   for (var i = 0; i < dadosBalancete.length; i++) {
     var retorno = dadosBalancete[i][0];
-    var status = calcularStatusIndividual(retorno, 'mensal');
+    // Enable debug logging for test function
+    var status = calcularStatusIndividual(retorno, 'mensal', true);
     Logger.log('   Linha ' + (i+4) + ': "' + retorno + '" → Status: "' + status + '"');
   }
   

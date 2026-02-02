@@ -196,10 +196,12 @@ git checkout HEAD~1 -- Code.gs
 
 ## Notes
 
-- The debug logging in `calcularStatusIndividual()` can be removed once verified working
+- Debug logging is controlled by the DEBUG_MODE flag and only logs first 3 rows to reduce overhead
+- The debug logging in `calcularStatusIndividual()` requires explicit enablement via parameter
 - The `normalizaData()` function was kept for backward compatibility
 - No changes made to DateUtils.gs or other files
 - No changes to the data structure or spreadsheet layout
+- In production, set DEBUG_MODE = false to minimize logging overhead
 
 ## Expected Timeline
 
