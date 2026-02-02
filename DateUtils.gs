@@ -444,3 +444,51 @@ function criarAbaApoioComValores() {
   Logger.log('\n✅ Aba APOIO preenchida com VALORES calculados!');
   Logger.log('✅ Agora execute: verificarAbaApoio()');
 }
+
+// ===== NOVAS FUNÇÕES UTILITÁRIAS DE DATA PARA CÁLCULO DE STATUS =====
+
+/**
+ * Calcula o 10º dia útil do mês atual (opcionalmente, recebe array de feriados se quiser)
+ */
+function calcularDecimoDiaUtil(referencia, feriados) {
+  var hoje = referencia ? new Date(referencia) : new Date();
+  var ano = hoje.getFullYear();
+  var mes = hoje.getMonth();
+  var date = new Date(ano, mes, 1); // 1º dia do mês
+  var uteis = 0;
+  feriados = feriados || [];
+  while (uteis < 10) {
+    var diaSemana = date.getDay();
+    var ehFeriado = feriados.some(function(f){
+      return (
+        f.getDate() === date.getDate() &&
+        f.getMonth() === date.getMonth() &&
+        f.getFullYear() === date.getFullYear()
+      );
+    });
+    if (diaSemana !== 0 && diaSemana !== 6 && !ehFeriado) {
+      uteis++;
+    }
+    if (uteis < 10) date.setDate(date.getDate() + 1);
+  }
+  return date;
+}
+
+/**
+ * Compara duas datas "DD/MM/YYYY", retorna -1 (d1<d2), 0 (iguais) ou 1 (d1>d2)
+ */
+function compararDatasPTBR(d1, d2) {
+  var d1a = d1.split('/').reverse().join('-');
+  var d2a = d2.split('/').reverse().join('-');
+  return d1a < d2a ? -1 : (d1a === d2a ? 0 : 1);
+}
+
+/**
+ * Dias restantes entre datas "DD/MM/YYYY"
+ */
+function calcularDiasRestantesPTBR(data1, data2) {
+  var d1 = new Date(data1.split('/').reverse().join('-'));
+  var d2 = new Date(data2.split('/').reverse().join('-'));
+  var delta = Math.ceil((d2 - d1) / (1000*60*60*24));
+  return delta >= 0 ? delta : 0;
+}
