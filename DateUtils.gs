@@ -279,6 +279,15 @@ function verificarAbaApoio() {
   Logger.log('  E1 (1º mês atual): ' + e1);
 }
 
+/**
+ * Helper function para criar named ranges de datas
+ */
+function criarNamedRangesDatas(ss, abaApoio) {
+  ss.setNamedRange('DIAMESREF', abaApoio.getRange('D1'));
+  ss.setNamedRange('DIAMESREF2', abaApoio.getRange('F1'));
+  ss.setNamedRange('DIADDD', abaApoio.getRange('A17'));
+}
+
 function criarAbaApoioComValores() {
   var ss = SpreadsheetApp.openById('1N6LP1ydsxnQO_Woatv9zWEccb0fOGaV_3EKK1GoSWZI');
   var abaApoio = ss.getSheetByName('APOIO');
@@ -406,6 +415,31 @@ function criarAbaApoioComValores() {
   abaApoio.getRange('B21').setValue(']/td[8]');
   
   SpreadsheetApp.flush();
+  
+  // ============================================
+  // CRIAR NOMES PARA AS DATAS (para uso em fórmulas)
+  // ============================================
+  try {
+    // Remover nomes existentes primeiro para evitar conflitos
+    var nomesExistentes = ss.getNamedRanges();
+    nomesExistentes.forEach(function(nr) {
+      var nome = nr.getName();
+      if (nome === 'DIAMESREF' || nome === 'DIAMESREF2' || nome === 'DIADDD') {
+        nr.remove();
+        Logger.log('  🗑️ Nome existente removido: ' + nome);
+      }
+    });
+    
+    // Criar os named ranges
+    criarNamedRangesDatas(ss, abaApoio);
+    Logger.log('  ✅ Named ranges criados com sucesso:');
+    Logger.log('     - DIAMESREF: APOIO!D1');
+    Logger.log('     - DIAMESREF2: APOIO!F1');
+    Logger.log('     - DIADDD: APOIO!A17');
+  } catch (e) {
+    Logger.log('❌ Erro ao criar named ranges: ' + e.toString());
+    throw new Error('Falha ao criar named ranges necessários para as fórmulas: ' + e.toString());
+  }
   
   Logger.log('\n✅ Aba APOIO preenchida com VALORES calculados!');
   Logger.log('✅ Agora execute: verificarAbaApoio()');
