@@ -145,10 +145,16 @@ function lerAbaBalancete(ss, datas) {
         status: linha[3] || '-'
       };
     });
+
+  // Monta o texto do statusGeral para que o dashboard mostre OK (X dias restantes)
+  let statusGeralDisplay = statusGeral;
+  if (statusGeral === "OK") {
+    statusGeralDisplay = "OK (" + formatarDiasRestantes(datas.diasRestantes) + ")";
+  }
   
   return {
     titulo: 'Balancetes de Fundos',
-    statusGeral: statusGeral || 'SEM DADOS',
+    statusGeral: montarStatusDisplay(statusGeral, datas.diasRestantes) || 'SEM DADOS',
     substatus: (statusGeral === 'OK') ? calcularCorStatusOk(datas.diasRestantes) : null,
     dados: dados
   };
@@ -202,10 +208,16 @@ function lerAbaComposicao(ss, datas) {
         status: linha[3] || '-'
       };
     });
+
+  // Monta o texto do statusGeral para que o dashboard mostre OK (X dias restantes)
+  let statusGeralDisplay = statusGeral;
+  if (statusGeral === "OK") {
+    statusGeralDisplay = "OK (" + formatarDiasRestantes(datas.diasRestantes) + ")";
+  }
   
   return {
     titulo: 'Composição da Carteira',
-    statusGeral: statusGeral || 'SEM DADOS',
+    statusGeral: montarStatusDisplay(statusGeral, datas.diasRestantes) || 'SEM DADOS',
     substatus: (statusGeral === 'OK') ? calcularCorStatusOk(datas.diasRestantes) : null,
     dados: dados
   };
@@ -300,10 +312,16 @@ function lerAbaLamina(ss, datas) {
         status: linha[3] || '-'
       };
     });
+
+  // Monta o texto do statusGeral para que o dashboard mostre OK (X dias restantes)
+  let statusGeralDisplay = statusGeral;
+  if (statusGeral === "OK") {
+    statusGeralDisplay = "OK (" + formatarDiasRestantes(datas.diasRestantes) + ")";
+  }
   
   return {
     titulo: 'Lâmina do Fundo',
-    statusGeral: statusGeral || 'SEM DADOS',
+    statusGeral: montarStatusDisplay(statusGeral, datas.diasRestantes) || 'SEM DADOS',
     substatus: (statusGeral === 'OK') ? calcularCorStatusOk(datas.diasRestantes) : null,
     dados: dados
   };
@@ -357,10 +375,16 @@ function lerAbaPerfilMensal(ss, datas) {
         status: linha[3] || '-'
       };
     });
+
+  // Monta o texto do statusGeral para que o dashboard mostre OK (X dias restantes)
+  let statusGeralDisplay = statusGeral;
+  if (statusGeral === "OK") {
+    statusGeralDisplay = "OK (" + formatarDiasRestantes(datas.diasRestantes) + ")";
+  }
   
   return {
     titulo: 'Perfil Mensal',
-    statusGeral: statusGeral || 'SEM DADOS',
+    statusGeral: montarStatusDisplay(statusGeral, datas.diasRestantes) || 'SEM DADOS',
     substatus: (statusGeral === 'OK') ? calcularCorStatusOk(datas.diasRestantes) : null,
     dados: dados
   };
@@ -543,47 +567,42 @@ function atualizarAbaCodFundoComColuna3() {
 function atualizarStatusNaPlanilha() {
   try {
     var ss = obterPlanilha();
-    
-    // Balancete
-    var abaBalancete = ss.getSheetByName('Balancete');
-    var dadosBalancete = abaBalancete.getRange('D4:D29').getValues();
-    var totalOK = dadosBalancete.filter(function(r) { return r[0] === 'OK'; }).length;
-    var statusBalancete = totalOK === dadosBalancete.length ? 'OK' : 'DESCONFORMIDADE';
-    abaBalancete.getRange('E1').setValue(statusBalancete);
-    
-    // Composição
-    var abaComposicao = ss.getSheetByName('Composição');
-    var dadosComposicao = abaComposicao.getRange('D4:D29').getValues();
-    totalOK = dadosComposicao.filter(function(r) { return r[0] === 'OK'; }).length;
-    var statusComposicao = totalOK === dadosComposicao.length ? 'OK' : 'DESCONFORMIDADE';
-    abaComposicao.getRange('E1').setValue(statusComposicao);
-    
-    // Diárias
+
+    // Processa em bloco as abas de conformidade
+    var datasReferencia = getDatasReferencia();
+    processarAbasConformidade(datasReferencia); // <<--- NOVA FUNÇÃO, roda Balancete, Composição, Lâmina, Perfil Mensal
+
+    // Diárias - permanece lógica específica (caso use diferentes critérios para Diárias):
     var abaDiarias = ss.getSheetByName('Diárias');
+    // status 1 (col E1): todos OK em D4:D29?
     var dadosDiarias1 = abaDiarias.getRange('D4:D29').getValues();
     var dadosDiarias2 = abaDiarias.getRange('F4:F29').getValues();
-    totalOK = dadosDiarias1.filter(function(r) { return r[0] === 'OK'; }).length;
-    var statusDiarias1 = totalOK === dadosDiarias1.length ? 'OK' : 'DESCONFORMIDADE';
-    totalOK = dadosDiarias2.filter(function(r) { return r[0] === 'OK'; }).length;
-    var statusDiarias2 = totalOK === dadosDiarias2.length ? 'OK' : 'A ATUALIZAR';
+
+    var totalOK1 = dadosDiarias1.filter(function(r) { return r[0] === 'OK'; }).length;
+    var statusDiarias1 = totalOK1 === dadosDiarias1.length ? 'OK' : 'DESCONFORMIDADE';
+
+    var totalOK2 = dadosDiarias2.filter(function(r) { return r[0] === 'OK'; }).length;
+    var statusDiarias2 = totalOK2 === dadosDiarias2.length ? 'OK' : 'A ATUALIZAR';
+
     abaDiarias.getRange('E1').setValue(statusDiarias1);
     abaDiarias.getRange('F1').setValue(statusDiarias2);
-    
-    // Lâmina
+
+    // Balancete, Composição, Lâmina, Perfil Mensal: status geral já foi atualizado em E1 de cada aba pela nova função
+
+    // Leitura após processamento atualizado:
+    var abaBalancete = ss.getSheetByName('Balancete');
+    var statusBalancete = abaBalancete.getRange('E1').getValue();
+
+    var abaComposicao = ss.getSheetByName('Composição');
+    var statusComposicao = abaComposicao.getRange('E1').getValue();
+
     var abaLamina = ss.getSheetByName('Lâmina');
-    var dadosLamina = abaLamina.getRange('D4:D29').getValues();
-    totalOK = dadosLamina.filter(function(r) { return r[0] === 'OK'; }).length;
-    var statusLamina = totalOK === dadosLamina.length ? 'OK' : 'DESCONFORMIDADE';
-    abaLamina.getRange('E1').setValue(statusLamina);
-    
-    // Perfil Mensal
+    var statusLamina = abaLamina.getRange('E1').getValue();
+
     var abaPerfilMensal = ss.getSheetByName('Perfil Mensal');
-    var dadosPerfilMensal = abaPerfilMensal.getRange('D4:D29').getValues();
-    totalOK = dadosPerfilMensal.filter(function(r) { return r[0] === 'OK'; }).length;
-    var statusPerfilMensal = totalOK === dadosPerfilMensal.length ? 'OK' : 'DESCONFORMIDADE';
-    abaPerfilMensal.getRange('E1').setValue(statusPerfilMensal);
-    
-    // GERAL
+    var statusPerfilMensal = abaPerfilMensal.getRange('E1').getValue();
+
+    // Atualiza dashboard
     var abaGeral = ss.getSheetByName('GERAL');
     abaGeral.getRange('A4').setValue(statusBalancete);
     abaGeral.getRange('B4').setValue(statusComposicao);
@@ -591,9 +610,8 @@ function atualizarStatusNaPlanilha() {
     abaGeral.getRange('D4').setValue(statusDiarias2);
     abaGeral.getRange('E4').setValue(statusLamina);
     abaGeral.getRange('F4').setValue(statusPerfilMensal);
-    
+
     Logger.log('✅ Status atualizados na planilha');
-    
   } catch (error) {
     Logger.log('❌ Erro ao atualizar status: ' + error.toString());
   }
@@ -798,9 +816,9 @@ function calcularStatusIndividual(retorno, tipo, enableDebugLog) {
       return 'OK';
     }
     
-    // Se ainda está dentro do prazo → EM CONFORMIDADE
+    // Se ainda está dentro do prazo → OK
     if (datas.diasRestantes >= 0) {
-      return 'EM CONFORMIDADE';
+      return 'OK';
     }
     
     // Passou do prazo → DESATUALIZADO
@@ -825,7 +843,7 @@ function calcularStatusIndividual(retorno, tipo, enableDebugLog) {
 /**
  * Calcular status geral de uma aba
  */
-function calcularStatusGeralDaAba(dados, tipo) {
+function calcularStatusGeralDaAba(dados, tipo, datas) {
   var totalOK = 0;
   var totalAguardando = 0;
   var total = dados.length;
@@ -854,7 +872,7 @@ function calcularStatusGeralDaAba(dados, tipo) {
   
   // Para tipo mensal: Se ainda está dentro do prazo (DIADDD <= DIAMESREF2)
   if (tipo === 'mensal' && datas.diasRestantes >= 0) {
-    return 'EM CONFORMIDADE\n' + datas.diasRestantes + ' DIAS RESTANTES';
+    return 'OK (' + formatarDiasRestantes(datas.diasRestantes) + ')';
   }
   
   if (tipo === 'diario') {
@@ -1296,8 +1314,11 @@ function atualizarDadosCVMRealCompleto() {
   // ============================================
   // 6. CALCULAR STATUS (APENAS OUTRAS ABAS)
   // ============================================
-  Logger.log('\n🧮 Calculando status das outras abas...');
-  atualizarStatusParaAbasEspecificas(['Balancete', 'Composição', 'Lâmina', 'Perfil Mensal']);
+  //Logger.log('\n🧮 Calculando status das outras abas...');
+  //atualizarStatusParaAbasEspecificas(['Balancete', 'Composição', 'Lâmina', 'Perfil Mensal']);
+
+  var datasReferencia = getDatasReferencia();
+  processarAbasConformidade(datasReferencia);
   
   Logger.log('\n✅ ═══════════════════════════════════════════');
   Logger.log('✅ ATUALIZAÇÃO 100% COMPLETA!');
@@ -1688,4 +1709,94 @@ function formatarCompetencia(dataStr) {
     return dataStr;
   }
   return dataStr;
+}
+
+// ===== FUNÇÕES DE STATUS INDIVIDUAL E GERAL =====
+
+/**
+ * Para cada linha de datas (Coluna C), determina o status na Coluna D
+ */
+function calcularArrayStatusIndividual(datasColunaC, dataReferencia, dataAtual, decimoDiaUtil) {
+  return datasColunaC.map(function(linha) {
+    var valor = String(linha[0] || '').trim();
+    if (!valor || valor === '-' || valor === 'ERRO') return 'DESATUALIZADO';
+    if (valor === dataReferencia) return 'OK';
+    if (compararDatasPTBR(dataAtual, decimoDiaUtil) <= 0) return 'OK';
+    return 'DESATUALIZADO';
+  });
+}
+
+/**
+ * Calcula o status geral final para a Coluna E (célula E1)
+ */
+function calcularStatusGeral(statusArray, totalLinhas, diasUteisRestantes) {
+  var okCount = statusArray.filter(function(s){ return s === 'OK'; }).length;
+  if (okCount === totalLinhas) return 'OK';
+  if (diasUteisRestantes > 0) { // Está no prazo (dias úteis!)
+    return 'OK\n(' + diasUteisRestantes + ' Dias restantes)';
+  }
+  return 'DESCONFORMIDADE';
+}
+
+/**
+ * Processa uma aba ("Balancete", "Composição", etc) para calcular os STATUS em lote
+ */
+function processarStatusAba(aba, datasReferencia) {
+  // Pega linhas não vazias
+  var rangeA = aba.getRange(4, 1, aba.getLastRow() - 3, 1).getValues();
+  var rangeC = aba.getRange(4, 3, rangeA.length, 1).getValues();
+
+  // Limpa as fórmulas/conteúdo da coluna D para evitar conflito!
+  aba.getRange(4, 4, rangeA.length, 1).clearContent();
+
+  var dataReferencia = datasReferencia.diaMesRef;
+  var dataAtual = datasReferencia.hoje;
+  var decimoDiaUtil = datasReferencia.diaMesRef2;
+
+  var linhasPreenchidas = rangeA.filter(function(l){ return l[0] && l[0].toString().trim() !== ''; }).length;
+
+  var statusIndividuais = calcularArrayStatusIndividual(rangeC, dataReferencia, dataAtual, decimoDiaUtil);
+
+  aba.getRange(4, 4, statusIndividuais.length, 1)
+    .setValues(statusIndividuais.map(function(x){ return [x]; }));
+
+  var statusGeral = calcularStatusGeral(statusIndividuais, linhasPreenchidas, datasReferencia.diasRestantes);
+  aba.getRange('E1').clearContent();
+  aba.getRange('E1').setValue(statusGeral);
+}
+
+/**
+ * Processa automaticamente todas as abas de conformidade monitoradas.
+ */
+function processarAbasConformidade(datasReferencia) {
+  var ss = obterPlanilha();
+  var abas = ['Balancete', 'Composição', 'Lâmina', 'Perfil Mensal'];
+  if (!datasReferencia) datasReferencia = getDatasReferencia();
+  abas.forEach(function(nome) {
+    var aba = ss.getSheetByName(nome);
+    if (aba) processarStatusAba(aba, datasReferencia);
+  });
+}
+
+// Executa nas abas Balancete, Composição, Lâmina, Perfil Mensal
+function limparFormulasE1() {
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  ['Balancete', 'Composição', 'Lâmina', 'Perfil Mensal'].forEach(function(nomeAba){
+    var aba = ss.getSheetByName(nomeAba);
+    if (aba) aba.getRange('E1').clearContent();
+  });
+}
+
+function formatarDiasRestantes(dias) {
+  if (dias === 1) return "1 dia restante";
+  return dias + " dias restantes";
+}
+
+function montarStatusDisplay(statusGeral, diasRestantes) {
+  // Garante que qualquer EM CONFORMIDADE virará OK
+  if (statusGeral && statusGeral.indexOf('EM CONFORMIDADE') !== -1) {
+    return "OK (" + formatarDiasRestantes(diasRestantes) + ")";
+  }
+  if (statusGeral === "OK") return "OK (" + formatarDiasRestantes(diasRestantes) + ")";
+  return statusGeral;
 }
