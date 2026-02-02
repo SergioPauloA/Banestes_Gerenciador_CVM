@@ -605,30 +605,66 @@ function atualizarStatusNaPlanilhaAutomatico() {
     Logger.log('🔄 [TRIGGER] Atualização automática iniciada em: ' + new Date());
     
     var ss = obterPlanilha();
+    var datas = getDatasReferencia();
+    
+    Logger.log('📅 Datas de referência:');
+    Logger.log('   - diaMesRef (deve ser 01/12/2025): ' + datas.diaMesRef);
+    Logger.log('   - diasRestantes: ' + datas.diasRestantes);
+    Logger.log('   - prazoFinal: ' + datas.diaMesRef2);
     
     // ============================================
     // BALANCETE
     // ============================================
-    Logger.log('📊 Processando Balancete...');
+    Logger.log('\n📊 Processando Balancete...');
     var abaBalancete = ss.getSheetByName('Balancete');
     var dadosBalancete = abaBalancete.getRange('C4:C29').getDisplayValues();
+    
+    Logger.log('   Total de linhas: ' + dadosBalancete.length);
+    Logger.log('   Primeiras 3 datas lidas:');
+    for (var i = 0; i < Math.min(3, dadosBalancete.length); i++) {
+      Logger.log('   [' + (i+1) + '] "' + dadosBalancete[i][0] + '"');
+    }
+    
     var statusBalancete = calcularStatusGeralDaAba(dadosBalancete, 'mensal');
+    Logger.log('   Status Geral calculado: "' + statusBalancete + '"');
     abaBalancete.getRange('E1').setValue(statusBalancete);
+    Logger.log('   ✅ Status Geral gravado na E1');
     
     // Atualizar status individuais
+    Logger.log('   Atualizando status individuais (coluna D)...');
+    var statusIndividuaisCalculados = [];
     for (var i = 0; i < dadosBalancete.length; i++) {
       var retorno = dadosBalancete[i][0];
       var status = calcularStatusIndividual(retorno, 'mensal');
       abaBalancete.getRange(i + 4, 4).setValue(status);
+      statusIndividuaisCalculados.push(status);
     }
+    
+    Logger.log('   Status individuais calculados:');
+    var contadores = {
+      'OK': 0,
+      'EM CONFORMIDADE': 0,
+      'DESATUALIZADO': 0,
+      '-': 0
+    };
+    statusIndividuaisCalculados.forEach(function(s) {
+      if (contadores.hasOwnProperty(s)) {
+        contadores[s]++;
+      }
+    });
+    Logger.log('   - OK: ' + contadores['OK']);
+    Logger.log('   - EM CONFORMIDADE: ' + contadores['EM CONFORMIDADE']);
+    Logger.log('   - DESATUALIZADO: ' + contadores['DESATUALIZADO']);
+    Logger.log('   - Vazios (-): ' + contadores['-']);
     
     // ============================================
     // COMPOSIÇÃO
     // ============================================
-    Logger.log('📈 Processando Composição...');
+    Logger.log('\n📈 Processando Composição...');
     var abaComposicao = ss.getSheetByName('Composição');
     var dadosComposicao = abaComposicao.getRange('C4:C29').getDisplayValues();
     var statusComposicao = calcularStatusGeralDaAba(dadosComposicao, 'mensal');
+    Logger.log('   Status Geral: "' + statusComposicao + '"');
     abaComposicao.getRange('E1').setValue(statusComposicao);
     
     for (var i = 0; i < dadosComposicao.length; i++) {
@@ -636,11 +672,12 @@ function atualizarStatusNaPlanilhaAutomatico() {
       var status = calcularStatusIndividual(retorno, 'mensal');
       abaComposicao.getRange(i + 4, 4).setValue(status);
     }
+    Logger.log('   ✅ Status individuais atualizados');
     
     // ============================================
-    // DIÁRIAS
+    // DIÁRIAS (NÃO ALTERAR - ESTÁ CORRETO)
     // ============================================
-    Logger.log('📅 Processando Diárias...');
+    Logger.log('\n📅 Processando Diárias...');
     var abaDiarias = ss.getSheetByName('Diárias');
     var dadosDiarias1 = abaDiarias.getRange('C4:C29').getDisplayValues();
     var dadosDiarias2 = abaDiarias.getRange('E4:E29').getDisplayValues();
@@ -658,14 +695,16 @@ function atualizarStatusNaPlanilhaAutomatico() {
       abaDiarias.getRange(i + 4, 4).setValue(status1);
       abaDiarias.getRange(i + 4, 6).setValue(status2);
     }
+    Logger.log('   ✅ Diárias atualizadas');
     
     // ============================================
     // LÂMINA
     // ============================================
-    Logger.log('📄 Processando Lâmina...');
+    Logger.log('\n📄 Processando Lâmina...');
     var abaLamina = ss.getSheetByName('Lâmina');
     var dadosLamina = abaLamina.getRange('C4:C29').getDisplayValues();
     var statusLamina = calcularStatusGeralDaAba(dadosLamina, 'mensal');
+    Logger.log('   Status Geral: "' + statusLamina + '"');
     abaLamina.getRange('E1').setValue(statusLamina);
     
     for (var i = 0; i < dadosLamina.length; i++) {
@@ -673,14 +712,16 @@ function atualizarStatusNaPlanilhaAutomatico() {
       var status = calcularStatusIndividual(retorno, 'mensal');
       abaLamina.getRange(i + 4, 4).setValue(status);
     }
+    Logger.log('   ✅ Status individuais atualizados');
     
     // ============================================
     // PERFIL MENSAL
     // ============================================
-    Logger.log('📊 Processando Perfil Mensal...');
+    Logger.log('\n📊 Processando Perfil Mensal...');
     var abaPerfilMensal = ss.getSheetByName('Perfil Mensal');
     var dadosPerfilMensal = abaPerfilMensal.getRange('C4:C29').getDisplayValues();
     var statusPerfilMensal = calcularStatusGeralDaAba(dadosPerfilMensal, 'mensal');
+    Logger.log('   Status Geral: "' + statusPerfilMensal + '"');
     abaPerfilMensal.getRange('E1').setValue(statusPerfilMensal);
     
     for (var i = 0; i < dadosPerfilMensal.length; i++) {
@@ -688,11 +729,12 @@ function atualizarStatusNaPlanilhaAutomatico() {
       var status = calcularStatusIndividual(retorno, 'mensal');
       abaPerfilMensal.getRange(i + 4, 4).setValue(status);
     }
+    Logger.log('   ✅ Status individuais atualizados');
     
     // ============================================
     // GERAL
     // ============================================
-    Logger.log('📋 Atualizando Dashboard Geral...');
+    Logger.log('\n📋 Atualizando Dashboard Geral...');
     var abaGeral = ss.getSheetByName('GERAL');
     abaGeral.getRange('A4').setValue(statusBalancete);
     abaGeral.getRange('B4').setValue(statusComposicao);
@@ -701,19 +743,26 @@ function atualizarStatusNaPlanilhaAutomatico() {
     abaGeral.getRange('E4').setValue(statusLamina);
     abaGeral.getRange('F4').setValue(statusPerfilMensal);
     
-    Logger.log('✅ [TRIGGER] Atualização automática concluída!');
+    Logger.log('\n✅ [TRIGGER] Atualização automática concluída!');
     Logger.log('📊 Próxima execução em 1 hora');
     
   } catch (error) {
     Logger.log('❌ [TRIGGER] Erro na atualização automática: ' + error.toString());
+    Logger.log('   Stack trace: ' + error.stack);
   }
 }
 
 /**
  * Calcular status individual de um fundo
  */
+/**
+ * Calcular status individual de um fundo
+ * @param {string} retorno - Data de retorno da coluna C (ex: "01/12/2025")
+ * @param {string} tipo - 'mensal' ou 'diario'
+ * @returns {string} - 'OK', 'EM CONFORMIDADE', 'DESATUALIZADO', ou '-'
+ */
 function calcularStatusIndividual(retorno, tipo) {
-  // Trate vazio, "-", erros e similares como "DESATUALIZADO"
+  // Se vazio ou com erro, retornar DESATUALIZADO
   if (
     !retorno ||
     retorno === '-' ||
@@ -729,22 +778,39 @@ function calcularStatusIndividual(retorno, tipo) {
   }
 
   var datas = getDatasReferencia();
-
+  
+  // Normalizar as datas para comparação
+  var retornoNormalizado = normalizaDataParaComparacao(retorno);
+  
   if (tipo === 'mensal') {
-    if (normalizaData(retorno) === normalizaData(datas.diaMesRef)) {
+    var dataRefNormalizada = normalizaDataParaComparacao(datas.diaMesRef);
+    
+    // Log para debug (remover depois)
+    Logger.log('🔍 Comparando: "' + retornoNormalizado + '" vs "' + dataRefNormalizada + '"');
+    
+    // Se a data é igual à data de referência → OK
+    if (retornoNormalizado === dataRefNormalizada) {
       return 'OK';
     }
-    // Verifica se ainda está dentro do prazo (DIADDD <= DIAMESREF2)
+    
+    // Se ainda está dentro do prazo → EM CONFORMIDADE
     if (datas.diasRestantes >= 0) {
       return 'EM CONFORMIDADE';
     }
+    
+    // Passou do prazo → DESATUALIZADO
     return 'DESATUALIZADO';
   }
 
   if (tipo === 'diario') {
-    if (normalizaData(retorno) === normalizaData(datas.diaD1)) { // Somente DIADREF1, igual à planilha
+    var diaD1Normalizado = normalizaDataParaComparacao(datas.diaD1);
+    
+    // Se a data é igual ao dia D-1 → OK
+    if (retornoNormalizado === diaD1Normalizado) {
       return 'OK';
     }
+    
+    // Para diárias, se não é OK, retornar vazio (conforme planilha original)
     return '-';
   }
 
@@ -810,6 +876,39 @@ function testarAtualizacaoAutomatica() {
       message: error.toString()
     };
   }
+}
+
+/**
+ * Função para testar manualmente o cálculo de status
+ * Execute esta função no Apps Script Editor para debug
+ */
+function testarCalculoDeStatus() {
+  Logger.log('🧪 ===== TESTE DE CÁLCULO DE STATUS =====\n');
+  
+  var ss = obterPlanilha();
+  var datas = getDatasReferencia();
+  
+  Logger.log('📅 Datas de Referência:');
+  Logger.log('   diaMesRef: ' + datas.diaMesRef);
+  Logger.log('   diasRestantes: ' + datas.diasRestantes);
+  Logger.log('   prazoFinal: ' + datas.diaMesRef2);
+  Logger.log('   diaD1: ' + datas.diaD1);
+  
+  Logger.log('\n📊 Testando Balancete:');
+  var abaBalancete = ss.getSheetByName('Balancete');
+  var dadosBalancete = abaBalancete.getRange('C4:C8').getDisplayValues();
+  
+  for (var i = 0; i < dadosBalancete.length; i++) {
+    var retorno = dadosBalancete[i][0];
+    var status = calcularStatusIndividual(retorno, 'mensal');
+    Logger.log('   Linha ' + (i+4) + ': "' + retorno + '" → Status: "' + status + '"');
+  }
+  
+  Logger.log('\n📈 Status Geral do Balancete:');
+  var statusGeral = calcularStatusGeralDaAba(dadosBalancete, 'mensal');
+  Logger.log('   ' + statusGeral);
+  
+  Logger.log('\n✅ Teste concluído!');
 }
 
 function enviarEmailDesconformidade() {
@@ -1537,6 +1636,39 @@ function normalizaData(data) {
   }
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
   return s.replace(/\s+/g, '');
+}
+
+/**
+ * Normaliza data para comparação
+ * Aceita formatos: "01/12/2025", "01/12/2025 - ", "2025-12-01"
+ */
+function normalizaDataParaComparacao(data) {
+  if (!data) return '';
+  
+  // Converter para string e remover espaços e traços extras
+  var dataStr = String(data).trim().replace(/\s*-\s*$/, '').trim();
+  
+  // Se for objeto Date
+  if (data instanceof Date) {
+    var dia = ('0' + data.getDate()).slice(-2);
+    var mes = ('0' + (data.getMonth() + 1)).slice(-2);
+    var ano = data.getFullYear();
+    return dia + '/' + mes + '/' + ano;
+  }
+  
+  // Se já estiver no formato DD/MM/YYYY
+  var match = dataStr.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (match) {
+    return match[1] + '/' + match[2] + '/' + match[3];
+  }
+  
+  // Se estiver no formato YYYY-MM-DD
+  match = dataStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    return match[3] + '/' + match[2] + '/' + match[1];
+  }
+  
+  return dataStr;
 }
 
 function formatarCompetencia(dataStr) {
