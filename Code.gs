@@ -49,14 +49,31 @@ function getDashboardData() {
     var ss = obterPlanilha();
     var datas = getDatasReferencia();
     
+    Logger.log('📅 Datas de referência: ' + JSON.stringify(datas));
+    
+    var balancete = lerAbaBalancete(ss, datas);
+    Logger.log('📊 Balancete statusGeral: "' + balancete.statusGeral + '"');
+    
+    var composicao = lerAbaComposicao(ss, datas);
+    Logger.log('📈 Composição statusGeral: "' + composicao.statusGeral + '"');
+    
+    var diarias = lerAbaDiarias(ss);
+    Logger.log('📅 Diárias statusGeral1: "' + diarias.statusGeral1 + '", statusGeral2: "' + diarias.statusGeral2 + '"');
+    
+    var lamina = lerAbaLamina(ss, datas);
+    Logger.log('📄 Lâmina statusGeral: "' + lamina.statusGeral + '"');
+    
+    var perfilMensal = lerAbaPerfilMensal(ss, datas);
+    Logger.log('📊 Perfil Mensal statusGeral: "' + perfilMensal.statusGeral + '"');
+    
     var resultado = {
       timestamp: new Date().toISOString(),
       datas: datas,
-      balancete: lerAbaBalancete(ss, datas),
-      composicao: lerAbaComposicao(ss, datas),
-      diarias: lerAbaDiarias(ss),
-      lamina: lerAbaLamina(ss, datas),
-      perfilMensal: lerAbaPerfilMensal(ss, datas)
+      balancete: balancete,
+      composicao: composicao,
+      diarias: diarias,
+      lamina: lamina,
+      perfilMensal: perfilMensal
     };
     
     Logger.log('✅ Dados lidos com sucesso');
@@ -81,15 +98,34 @@ function lerAbaBalancete(ss, datas) {
   var aba = ss.getSheetByName('Balancete');
   if (!aba) throw new Error('Aba Balancete não encontrada');
   
+  // Ler o status atual da célula E1
   var statusGeral = aba.getRange('E1').getDisplayValue();
+  
+  // LOG: Verificar o que está sendo lido
+  Logger.log('📊 Balancete - Status lido da E1: "' + statusGeral + '"');
+  
   var ultimaLinha = aba.getLastRow();
   
   if (ultimaLinha < 4) {
     return {
       titulo: 'Balancetes de Fundos',
-      statusGeral: statusGeral || 'SEM DADOS',
+      statusGeral: 'SEM DADOS',
+      substatus: null,
       dados: []
     };
+  }
+  
+  // Se o status estiver vazio, com "-", ou inválido, recalcular
+  if (!statusGeral || statusGeral === '' || statusGeral === '-' || statusGeral.trim() === '') {
+    Logger.log('⚠️ Balancete - Status inválido na E1, recalculando...');
+    
+    // Recalcular o status
+    var dadosRetorno = aba.getRange('C4:C' + ultimaLinha).getDisplayValues();
+    statusGeral = calcularStatusGeralDaAba(dadosRetorno, 'mensal');
+    
+    // Atualizar a célula E1 com o valor correto
+    aba.getRange('E1').setValue(statusGeral);
+    Logger.log('✅ Balancete - Status recalculado e atualizado: "' + statusGeral + '"');
   }
   
   var valores = aba.getRange(4, 1, ultimaLinha - 3, 4).getDisplayValues();
@@ -119,15 +155,34 @@ function lerAbaComposicao(ss, datas) {
   var aba = ss.getSheetByName('Composição');
   if (!aba) throw new Error('Aba Composição não encontrada');
   
+  // Ler o status atual da célula E1
   var statusGeral = aba.getRange('E1').getDisplayValue();
+  
+  // LOG: Verificar o que está sendo lido
+  Logger.log('📈 Composição - Status lido da E1: "' + statusGeral + '"');
+  
   var ultimaLinha = aba.getLastRow();
   
   if (ultimaLinha < 4) {
     return {
       titulo: 'Composição da Carteira',
-      statusGeral: statusGeral || 'SEM DADOS',
+      statusGeral: 'SEM DADOS',
+      substatus: null,
       dados: []
     };
+  }
+  
+  // Se o status estiver vazio, com "-", ou inválido, recalcular
+  if (!statusGeral || statusGeral === '' || statusGeral === '-' || statusGeral.trim() === '') {
+    Logger.log('⚠️ Composição - Status inválido na E1, recalculando...');
+    
+    // Recalcular o status
+    var dadosRetorno = aba.getRange('C4:C' + ultimaLinha).getDisplayValues();
+    statusGeral = calcularStatusGeralDaAba(dadosRetorno, 'mensal');
+    
+    // Atualizar a célula E1 com o valor correto
+    aba.getRange('E1').setValue(statusGeral);
+    Logger.log('✅ Composição - Status recalculado e atualizado: "' + statusGeral + '"');
   }
   
   var valores = aba.getRange(4, 1, ultimaLinha - 3, 4).getDisplayValues();
@@ -198,15 +253,34 @@ function lerAbaLamina(ss, datas) {
   var aba = ss.getSheetByName('Lâmina');
   if (!aba) throw new Error('Aba Lâmina não encontrada');
   
+  // Ler o status atual da célula E1
   var statusGeral = aba.getRange('E1').getDisplayValue();
+  
+  // LOG: Verificar o que está sendo lido
+  Logger.log('📄 Lâmina - Status lido da E1: "' + statusGeral + '"');
+  
   var ultimaLinha = aba.getLastRow();
   
   if (ultimaLinha < 4) {
     return {
       titulo: 'Lâmina do Fundo',
-      statusGeral: statusGeral || 'SEM DADOS',
+      statusGeral: 'SEM DADOS',
+      substatus: null,
       dados: []
     };
+  }
+  
+  // Se o status estiver vazio, com "-", ou inválido, recalcular
+  if (!statusGeral || statusGeral === '' || statusGeral === '-' || statusGeral.trim() === '') {
+    Logger.log('⚠️ Lâmina - Status inválido na E1, recalculando...');
+    
+    // Recalcular o status
+    var dadosRetorno = aba.getRange('C4:C' + ultimaLinha).getDisplayValues();
+    statusGeral = calcularStatusGeralDaAba(dadosRetorno, 'mensal');
+    
+    // Atualizar a célula E1 com o valor correto
+    aba.getRange('E1').setValue(statusGeral);
+    Logger.log('✅ Lâmina - Status recalculado e atualizado: "' + statusGeral + '"');
   }
   
   var valores = aba.getRange(4, 1, ultimaLinha - 3, 4).getDisplayValues();
@@ -236,15 +310,34 @@ function lerAbaPerfilMensal(ss, datas) {
   var aba = ss.getSheetByName('Perfil Mensal');
   if (!aba) throw new Error('Aba Perfil Mensal não encontrada');
   
+  // Ler o status atual da célula E1
   var statusGeral = aba.getRange('E1').getDisplayValue();
+  
+  // LOG: Verificar o que está sendo lido
+  Logger.log('📊 Perfil Mensal - Status lido da E1: "' + statusGeral + '"');
+  
   var ultimaLinha = aba.getLastRow();
   
   if (ultimaLinha < 4) {
     return {
       titulo: 'Perfil Mensal',
-      statusGeral: statusGeral || 'SEM DADOS',
+      statusGeral: 'SEM DADOS',
+      substatus: null,
       dados: []
     };
+  }
+  
+  // Se o status estiver vazio, com "-", ou inválido, recalcular
+  if (!statusGeral || statusGeral === '' || statusGeral === '-' || statusGeral.trim() === '') {
+    Logger.log('⚠️ Perfil Mensal - Status inválido na E1, recalculando...');
+    
+    // Recalcular o status
+    var dadosRetorno = aba.getRange('C4:C' + ultimaLinha).getDisplayValues();
+    statusGeral = calcularStatusGeralDaAba(dadosRetorno, 'mensal');
+    
+    // Atualizar a célula E1 com o valor correto
+    aba.getRange('E1').setValue(statusGeral);
+    Logger.log('✅ Perfil Mensal - Status recalculado e atualizado: "' + statusGeral + '"');
   }
   
   var valores = aba.getRange(4, 1, ultimaLinha - 3, 4).getDisplayValues();

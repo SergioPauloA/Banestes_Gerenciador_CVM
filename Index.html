@@ -1163,7 +1163,10 @@
     function atualizarStatusCard(elementId, status, substatus) {
       var elemento = document.getElementById(elementId);
       if (!elemento) return;
-      elemento.textContent = status || 'SEM DADOS';
+      
+      // Substituir \n por <br> para exibição HTML
+      var statusFormatado = (status || 'SEM DADOS').replace(/\n/g, '<br>');
+      elemento.innerHTML = statusFormatado;
 
       let baseClass = 'status-badge ' + obterClasseStatus(status);
       // append substatus class if "OK"
@@ -1190,10 +1193,20 @@
 
     function obterClasseStatus(status) {
       if (!status) return 'status-erro';
-      if (status === 'OK') return 'status-ok';
-      if (status.indexOf('CONFORMIDADE') !== -1) return 'status-conformidade';
-      if (status.indexOf('DESCONFORMIDADE') !== -1 || status === 'DESATUALIZADO') return 'status-desconformidade';
-      if (status === 'A ATUALIZAR') return 'status-atualizar';
+      
+      // Normalizar o status (remover quebras de linha e espaços extras)
+      var statusNormalizado = status.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase();
+      
+      if (statusNormalizado === 'OK') return 'status-ok';
+      
+      // Verificar se contém "CONFORMIDADE" (cobre "EM CONFORMIDADE" e "DESCONFORMIDADE")
+      if (statusNormalizado.indexOf('EM CONFORMIDADE') !== -1) return 'status-conformidade';
+      if (statusNormalizado.indexOf('DESCONFORMIDADE') !== -1) return 'status-desconformidade';
+      
+      if (statusNormalizado === 'DESATUALIZADO') return 'status-desconformidade';
+      if (statusNormalizado === 'A ATUALIZAR') return 'status-atualizar';
+      if (statusNormalizado === 'AGUARDANDO DADOS') return 'status-erro';
+      
       return 'status-erro';
     }
     function atualizarTabela(tabelaId, dados, tipo) {
