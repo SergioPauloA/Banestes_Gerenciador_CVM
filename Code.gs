@@ -5,6 +5,9 @@
 
 var SPREADSHEET_ID = '1N6LP1ydsxnQO_Woatv9zWEccb0fOGaV_3EKK1GoSWZI';
 
+// Debug flag - set to false in production to reduce logging
+var DEBUG_MODE = true;
+
 // ============================================
 // WEB APP
 // ============================================
@@ -785,8 +788,10 @@ function calcularStatusIndividual(retorno, tipo) {
   if (tipo === 'mensal') {
     var dataRefNormalizada = normalizaDataParaComparacao(datas.diaMesRef);
     
-    // Log para debug (remover depois)
-    Logger.log('🔍 Comparando: "' + retornoNormalizado + '" vs "' + dataRefNormalizada + '"');
+    // Debug logging (controlled by DEBUG_MODE flag)
+    if (DEBUG_MODE) {
+      Logger.log('🔍 Comparando: "' + retornoNormalizado + '" vs "' + dataRefNormalizada + '"');
+    }
     
     // Se a data é igual à data de referência → OK
     if (retornoNormalizado === dataRefNormalizada) {
