@@ -641,7 +641,8 @@ function calcularStatusIndividual(retorno, tipo) {
     if (normalizaData(retorno) === normalizaData(datas.diaMesRef)) {
       return 'OK';
     }
-    if (datas.diasRestantes > 0) {
+    // Verifica se ainda está dentro do prazo (DIADDD <= DIAMESREF2)
+    if (datas.diasRestantes >= 0 || normalizaData(datas.diaDD) <= normalizaData(datas.diaMesRef2)) {
       return 'EM CONFORMIDADE';
     }
     return 'DESATUALIZADO';
@@ -687,7 +688,8 @@ function calcularStatusGeralDaAba(dados, tipo) {
   
   var datas = getDatasReferencia();
   
-  if (tipo === 'mensal' && datas.diasRestantes > 0) {
+  // Para tipo mensal: Se ainda está dentro do prazo (DIADDD <= DIAMESREF2)
+  if (tipo === 'mensal' && datas.diasRestantes >= 0) {
     return 'EM CONFORMIDADE\n' + datas.diasRestantes + ' DIAS RESTANTES';
   }
   

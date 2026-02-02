@@ -29,20 +29,31 @@ function getDatasReferencia() {
     mesAnterior.setDate(1);
     var diaMesRef = formatarData(mesAnterior);
     
+    // Calcular 10º dia útil do mês atual
+    var mesAtual = new Date(diaAtual.getFullYear(), diaAtual.getMonth(), 1);
+    var decimoDiaUtil = calcularDiaUtil(mesAtual, 10, ss);
+    var diaMesRef2 = formatarData(decimoDiaUtil);
+    
+    // Calcular dias restantes até o prazo (10º dia útil)
+    var hoje = new Date(diaAtual);
+    var diasRestantes = calcularDiasUteisEntre(hoje, decimoDiaUtil, ss);
+    
     Logger.log('📅 Datas obtidas da aba APOIO:');
     Logger.log('  Hoje: ' + formatarData(diaAtual));
     Logger.log('  D-2 (DIADREF1): ' + diaD1);
     Logger.log('  D-1 (DIADREF2): ' + diaD2);
     Logger.log('  1º mês anterior: ' + diaMesRef);
+    Logger.log('  10º dia útil (prazo): ' + diaMesRef2);
+    Logger.log('  Dias restantes: ' + diasRestantes);
     
     return {
       hoje: formatarData(diaAtual),
       diaMesRef: diaMesRef,
-      diaMesRef2: formatarData(new Date(diaAtual.getFullYear(), diaAtual.getMonth(), 15)),
+      diaMesRef2: diaMesRef2,
       diaDD: formatarData(diaAtual),
       diaD1: diaD1, // D-2 (dias úteis)
       diaD2: diaD2, // D-1 (dias úteis)
-      diasRestantes: 0
+      diasRestantes: diasRestantes
     };
     
   } catch (error) {
@@ -77,20 +88,30 @@ function calcularDatasManualmente() {
   var mesAnterior = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
   var diaMesRef = formatarData(mesAnterior);
   
+  // DIAMESREF2 (10º dia útil do mês atual)
+  var mesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  var decimoDiaUtil = calcularDiaUtil(mesAtual, 10, ss);
+  var diaMesRef2 = formatarData(decimoDiaUtil);
+  
+  // Calcular dias restantes até o prazo (10º dia útil)
+  var diasRestantes = calcularDiasUteisEntre(hoje, decimoDiaUtil, ss);
+  
   Logger.log('📅 Datas calculadas manualmente:');
   Logger.log('  Hoje: ' + diaDD);
   Logger.log('  D-2 (DIADREF1 - úteis): ' + diaD1);
   Logger.log('  D-1 (DIADREF2 - úteis): ' + diaD2);
   Logger.log('  1º mês anterior: ' + diaMesRef);
+  Logger.log('  10º dia útil (prazo): ' + diaMesRef2);
+  Logger.log('  Dias restantes: ' + diasRestantes);
   
   return {
     hoje: diaDD,
     diaMesRef: diaMesRef,
-    diaMesRef2: formatarData(new Date(hoje.getFullYear(), hoje.getMonth(), 15)),
+    diaMesRef2: diaMesRef2,
     diaDD: diaDD,
     diaD1: diaD1,
     diaD2: diaD2,
-    diasRestantes: 0
+    diasRestantes: diasRestantes
   };
 }
 
@@ -114,6 +135,35 @@ function calcularDiaUtil(dataInicial, diasUteis, ss) {
   }
   
   return resultado;
+}
+
+function calcularDiasUteisEntre(dataInicio, dataFim, ss) {
+  // Se a data de fim já passou, retornar 0 (prazo expirado)
+  if (dataFim < dataInicio) {
+    return 0;
+  }
+  
+  var diasUteis = 0;
+  var dataAtual = new Date(dataInicio);
+  
+  // Normalizar datas para meia-noite para comparação correta
+  dataAtual.setHours(0, 0, 0, 0);
+  var dataFimNormalizada = new Date(dataFim);
+  dataFimNormalizada.setHours(0, 0, 0, 0);
+  
+  while (dataAtual <= dataFimNormalizada) {
+    var diaSemana = dataAtual.getDay();
+    // Se não é sábado (6) nem domingo (0)
+    if (diaSemana !== 0 && diaSemana !== 6) {
+      // Se não é feriado
+      if (!ehFeriado(dataAtual, ss)) {
+        diasUteis++;
+      }
+    }
+    dataAtual.setDate(dataAtual.getDate() + 1);
+  }
+  
+  return diasUteis;
 }
 
 function ehFeriado(data, ss) {
