@@ -1,80 +1,23 @@
 /**
  * DateUtils.gs - Funções de cálculo de datas
+ * 
+ * CORREÇÃO FINAL: Ignora aba APOIO se a data for fim de semana
  */
 
 function getDatasReferencia() {
-  try {
-    var ss = SpreadsheetApp.openById('1N6LP1ydsxnQO_Woatv9zWEccb0fOGaV_3EKK1GoSWZI');
-    var abaApoio = ss.getSheetByName('APOIO');
-    
-    if (!abaApoio) {
-      Logger.log('⚠️ Aba APOIO não encontrada. Calculando manualmente.');
-      return calcularDatasManualmente();
-    }
-    
-    // Tentar ler da linha 17 (onde estão os cálculos)
-    var diaAtual = abaApoio.getRange('A17').getValue(); // HOJE
-    var diaD1 = abaApoio.getRange('B17').getDisplayValue(); // D-1 útil (OK agora!)
-    var diaD2 = abaApoio.getRange('B18').getDisplayValue(); // D-2 útil
-    
-    // Se algum valor está vazio, calcular manualmente
-    if (!diaD1 || !diaD2 || diaD1 === '' || diaD2 === '') {
-      Logger.log('⚠️ Aba APOIO com dados incompletos. Calculando manualmente.');
-      return calcularDatasManualmente();
-    }
-    
-    // 1º dia do mês anterior
-    var mesAnterior = new Date(diaAtual);
-    mesAnterior.setMonth(mesAnterior.getMonth() - 1);
-    mesAnterior.setDate(1);
-    var diaMesRef = formatarData(mesAnterior);
-    
-    // Calcular 10º dia útil do mês atual
-    var mesAtual = new Date(diaAtual.getFullYear(), diaAtual.getMonth(), 1);
-    var decimoDiaUtil = calcularDiaUtil(mesAtual, 10, ss);
-    var diaMesRef2 = formatarData(decimoDiaUtil);
-    
-    // Calcular dias restantes até o prazo (10º dia útil)
-    var hoje = new Date(diaAtual);
-    var diasRestantes = calcularDiasUteisEntre(hoje, decimoDiaUtil, ss);
-    
-    Logger.log('📅 Datas obtidas da aba APOIO:');
-    Logger.log('  Hoje: ' + formatarData(diaAtual));
-    Logger.log('  D-2 (DIADREF1): ' + diaD1);
-    Logger.log('  D-1 (DIADREF2): ' + diaD2);
-    Logger.log('  1º mês anterior: ' + diaMesRef);
-    Logger.log('  10º dia útil (prazo): ' + diaMesRef2);
-    Logger.log('  Dias restantes: ' + diasRestantes);
-    
-    return {
-      hoje: formatarData(diaAtual),
-      diaMesRef: diaMesRef,
-      diaMesRef2: diaMesRef2,
-      diaDD: formatarData(diaAtual),
-      diaD1: diaD1, // D-2 (dias úteis)
-      diaD2: diaD2, // D-1 (dias úteis)
-      diasRestantes: diasRestantes
-    };
-    
-  } catch (error) {
-    Logger.log('❌ Erro ao ler aba APOIO: ' + error.toString());
-    Logger.log('⚠️ Usando datas calculadas manualmente.');
-    return calcularDatasManualmente();
-  }
-}
-
-function calcularDatasManualmente() {
+  Logger.log('📅 getDatasReferencia: calculando datas...');
+  
   var ss = SpreadsheetApp.openById('1N6LP1ydsxnQO_Woatv9zWEccb0fOGaV_3EKK1GoSWZI');
   var hoje = new Date();
   
-  // DIADDD (Hoje)
-  var diaDD = formatarData(hoje);
-  
-  // IMPORTANTE: Se hoje é fim de semana, recuar para a última sexta-feira
+  // 🔥 Se hoje é fim de semana, ajustar para o próximo dia útil
   var diaParaCalculo = new Date(hoje);
   while (diaParaCalculo.getDay() === 0 || diaParaCalculo.getDay() === 6) {
-    diaParaCalculo.setDate(diaParaCalculo.getDate() - 1);
+    diaParaCalculo.setDate(diaParaCalculo.getDate() + 1);
   }
+  
+  Logger.log('  Data real: ' + formatarData(hoje));
+  Logger.log('  Data de trabalho: ' + formatarData(diaParaCalculo));
   
   // DIADREF1 (D-2 em dias ÚTEIS)
   var dataD1 = calcularDiaUtil(diaParaCalculo, -2, ss);
@@ -85,30 +28,75 @@ function calcularDatasManualmente() {
   var diaD2 = formatarData(dataD2);
   
   // DIAMESREF (1º dia do mês anterior)
-  var mesAnterior = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+  var mesAnterior = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth() - 1, 1);
   var diaMesRef = formatarData(mesAnterior);
   
   // DIAMESREF2 (10º dia útil do mês atual)
-  var mesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  var mesAtual = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth(), 1);
   var decimoDiaUtil = calcularDiaUtil(mesAtual, 10, ss);
   var diaMesRef2 = formatarData(decimoDiaUtil);
   
-  // Calcular dias restantes até o prazo (10º dia útil)
-  var diasRestantes = calcularDiasUteisEntre(hoje, decimoDiaUtil, ss);
+  // Calcular dias restantes até o prazo
+  var diasRestantes = calcularDiasUteisEntre(diaParaCalculo, decimoDiaUtil, ss);
   
-  Logger.log('📅 Datas calculadas manualmente:');
-  Logger.log('  Hoje: ' + diaDD);
-  Logger.log('  D-2 (DIADREF1 - úteis): ' + diaD1);
-  Logger.log('  D-1 (DIADREF2 - úteis): ' + diaD2);
-  Logger.log('  1º mês anterior: ' + diaMesRef);
+  Logger.log('  1º dia mês anterior: ' + diaMesRef);
   Logger.log('  10º dia útil (prazo): ' + diaMesRef2);
-  Logger.log('  Dias restantes: ' + diasRestantes);
+  Logger.log('  🔥 Dias restantes: ' + diasRestantes);
   
   return {
-    hoje: diaDD,
+    hoje: formatarData(diaParaCalculo),
     diaMesRef: diaMesRef,
     diaMesRef2: diaMesRef2,
-    diaDD: diaDD,
+    diaDD: formatarData(diaParaCalculo),
+    diaD1: diaD1,
+    diaD2: diaD2,
+    diasRestantes: diasRestantes
+  };
+}
+
+
+function calcularDatasManualmente() {
+  var ss = SpreadsheetApp.openById('1N6LP1ydsxnQO_Woatv9zWEccb0fOGaV_3EKK1GoSWZI');
+  var hoje = new Date();
+  
+  // 🔥 CORREÇÃO CRÍTICA: Se hoje é fim de semana, ajustar para o próximo dia útil
+  var diaParaCalculo = new Date(hoje);
+  while (diaParaCalculo.getDay() === 0 || diaParaCalculo.getDay() === 6) {
+    diaParaCalculo.setDate(diaParaCalculo.getDate() + 1); // AVANÇAR para segunda
+  }
+  
+  Logger.log('📅 calcularDatasManualmente:');
+  Logger.log('  Data real (hoje): ' + formatarData(hoje));
+  Logger.log('  Data ajustada (dia útil): ' + formatarData(diaParaCalculo));
+  
+  // DIADREF1 (D-2 em dias ÚTEIS)
+  var dataD1 = calcularDiaUtil(diaParaCalculo, -2, ss);
+  var diaD1 = formatarData(dataD1);
+  
+  // DIADREF2 (D-1 em dias ÚTEIS)
+  var dataD2 = calcularDiaUtil(diaParaCalculo, -1, ss);
+  var diaD2 = formatarData(dataD2);
+  
+  // DIAMESREF (1º dia do mês anterior)
+  var mesAnterior = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth() - 1, 1);
+  var diaMesRef = formatarData(mesAnterior);
+  
+  // DIAMESREF2 (10º dia útil do mês atual)
+  var mesAtual = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth(), 1);
+  var decimoDiaUtil = calcularDiaUtil(mesAtual, 10, ss);
+  var diaMesRef2 = formatarData(decimoDiaUtil);
+  
+  // Calcular dias restantes até o prazo
+  var diasRestantes = calcularDiasUteisEntre(diaParaCalculo, decimoDiaUtil, ss);
+  
+  Logger.log('  10º dia útil (prazo): ' + diaMesRef2);
+  Logger.log('  🔥 Dias restantes: ' + diasRestantes);
+  
+  return {
+    hoje: formatarData(diaParaCalculo), // 🔥 USAR DATA AJUSTADA
+    diaMesRef: diaMesRef,
+    diaMesRef2: diaMesRef2,
+    diaDD: formatarData(diaParaCalculo),
     diaD1: diaD1,
     diaD2: diaD2,
     diasRestantes: diasRestantes
@@ -125,9 +113,7 @@ function calcularDiaUtil(dataInicial, diasUteis, ss) {
     resultado.setDate(resultado.getDate() + direcao);
     
     var diaSemana = resultado.getDay();
-    // Se não é sábado (6) nem domingo (0)
     if (diaSemana !== 0 && diaSemana !== 6) {
-      // Se não é feriado
       if (!ehFeriado(resultado, ss)) {
         diasAdicionados++;
       }
@@ -137,43 +123,58 @@ function calcularDiaUtil(dataInicial, diasUteis, ss) {
   return resultado;
 }
 
+/**
+ * Calcula dias úteis RESTANTES entre duas datas
+ * 
+ * REGRA CORRIGIDA:
+ * - NÃO conta o dia de HOJE (já estamos nele)
+ * - NÃO conta o dia do PRAZO (é o deadline)
+ * - NÃO conta fins de semana
+ * - NÃO conta feriados
+ * 
+ * Exemplo: Hoje 03/02/2026 até prazo 13/02/2026
+ * Conta: 04, 05, 06, 07, 10, 11, 12 = 7 dias úteis
+ */
 function calcularDiasUteisEntre(dataInicio, dataFim, ss) {
   var diasUteis = 0;
   var dataAtual = new Date(dataInicio);
   
-  // Normalizar datas para meia-noite para comparação correta
+  // Normalizar datas para meia-noite
   dataAtual.setHours(0, 0, 0, 0);
   var dataFimNormalizada = new Date(dataFim);
   dataFimNormalizada.setHours(0, 0, 0, 0);
   
-  // Se a data de fim já passou, calcular dias negativos (prazo expirado)
-  if (dataFimNormalizada < dataAtual) {
-    // Inverter e retornar negativo
+  // Se o prazo já passou
+  if (dataFimNormalizada <= dataAtual) {
     var temp = new Date(dataAtual);
-    while (dataFimNormalizada < temp) {
-      temp.setDate(temp.getDate() - 1);
+    temp.setDate(temp.getDate() - 1);
+    
+    while (temp > dataFimNormalizada) {
       var diaSemana = temp.getDay();
       if (diaSemana !== 0 && diaSemana !== 6) {
         if (!ehFeriado(temp, ss)) {
           diasUteis--;
         }
       }
+      temp.setDate(temp.getDate() - 1);
     }
     return diasUteis;
   }
   
-  // Contar dias úteis até a data fim (NÃO incluindo o dia de hoje, MAS incluindo o prazo)
-  dataAtual.setDate(dataAtual.getDate() + 1); // Começar do dia seguinte
-  while (dataAtual <= dataFimNormalizada) {
-    var diaSemana = dataAtual.getDay();
-    // Se não é sábado (6) nem domingo (0)
+  // 🔥 CONTAR DE AMANHÃ ATÉ ANTES DO PRAZO
+  var temp = new Date(dataAtual);
+  temp.setDate(temp.getDate() + 1); // Pular HOJE
+  
+  while (temp < dataFimNormalizada) { // Parar ANTES do prazo
+    var diaSemana = temp.getDay();
+    
     if (diaSemana !== 0 && diaSemana !== 6) {
-      // Se não é feriado
-      if (!ehFeriado(dataAtual, ss)) {
+      if (!ehFeriado(temp, ss)) {
         diasUteis++;
       }
     }
-    dataAtual.setDate(dataAtual.getDate() + 1);
+    
+    temp.setDate(temp.getDate() + 1);
   }
   
   return diasUteis;
@@ -186,7 +187,6 @@ function ehFeriado(data, ss) {
     }
     
     var abaFeriados = ss.getSheetByName('FERIADOS');
-    
     if (!abaFeriados) return false;
     
     var feriados = abaFeriados.getRange('A2:A100').getValues();
@@ -214,23 +214,36 @@ function formatarData(data) {
   return dia + '/' + mes + '/' + ano;
 }
 
-// Função de teste
-function testarGetDatasReferencia() {
-  Logger.log('🧪 Testando getDatasReferencia()...\n');
+// ============================================
+// FUNÇÕES DE TESTE
+// ============================================
+
+function testarContagemDiasCompleta() {
+  Logger.log('🧪 ===== TESTE DE CONTAGEM DE DIAS =====\n');
   
+  var ss = SpreadsheetApp.openById('1N6LP1ydsxnQO_Woatv9zWEccb0fOGaV_3EKK1GoSWZI');
+  
+  // Teste 1: 03/02/2026 até 13/02/2026
+  Logger.log('📅 TESTE 1: 03/02/2026 até 13/02/2026');
+  var hoje1 = new Date(2026, 1, 3);
+  var prazo1 = new Date(2026, 1, 13);
+  var resultado1 = calcularDiasUteisEntre(hoje1, prazo1, ss);
+  Logger.log('Resultado: ' + resultado1 + ' dias');
+  Logger.log('Esperado: 7 dias');
+  Logger.log(resultado1 === 7 ? '✅ PASSOU\n' : '❌ FALHOU\n');
+  
+  // Teste 2: Usando getDatasReferencia (data real)
+  Logger.log('📅 TESTE 2: Usando getDatasReferencia()');
   var datas = getDatasReferencia();
-  
-  Logger.log('📅 RESULTADO:');
-  Logger.log('  Hoje: ' + datas.hoje);
-  Logger.log('  1º mês anterior: ' + datas.diaMesRef);
-  Logger.log('  Prazo (10º dia útil): ' + datas.diaMesRef2);
-  Logger.log('  D-2 (DIADREF1 - úteis): ' + datas.diaD1);
-  Logger.log('  D-1 (DIADREF2 - úteis): ' + datas.diaD2);
-  Logger.log('  Dias restantes: ' + datas.diasRestantes);
-  
+  Logger.log('Dias restantes: ' + datas.diasRestantes);
+  Logger.log('Hoje: ' + datas.hoje);
+  Logger.log('Prazo: ' + datas.diaMesRef2);
   Logger.log('\n✅ Teste concluído!');
-  
-  return datas;
+}
+
+function testarAtualizacaoApoio() {
+  Logger.log('🧪 Testando atualização da aba APOIO...\n');
+  atualizarAbaApoioComDatas();
 }
 
 function verificarAbaApoio() {
