@@ -286,6 +286,28 @@
       /* ✅ REMOVER margin auto, não é necessário com flexbox */
     }
 
+    /* ✅ CLASSES DE COR PARA STATUS OK (baseado em dias restantes) */
+    .status-badge.ok-verde,
+    .status-badge.status-ok.ok-verde {
+      background: #d1fae5 !important;
+      color: #065f46 !important;
+      border: 2px solid #10b981 !important;
+    }
+
+    .status-badge.ok-amarelo,
+    .status-badge.status-ok.ok-amarelo {
+      background: #fef3c7 !important;
+      color: #92400e !important;
+      border: 2px solid #f59e0b !important;
+    }
+
+    .status-badge.ok-vermelho,
+    .status-badge.status-ok.ok-vermelho {
+      background: #fee2e2 !important;
+      color: #991b1b !important;
+      border: 2px solid #ef4444 !important;
+    }
+
     .status-ok {
       background: #d1fae5;
       color: #065f46;
@@ -1135,28 +1157,15 @@
     // ATUALIZAÇÃO DE COMPONENTES
     // ============================================
     function atualizarDashboardGeral(dados) {
+      // Atualizar cards principais COM substatus para mudar as cores
       atualizarStatusCard('statusBalancete', dados.balancete.statusGeral, dados.balancete.substatus);
       atualizarStatusCard('statusComposicao', dados.composicao.statusGeral, dados.composicao.substatus);
-      
-      // ✅ ATUALIZAR OS 2 STATUS SEPARADOS
-      atualizarStatusCard('statusDiarias1', dados.diarias.statusGeral1);
-      atualizarStatusCard('statusDiarias2', dados.diarias.statusGeral2);
-      
       atualizarStatusCard('statusLamina', dados.lamina.statusGeral, dados.lamina.substatus);
       atualizarStatusCard('statusPerfilMensal', dados.perfilMensal.statusGeral, dados.perfilMensal.substatus);
-
-    }
-
-    function atualizarDashboardGeral(dados) {
-      atualizarStatusCard('statusBalancete', dados.balancete.statusGeral);
-      atualizarStatusCard('statusComposicao', dados.composicao.statusGeral);
       
-      // ✅ ATUALIZAR OS 2 STATUS SEPARADOS (COM CLASSE ESPECÍFICA)
+      // Diárias usam badges pequenos (sem substatus)
       atualizarStatusCardSmall('statusDiarias1', dados.diarias.statusGeral1);
       atualizarStatusCardSmall('statusDiarias2', dados.diarias.statusGeral2);
-      
-      atualizarStatusCard('statusLamina', dados.lamina.statusGeral);
-      atualizarStatusCard('statusPerfilMensal', dados.perfilMensal.statusGeral);
     }
 
     // ✅ FUNÇÃO PARA BADGES NORMAIS
@@ -1169,9 +1178,13 @@
       elemento.innerHTML = statusFormatado;
 
       let baseClass = 'status-badge ' + obterClasseStatus(status);
-      // append substatus class if "OK"
-      if (status === 'OK' && substatus)
+      
+      // ✅ CORRIGIDO: Verificar se CONTÉM "OK" em vez de ser EXATAMENTE "OK"
+      if (status && status.indexOf('OK') !== -1 && substatus) {
         baseClass += ' ' + substatus;
+        console.log('🎨 Aplicando cor:', substatus, 'no elemento:', elementId); // DEBUG
+      }
+      
       elemento.className = baseClass;
     }
 
@@ -1197,6 +1210,7 @@
       // Normalizar o status (remover quebras de linha e espaços extras)
       var statusNormalizado = status.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase();
       
+      // Verificar se é exatamente "OK" (sem parênteses)
       if (statusNormalizado === 'OK') return 'status-ok';
       
       // Verificar se contém "CONFORMIDADE" (cobre "EM CONFORMIDADE" e "DESCONFORMIDADE")
@@ -1209,6 +1223,7 @@
       
       return 'status-erro';
     }
+    
     function atualizarTabela(tabelaId, dados, tipo) {
       var tbody = document.getElementById(tabelaId);
       if (!tbody) return;
