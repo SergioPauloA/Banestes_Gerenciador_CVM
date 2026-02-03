@@ -391,9 +391,9 @@ function lerAbaPerfilMensal(ss, datas) {
 }
 
 function calcularCorStatusOk(diasRestantes) {
-  if (diasRestantes > 5) return 'ok-verde';
-  if (diasRestantes >= 3) return 'ok-amarelo';
-  return 'ok-vermelho'; // 1 ou 2 dias restantes
+  if (diasRestantes > 15) return 'ok-verde';      // Mais de 15 dias = Verde
+  if (diasRestantes >= 5) return 'ok-amarelo';    // 5 a 15 dias = Amarelo
+  return 'ok-vermelho';                            // Menos de 5 dias = Vermelho
 }
 
 // ============================================
@@ -816,9 +816,34 @@ function calcularStatusIndividual(retorno, tipo, enableDebugLog) {
       return 'OK';
     }
     
-    // Se ainda está dentro do prazo → OK
+    // ✅ NOVA LÓGICA: Se ainda está dentro do prazo, aceitar apenas mês anterior
     if (datas.diasRestantes >= 0) {
-      return 'OK';
+      // Calcular data do mês retrasado (limite mínimo aceitável)
+      var hoje = new Date();
+      var mesRetrasado = new Date(hoje.getFullYear(), hoje.getMonth() - 2, 1);
+      var dataLimiteMinima = normalizaDataParaComparacao(formatarData(mesRetrasado));
+      
+      // Converter strings DD/MM/YYYY para objetos Date para comparação
+      var partesRetorno = retornoNormalizado.split('/');
+      var dataRetorno = new Date(partesRetorno[2], partesRetorno[1] - 1, partesRetorno[0]);
+      
+      var partesLimite = dataLimiteMinima.split('/');
+      var dataLimite = new Date(partesLimite[2], partesLimite[1] - 1, partesLimite[0]);
+      
+      // Debug logging
+      if (DEBUG_MODE && enableDebugLog) {
+        Logger.log('📅 Data retornada: ' + retornoNormalizado + ' (' + dataRetorno.toISOString().split('T')[0] + ')');
+        Logger.log('📅 Data limite mínima: ' + dataLimiteMinima + ' (' + dataLimite.toISOString().split('T')[0] + ')');
+        Logger.log('✅ Data retornada >= limite? ' + (dataRetorno >= dataLimite));
+      }
+      
+      // Se a data retornada é >= mês retrasado → OK
+      if (dataRetorno >= dataLimite) {
+        return 'OK';
+      }
+      
+      // Data muito antiga → DESATUALIZADO
+      return 'DESATUALIZADO';
     }
     
     // Passou do prazo → DESATUALIZADO
