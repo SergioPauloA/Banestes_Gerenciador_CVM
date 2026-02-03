@@ -146,16 +146,20 @@ function lerAbaBalancete(ss, datas) {
       };
     });
 
-  // Monta o texto do statusGeral para que o dashboard mostre OK (X dias restantes)
-  let statusGeralDisplay = statusGeral;
-  if (statusGeral === "OK") {
-    statusGeralDisplay = "OK (" + formatarDiasRestantes(datas.diasRestantes) + ")";
+  // ✅ CORREÇÃO: Calcular substatus ANTES de modificar o statusGeral
+  var substatus = null;
+  var statusGeralDisplay = statusGeral;
+  
+  // Se o status é "OK", calcular a cor baseada nos dias restantes
+  if (statusGeral === 'OK') {
+    substatus = calcularCorStatusOk(datas.diasRestantes); // Calcular COR primeiro
+    statusGeralDisplay = 'OK (' + formatarDiasRestantes(datas.diasRestantes) + ')'; // Modificar texto depois
   }
   
   return {
     titulo: 'Balancetes de Fundos',
-    statusGeral: montarStatusDisplay(statusGeral, datas.diasRestantes) || 'SEM DADOS',
-    substatus: (statusGeral === 'OK') ? calcularCorStatusOk(datas.diasRestantes) : null,
+    statusGeral: statusGeralDisplay, // Texto formatado com dias restantes
+    substatus: substatus, // Classe CSS: 'ok-verde', 'ok-amarelo' ou 'ok-vermelho'
     dados: dados
   };
 }
@@ -209,16 +213,20 @@ function lerAbaComposicao(ss, datas) {
       };
     });
 
-  // Monta o texto do statusGeral para que o dashboard mostre OK (X dias restantes)
-  let statusGeralDisplay = statusGeral;
-  if (statusGeral === "OK") {
-    statusGeralDisplay = "OK (" + formatarDiasRestantes(datas.diasRestantes) + ")";
+  // ✅ CORREÇÃO: Calcular substatus ANTES de modificar o statusGeral
+  var substatus = null;
+  var statusGeralDisplay = statusGeral;
+  
+  // Se o status é "OK", calcular a cor baseada nos dias restantes
+  if (statusGeral === 'OK') {
+    substatus = calcularCorStatusOk(datas.diasRestantes); // Calcular COR primeiro
+    statusGeralDisplay = 'OK (' + formatarDiasRestantes(datas.diasRestantes) + ')'; // Modificar texto depois
   }
   
   return {
     titulo: 'Composição da Carteira',
-    statusGeral: montarStatusDisplay(statusGeral, datas.diasRestantes) || 'SEM DADOS',
-    substatus: (statusGeral === 'OK') ? calcularCorStatusOk(datas.diasRestantes) : null,
+    statusGeral: statusGeralDisplay, // Texto formatado com dias restantes
+    substatus: substatus, // Classe CSS: 'ok-verde', 'ok-amarelo' ou 'ok-vermelho'
     dados: dados
   };
 }
@@ -313,16 +321,20 @@ function lerAbaLamina(ss, datas) {
       };
     });
 
-  // Monta o texto do statusGeral para que o dashboard mostre OK (X dias restantes)
-  let statusGeralDisplay = statusGeral;
-  if (statusGeral === "OK") {
-    statusGeralDisplay = "OK (" + formatarDiasRestantes(datas.diasRestantes) + ")";
+  // ✅ CORREÇÃO: Calcular substatus ANTES de modificar o statusGeral
+  var substatus = null;
+  var statusGeralDisplay = statusGeral;
+  
+  // Se o status é "OK", calcular a cor baseada nos dias restantes
+  if (statusGeral === 'OK') {
+    substatus = calcularCorStatusOk(datas.diasRestantes); // Calcular COR primeiro
+    statusGeralDisplay = 'OK (' + formatarDiasRestantes(datas.diasRestantes) + ')'; // Modificar texto depois
   }
   
   return {
     titulo: 'Lâmina do Fundo',
-    statusGeral: montarStatusDisplay(statusGeral, datas.diasRestantes) || 'SEM DADOS',
-    substatus: (statusGeral === 'OK') ? calcularCorStatusOk(datas.diasRestantes) : null,
+    statusGeral: statusGeralDisplay, // Texto formatado com dias restantes
+    substatus: substatus, // Classe CSS: 'ok-verde', 'ok-amarelo' ou 'ok-vermelho'
     dados: dados
   };
 }
@@ -376,16 +388,20 @@ function lerAbaPerfilMensal(ss, datas) {
       };
     });
 
-  // Monta o texto do statusGeral para que o dashboard mostre OK (X dias restantes)
-  let statusGeralDisplay = statusGeral;
-  if (statusGeral === "OK") {
-    statusGeralDisplay = "OK (" + formatarDiasRestantes(datas.diasRestantes) + ")";
+  // ✅ CORREÇÃO: Calcular substatus ANTES de modificar o statusGeral
+  var substatus = null;
+  var statusGeralDisplay = statusGeral;
+  
+  // Se o status é "OK", calcular a cor baseada nos dias restantes
+  if (statusGeral === 'OK') {
+    substatus = calcularCorStatusOk(datas.diasRestantes); // Calcular COR primeiro
+    statusGeralDisplay = 'OK (' + formatarDiasRestantes(datas.diasRestantes) + ')'; // Modificar texto depois
   }
   
   return {
     titulo: 'Perfil Mensal',
-    statusGeral: montarStatusDisplay(statusGeral, datas.diasRestantes) || 'SEM DADOS',
-    substatus: (statusGeral === 'OK') ? calcularCorStatusOk(datas.diasRestantes) : null,
+    statusGeral: statusGeralDisplay, // Texto formatado com dias restantes
+    substatus: substatus, // Classe CSS: 'ok-verde', 'ok-amarelo' ou 'ok-vermelho'
     dados: dados
   };
 }
