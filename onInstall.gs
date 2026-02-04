@@ -323,39 +323,42 @@ function criarFormulasBalancete(ss) {
   var aba = ss.getSheetByName('Balancete');
   aba.clear();
   
-  // Título
+  // Título A1:D2
   aba.getRange('A1:D2').merge().setValue('Balancetes de Fundos')
     .setBackground('#667eea').setFontColor('#FFFFFF').setFontWeight('bold')
     .setHorizontalAlignment('center').setVerticalAlignment('middle');
   
-  // Status Geral
+  // Status Geral E1:E2
   aba.getRange('E1:E2').merge();
   aba.getRange('E1').setValue('AGUARDANDO DADOS')
     .setBackground('#fef3c7').setHorizontalAlignment('center').setVerticalAlignment('middle').setFontWeight('bold');
   
-  // Cabeçalhos
-  aba.getRange('A3:D3').setValues([['FUNDO', 'COD', 'RETORNO', 'STATUS']])
+  // Cabeçalhos linha 3
+  aba.getRange('A3:F3').setValues([['FUNDO', 'COD', 'COMPETÊNCIA 1', 'STATUS 1', 'COMPETÊNCIA 2', 'STATUS 2']])
     .setBackground('#667eea').setFontColor('#FFFFFF').setFontWeight('bold').setHorizontalAlignment('center');
   
-  // Criar fórmulas para cada fundo
   var fundos = getFundos();
   for (var i = 0; i < fundos.length; i++) {
     var linha = i + 4;
     var linhaCodFundo = i + 2;
     
     aba.getRange(linha, 1).setFormula("='COD FUNDO'!A" + linhaCodFundo);
-    aba.getRange(linha, 2).setFormula("='COD FUNDO'!B" + linhaCodFundo);
+    aba.getRange(linha, 2).setFormula("='COD FUNDO'!C" + linhaCodFundo); // Código BANESTES
     aba.getRange(linha, 3).setFormula('=IFERROR(ÍNDICE(IMPORTXML(CONCATENAR(LINKB1;\'COD FUNDO\'!B' + linhaCodFundo + ';LINKB2);HTMLB);1);"-")');
-    aba.getRange(linha, 4).setFormula(criarFormulaStatusIndividual(linha));
+    aba.getRange(linha, 4).setValue('Aguardando...');
+    aba.getRange(linha, 5).setFormula('=IFERROR(ÍNDICE(IMPORTXML(CONCATENAR(LINKB1;\'COD FUNDO\'!B' + linhaCodFundo + ';LINKB2);HTMLB);2);"-")');
+    aba.getRange(linha, 6).setValue('Aguardando...');
   }
   
   aba.setColumnWidth(1, 400);
   aba.setColumnWidth(2, 80);
-  aba.setColumnWidth(3, 120);
+  aba.setColumnWidth(3, 130);
   aba.setColumnWidth(4, 150);
+  aba.setColumnWidth(5, 130);
+  aba.setColumnWidth(6, 150);
   aba.setFrozenRows(3);
   
-  Logger.log('  ✅ Balancete criado');
+  Logger.log('  ✅ Balancete criado (6 colunas com competências)');
 }
 
 function criarFormulasComposicao(ss) {
@@ -370,7 +373,7 @@ function criarFormulasComposicao(ss) {
   aba.getRange('E1').setValue('AGUARDANDO DADOS')
     .setBackground('#fef3c7').setHorizontalAlignment('center').setVerticalAlignment('middle').setFontWeight('bold');
   
-  aba.getRange('A3:D3').setValues([['FUNDO', 'COD', 'RETORNO', 'STATUS']])
+  aba.getRange('A3:F3').setValues([['FUNDO', 'COD', 'COMPETÊNCIA 1', 'STATUS 1', 'COMPETÊNCIA 2', 'STATUS 2']])
     .setBackground('#667eea').setFontColor('#FFFFFF').setFontWeight('bold').setHorizontalAlignment('center');
   
   var fundos = getFundos();
@@ -379,18 +382,22 @@ function criarFormulasComposicao(ss) {
     var linhaCodFundo = i + 2;
     
     aba.getRange(linha, 1).setFormula("='COD FUNDO'!A" + linhaCodFundo);
-    aba.getRange(linha, 2).setFormula("='COD FUNDO'!B" + linhaCodFundo);
+    aba.getRange(linha, 2).setFormula("='COD FUNDO'!C" + linhaCodFundo);
     aba.getRange(linha, 3).setFormula('=IFERROR(ÍNDICE(IMPORTXML(CONCATENAR(LINKC1;\'COD FUNDO\'!B' + linhaCodFundo + ';LINKC2);HTMLC);1);"-")');
-    aba.getRange(linha, 4).setFormula(criarFormulaStatusIndividual(linha));
+    aba.getRange(linha, 4).setValue('Aguardando...');
+    aba.getRange(linha, 5).setFormula('=IFERROR(ÍNDICE(IMPORTXML(CONCATENAR(LINKC1;\'COD FUNDO\'!B' + linhaCodFundo + ';LINKC2);HTMLC);2);"-")');
+    aba.getRange(linha, 6).setValue('Aguardando...');
   }
   
   aba.setColumnWidth(1, 400);
   aba.setColumnWidth(2, 80);
-  aba.setColumnWidth(3, 120);
+  aba.setColumnWidth(3, 130);
   aba.setColumnWidth(4, 150);
+  aba.setColumnWidth(5, 130);
+  aba.setColumnWidth(6, 150);
   aba.setFrozenRows(3);
   
-  Logger.log('  ✅ Composição criada');
+  Logger.log('  ✅ Composição criada (6 colunas com competências)');
 }
 
 function criarFormulasDiarias(ss) {
@@ -448,7 +455,7 @@ function criarFormulasLamina(ss) {
   aba.getRange('E1').setValue('AGUARDANDO DADOS')
     .setBackground('#fef3c7').setHorizontalAlignment('center').setVerticalAlignment('middle').setFontWeight('bold');
   
-  aba.getRange('A3:D3').setValues([['FUNDO', 'COD', 'RETORNO', 'STATUS']])
+  aba.getRange('A3:F3').setValues([['FUNDO', 'COD', 'COMPETÊNCIA 1', 'STATUS 1', 'COMPETÊNCIA 2', 'STATUS 2']])
     .setBackground('#667eea').setFontColor('#FFFFFF').setFontWeight('bold').setHorizontalAlignment('center');
   
   var fundos = getFundos();
@@ -457,18 +464,22 @@ function criarFormulasLamina(ss) {
     var linhaCodFundo = i + 2;
     
     aba.getRange(linha, 1).setFormula("='COD FUNDO'!A" + linhaCodFundo);
-    aba.getRange(linha, 2).setFormula("='COD FUNDO'!B" + linhaCodFundo);
+    aba.getRange(linha, 2).setFormula("='COD FUNDO'!C" + linhaCodFundo);
     aba.getRange(linha, 3).setFormula('=IFERROR(ÍNDICE(IMPORTXML(CONCATENAR(LINKL1;\'COD FUNDO\'!B' + linhaCodFundo + ';LINKL2);HTMLL);1);"-")');
-    aba.getRange(linha, 4).setFormula(criarFormulaStatusIndividual(linha));
+    aba.getRange(linha, 4).setValue('Aguardando...');
+    aba.getRange(linha, 5).setFormula('=IFERROR(ÍNDICE(IMPORTXML(CONCATENAR(LINKL1;\'COD FUNDO\'!B' + linhaCodFundo + ';LINKL2);HTMLL);2);"-")');
+    aba.getRange(linha, 6).setValue('Aguardando...');
   }
   
   aba.setColumnWidth(1, 400);
   aba.setColumnWidth(2, 80);
-  aba.setColumnWidth(3, 120);
+  aba.setColumnWidth(3, 130);
   aba.setColumnWidth(4, 150);
+  aba.setColumnWidth(5, 130);
+  aba.setColumnWidth(6, 150);
   aba.setFrozenRows(3);
   
-  Logger.log('  ✅ Lâmina criada');
+  Logger.log('  ✅ Lâmina criada (6 colunas com competências)');
 }
 
 function criarFormulasPerfilMensal(ss) {
@@ -483,7 +494,7 @@ function criarFormulasPerfilMensal(ss) {
   aba.getRange('E1').setValue('AGUARDANDO DADOS')
     .setBackground('#fef3c7').setHorizontalAlignment('center').setVerticalAlignment('middle').setFontWeight('bold');
   
-  aba.getRange('A3:D3').setValues([['FUNDO', 'COD', 'RETORNO', 'STATUS']])
+  aba.getRange('A3:F3').setValues([['FUNDO', 'COD', 'COMPETÊNCIA 1', 'STATUS 1', 'COMPETÊNCIA 2', 'STATUS 2']])
     .setBackground('#667eea').setFontColor('#FFFFFF').setFontWeight('bold').setHorizontalAlignment('center');
   
   var fundos = getFundos();
@@ -492,18 +503,22 @@ function criarFormulasPerfilMensal(ss) {
     var linhaCodFundo = i + 2;
     
     aba.getRange(linha, 1).setFormula("='COD FUNDO'!A" + linhaCodFundo);
-    aba.getRange(linha, 2).setFormula("='COD FUNDO'!B" + linhaCodFundo);
+    aba.getRange(linha, 2).setFormula("='COD FUNDO'!C" + linhaCodFundo);
     aba.getRange(linha, 3).setFormula('=IFERROR(ÍNDICE(IMPORTXML(CONCATENAR(LINKP;\'COD FUNDO\'!B' + linhaCodFundo + ');HTMLP);1);"-")');
-    aba.getRange(linha, 4).setFormula(criarFormulaStatusIndividual(linha));
+    aba.getRange(linha, 4).setValue('Aguardando...');
+    aba.getRange(linha, 5).setFormula('=IFERROR(ÍNDICE(IMPORTXML(CONCATENAR(LINKP;\'COD FUNDO\'!B' + linhaCodFundo + ');HTMLP);2);"-")');
+    aba.getRange(linha, 6).setValue('Aguardando...');
   }
   
   aba.setColumnWidth(1, 400);
   aba.setColumnWidth(2, 80);
-  aba.setColumnWidth(3, 120);
+  aba.setColumnWidth(3, 130);
   aba.setColumnWidth(4, 150);
+  aba.setColumnWidth(5, 130);
+  aba.setColumnWidth(6, 150);
   aba.setFrozenRows(3);
   
-  Logger.log('  ✅ Perfil Mensal criado');
+  Logger.log('  ✅ Perfil Mensal criado (6 colunas com competências)');
 }
 
 // ============================================
