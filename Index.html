@@ -770,6 +770,19 @@
       animation: slideInRight 0.3s ease;
     }
 
+    .badge-atualizar {
+      background: #fed7aa;
+      color: #9a3412;
+      border: 2px solid #f97316;
+    }
+
+    /* 🆕 Adicionar classe para AGUARDANDO (amarelo claro) */
+    .badge-aguardando {
+      background: #fef3c7;
+      color: #92400e;
+      border: 2px solid #f59e0b;
+    }
+
     @keyframes slideInRight {
       from {
         opacity: 0;
@@ -899,13 +912,15 @@
               <tr>
                 <th>Fundo</th>
                 <th>Código</th>
-                <th>Competência</th>
+                <th>Competência 1</th>
                 <th>Status</th>
+                <th>Competência 2</th>
+                <th>Status 2</th>
               </tr>
             </thead>
             <tbody id="tableBalancete">
               <tr>
-                <td colspan="4" class="empty-state">
+                <td colspan="6" class="empty-state">
                   <div class="empty-state-icon">⏳</div>
                   <div class="empty-state-text">Carregando dados...</div>
                 </td>
@@ -924,13 +939,15 @@
               <tr>
                 <th>Fundo</th>
                 <th>Código</th>
-                <th>Competência</th>
+                <th>Competência 1</th>
                 <th>Status</th>
+                <th>Competência 2</th>
+                <th>Status 2</th>
               </tr>
             </thead>
             <tbody id="tableComposicao">
               <tr>
-                <td colspan="4" class="empty-state">
+                <td colspan="6" class="empty-state">
                   <div class="empty-state-icon">⏳</div>
                   <div class="empty-state-text">Carregando dados...</div>
                 </td>
@@ -976,13 +993,15 @@
               <tr>
                 <th>Fundo</th>
                 <th>Código</th>
-                <th>Competência</th>
+                <th>Competência 1</th>
                 <th>Status</th>
+                <th>Competência 2</th>
+                <th>Status 2</th>
               </tr>
             </thead>
             <tbody id="tableLamina">
               <tr>
-                <td colspan="4" class="empty-state">
+                <td colspan="6" class="empty-state">
                   <div class="empty-state-icon">⏳</div>
                   <div class="empty-state-text">Carregando dados...</div>
                 </td>
@@ -1001,13 +1020,15 @@
               <tr>
                 <th>Fundo</th>
                 <th>Código</th>
-                <th>Competência</th>
+                <th>Competência 1</th>
                 <th>Status</th>
+                <th>Competência 2</th>
+                <th>Status 2</th>
               </tr>
             </thead>
             <tbody id="tablePerfilMensal">
               <tr>
-                <td colspan="4" class="empty-state">
+                <td colspan="6" class="empty-state">
                   <div class="empty-state-icon">⏳</div>
                   <div class="empty-state-text">Carregando dados...</div>
                 </td>
@@ -1016,8 +1037,6 @@
           </table>
         </div>
       </div>
-    </div>
-  </div>
 
   <!-- JAVASCRIPT -->
   <script>
@@ -1132,7 +1151,6 @@
         }
       });
       
-      // ✅ ATUALIZAR OS 2 STATUS DE DIÁRIAS
       ['statusDiarias1', 'statusDiarias2'].forEach(function(id) {
         var elemento = document.getElementById(id);
         if (elemento) {
@@ -1141,11 +1159,11 @@
         }
       });
       
+      // 🔥 ATUALIZAR COLSPAN PARA 6 EM TODAS AS TABELAS
       ['tableBalancete', 'tableComposicao', 'tableDiarias', 'tableLamina', 'tablePerfilMensal'].forEach(function(id) {
         var tbody = document.getElementById(id);
         if (tbody) {
-          var colspan = id === 'tableDiarias' ? 6 : 4;
-          tbody.innerHTML = '<tr><td colspan="' + colspan + '" class="empty-state">' +
+          tbody.innerHTML = '<tr><td colspan="6" class="empty-state">' +
             '<div class="empty-state-icon">📭</div>' +
             '<div class="empty-state-text">Clique em "Atualizar Dados"</div>' +
             '</td></tr>';
@@ -1231,7 +1249,7 @@
       tbody.innerHTML = '';
       
       if (!dados || dados.length === 0) {
-        var colspan = tipo === 'diarias' ? 6 : 4;
+        var colspan = 6; // TODAS as tabelas agora têm 6 colunas
         tbody.innerHTML = '<tr><td colspan="' + colspan + '" class="empty-state">' +
           '<div class="empty-state-icon">📭</div>' +
           '<div class="empty-state-text">Nenhum dado disponível</div>' +
@@ -1243,6 +1261,7 @@
         var tr = document.createElement('tr');
         
         if (tipo === 'diarias') {
+          // DIÁRIAS: usa retorno1, status1, retorno2, status2
           tr.innerHTML = 
             '<td>' + (item.fundo || '') + '</td>' +
             '<td>' + (item.codigo || '') + '</td>' +
@@ -1251,11 +1270,14 @@
             '<td>' + (item.retorno2 || '-') + '</td>' +
             '<td><span class="badge ' + obterClasseBadge(item.status2) + '">' + (item.status2 || '-') + '</span></td>';
         } else {
+          // OUTRAS ABAS: usa retorno, status, retorno2, status2
           tr.innerHTML = 
             '<td>' + (item.fundo || '') + '</td>' +
             '<td>' + (item.codigo || '') + '</td>' +
             '<td>' + (item.retorno || '-') + '</td>' +
-            '<td><span class="badge ' + obterClasseBadge(item.status) + '">' + (item.status || '-') + '</span></td>';
+            '<td><span class="badge ' + obterClasseBadge(item.status) + '">' + (item.status || '-') + '</span></td>' +
+            '<td>' + (item.retorno2 || '-') + '</td>' +
+            '<td><span class="badge ' + obterClasseBadge(item.status2) + '">' + (item.status2 || '-') + '</span></td>';
         }
         
         tbody.appendChild(tr);
@@ -1264,11 +1286,15 @@
 
     function obterClasseBadge(status) {
       if (!status) return 'badge-erro';
-      if (status === 'OK') return 'badge-ok';
-      if (status === 'EM CONFORMIDADE') return 'badge-conformidade';
-      if (status === 'DESATUALIZADO' || status === 'DESCONFORMIDADE') return 'badge-desatualizado';
-      if (status === 'A ATUALIZAR') return 'badge-atualizar';
-      if (status === '-') return 'badge-erro';
+      
+      var statusNormalizado = status.toUpperCase().trim();
+      
+      if (statusNormalizado === 'OK') return 'badge-ok';
+      if (statusNormalizado === 'EM CONFORMIDADE') return 'badge-conformidade';
+      if (statusNormalizado === 'DESATUALIZADO' || statusNormalizado === 'DESCONFORMIDADE') return 'badge-desatualizado';
+      if (statusNormalizado === 'A ATUALIZAR' || statusNormalizado === 'AGUARDANDO') return 'badge-atualizar';
+      if (statusNormalizado === '-') return 'badge-erro';
+      
       return 'badge-erro';
     }
 
