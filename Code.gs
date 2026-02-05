@@ -909,37 +909,417 @@ function testarCalculoDeStatus() {
   Logger.log('\n✅ Teste concluído!');
 }
 
-function enviarEmailDesconformidade() {
+/**
+ * Envia emails de conformidade ou desconformidade com os modelos HTML
+ * Focando no STATUS 2 de cada aba
+ */
+function enviarEmailConformidadeOuDesconformidadeAvancado() {
   var ss = obterPlanilha();
-  var abaBalancete = ss.getSheetByName('Balancete');
-  var dados = abaBalancete.getRange('A4:D29').getValues();
+  var destinatarios = [
+    'spandrade@banestes.com.br',
+    'fabiooliveira@banestes.com.br',
+    'iodutra@banestes.com.br',
+    'jcrepossi@banestes.com.br',
+    'mcdias@banestes.com.br',
+    'sndemuner@banestes.com.br',
+    'wffreitas@banestes.com.br'
+  ];
   
-  var fundosDesconformes = [];
+  var mesPassado = obterMesPassadoFormatado();
+  var dataAtualFormatada = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy HH:mm');
+  var urlPlanilha = obterURLPlanilha();
   
-  dados.forEach(function(linha) {
-    var fundo = linha[0];
-    var status = linha[3];
-    
-    if (status === 'DESATUALIZADO' || status === 'DESCONFORMIDADE') {
-      fundosDesconformes.push(fundo);
-    }
+  Logger.log('📧 Iniciando envio de emails...');
+
+  // ============================================
+  // 1. BALANCETE
+  // ============================================
+  processarAbaEmail(
+    ss.getSheetByName('Balancete'),
+    'Balancete',
+    destinatarios,
+    mesPassado,
+    dataAtualFormatada,
+    urlPlanilha,
+    'mensal'
+  );
+
+  // ============================================
+  // 2. COMPOSIÇÃO
+  // ============================================
+  processarAbaEmail(
+    ss.getSheetByName('Composição'),
+    'Composição',
+    destinatarios,
+    mesPassado,
+    dataAtualFormatada,
+    urlPlanilha,
+    'mensal'
+  );
+
+  // ============================================
+  // 3. DIÁRIAS
+  // ============================================
+  processarAbaEmail(
+    ss.getSheetByName('Diárias'),
+    'Diárias',
+    destinatarios,
+    mesPassado,
+    dataAtualFormatada,
+    urlPlanilha,
+    'diario'
+  );
+
+  // ============================================
+  // 4. LÂMINA
+  // ============================================
+  processarAbaEmail(
+    ss.getSheetByName('Lâmina'),
+    'Lâmina',
+    destinatarios,
+    mesPassado,
+    dataAtualFormatada,
+    urlPlanilha,
+    'mensal'
+  );
+
+  // ============================================
+  // 5. PERFIL MENSAL
+  // ============================================
+  processarAbaEmail(
+    ss.getSheetByName('Perfil Mensal'),
+    'Perfil Mensal',
+    destinatarios,
+    mesPassado,
+    dataAtualFormatada,
+    urlPlanilha,
+    'mensal'
+  );
+
+  Logger.log('✅ Processo de envio de emails concluído!');
+}
+
+/**
+ * Processa uma aba e envia email de conformidade ou desconformidade
+ */
+function processarAbaEmail(aba, nomeAba, destinatarios, mesPassado, dataAtualFormatada, urlPlanilha, tipo) {
+  if (!aba) {
+    Logger.log('⚠️ Aba não encontrada: ' + nomeAba);
+    return;
+  }
+
+  Logger.log('\n📊 Processando: ' + nomeAba);
+
+  var ultimaLinha = aba.getLastRow();
+  if (ultimaLinha < 4) {
+    Logger.log('  ⚠️ Sem dados na aba');
+    return;
+  }
+
+  // Ler dados: A=Nome, B=Código, C=Comp1/Ret1, D=Status1, E=Comp2/Ret2, F=Status2
+  var dados = aba.getRange(4, 1, ultimaLinha - 3, 6).getValues();
+
+  var fundos = dados
+    .filter(function(linha) { return linha[0] && linha[0].toString().trim() !== ''; })
+    .map(function(linha) {
+      // 🔥 FORMATAR DATAS CORRETAMENTE
+      var comp1 = linha[2];
+      var comp2 = linha[4];
+      
+      // Se for objeto Date, converter para DD/MM/YYYY
+      if (comp1 instanceof Date) {
+        comp1 = Utilities.formatDate(comp1, 'GMT-3', 'dd/MM/yyyy');
+      } else {
+        comp1 = comp1 || '-';
+      }
+      
+      if (comp2 instanceof Date) {
+        comp2 = Utilities.formatDate(comp2, 'GMT-3', 'dd/MM/yyyy');
+      } else {
+        comp2 = comp2 || '-';
+      }
+      
+      return {
+        nome: linha[0],
+        codigo: linha[1],
+        competencia1: comp1,
+        status1: linha[3] || '-',
+        competencia2: comp2,
+        status2: linha[5] || '-'  // 🔥 PEGAR STATUS 2 (coluna F)
+      };
+    });
+
+  Logger.log('  Total de fundos: ' + fundos.length);
+  Logger.log('  Exemplo do primeiro fundo:');
+  if (fundos.length > 0) {
+    Logger.log('    - Nome: ' + fundos[0].nome.substring(0, 40));
+    Logger.log('    - Comp1: ' + fundos[0].competencia1);
+    Logger.log('    - Status1: ' + fundos[0].status1);
+    Logger.log('    - Comp2: ' + fundos[0].competencia2);
+    Logger.log('    - Status2: ' + fundos[0].status2);
+  }
+
+  // ✅ FILTRAR APENAS DESCONFORMIDADES NO STATUS 2
+  var desconformes = fundos.filter(function(f) {
+    var status2Normalizado = f.status2.toString().trim().toUpperCase();
+    return status2Normalizado === 'DESCONFORMIDADE' || 
+           status2Normalizado === 'DESATUALIZADO' ||
+           status2Normalizado === 'A ATUALIZAR';
   });
-  
-  if (fundosDesconformes.length > 0) {
-    var destinatario = 'seu-email@banestes.com.br'; 
-    //* Fundos.administrador@banestes.com.br
-    //* Fabiooliveira@banestes.com.br
-    //* Adicionar copia
-    var assunto = '⚠️ ALERTA: Fundos em Desconformidade';
-    var corpo = 'Os seguintes fundos estão em desconformidade:\n\n' + 
-                fundosDesconformes.join('\n') +
-                '\n\nTotal: ' + fundosDesconformes.length + ' fundos' +
-                '\n\nAcesse: ' + obterURLPlanilha();
-    
-    MailApp.sendEmail(destinatario, assunto, corpo);
-    Logger.log('📧 Email enviado para: ' + destinatario);
+
+  Logger.log('  Desconformes (Status 2): ' + desconformes.length);
+
+  // ============================================
+  // DECIDIR: CONFORMIDADE OU DESCONFORMIDADE
+  // ============================================
+  if (desconformes.length > 0) {
+    enviarEmailDesconformidade(nomeAba, desconformes, destinatarios, dataAtualFormatada, urlPlanilha);
+  } else {
+    enviarEmailConformidade(nomeAba, fundos, destinatarios, mesPassado, dataAtualFormatada);
   }
 }
+
+/**
+ * Envia email de DESCONFORMIDADE (SEMPRE usa Competência 2)
+ */
+function enviarEmailDesconformidade(nomeAba, fundosDesconformes, destinatarios, dataAtual, urlPlanilha) {
+  Logger.log('  ❌ Enviando email de DESCONFORMIDADE');
+
+  // 🔥 GERAR TABELA - SEMPRE COMPETÊNCIA 2 E STATUS 2
+  var linhasTabela = fundosDesconformes.map(function(f) {
+    var dataExibir = f.competencia2 || '-'; // SEMPRE COMPETÊNCIA 2
+    var statusExibir = f.status2 || '-';     // SEMPRE STATUS 2
+    
+    return '<tr>' +
+      '<td style="padding:10px;border:1px solid #e0e0e0;">' + dataExibir + '</td>' +
+      '<td style="padding:10px;border:1px solid #e0e0e0;">' + (f.nome || '-') + '</td>' +
+      '<td style="padding:10px;border:1px solid #e0e0e0;text-align:center;">' + statusExibir + '</td>' +
+      '</tr>';
+  }).join('');
+
+  var htmlTabela = '<table border="1" cellpadding="10" cellspacing="0" width="100%" style="border-collapse:collapse;margin-top:15px;">' +
+    '<thead>' +
+    '<tr style="background-color:#f3f4f6;">' +
+    '<th style="padding:10px;border:1px solid #e0e0e0;text-align:left;">Data Envio</th>' +
+    '<th style="padding:10px;border:1px solid #e0e0e0;text-align:left;">Fundo</th>' +
+    '<th style="padding:10px;border:1px solid #e0e0e0;text-align:center;">Status 2</th>' +
+    '</tr>' +
+    '</thead>' +
+    '<tbody>' +
+    linhasTabela +
+    '</tbody>' +
+    '</table>';
+
+  // Carregar template e substituir placeholders
+  var htmlDesconformidade = HtmlService.createHtmlOutputFromFile('desconformidade').getContent();
+  
+  htmlDesconformidade = htmlDesconformidade
+    .replace('[INSERIR NOME/CÓDIGO DO FUNDO OU EMPRESA]', nomeAba)
+    .replace('[INSERIR DESCRIÇÃO DA FALHA, EX: ENVIO DE LÂMINA EM ATRASO]', htmlTabela)
+    .replace('[INSERIR DATA]', dataAtual.split(' ')[0])
+    .replace('[INSERIR HORÁRIO]', '17:00')
+    .replace('[LINK_PARA_SISTEMA_OU_INSTRUCOES]', urlPlanilha);
+
+  // Enviar email
+  MailApp.sendEmail({
+    to: destinatarios.join(','),
+    subject: '⚠️ Desconformidade CVM - ' + nomeAba,
+    htmlBody: htmlDesconformidade
+  });
+
+  Logger.log('  ✅ Email de desconformidade enviado para: ' + destinatarios.join(', '));
+}
+
+/**
+ * Envia email de CONFORMIDADE (SEMPRE usa Competência 2)
+ */
+function enviarEmailConformidade(nomeAba, fundos, destinatarios, mesPassado, dataAtual) {
+  Logger.log('  ✅ Enviando email de CONFORMIDADE');
+  Logger.log('  Total de fundos: ' + fundos.length);
+
+  // 🔥 GERAR TABELA - SEMPRE USAR COMPETÊNCIA 2 E STATUS 2
+  var linhasTabela = fundos.map(function(f) {
+    // 🔥 SEMPRE COMPETÊNCIA 2 (mesmo que seja "-")
+    var dataExibir = f.competencia2 || '-';
+    
+    // 🔥 SEMPRE STATUS 2
+    var statusExibir = f.status2 || '-';
+    var statusNormalizado = statusExibir.toString().trim().toUpperCase();
+    
+    // 🔥 DEFINIR COR DO STATUS
+    var corStatus, textoStatus;
+    if (statusNormalizado === 'OK') {
+      corStatus = '#d1fae5';
+      textoStatus = '#065f46';
+    } else if (statusNormalizado === 'AGUARDANDO') {
+      corStatus = '#fef3c7';
+      textoStatus = '#92400e';
+    } else if (statusNormalizado === 'A ATUALIZAR') {
+      corStatus = '#fed7aa';
+      textoStatus = '#9a3412';
+    } else if (statusNormalizado === 'DESCONFORMIDADE' || statusNormalizado === 'DESATUALIZADO') {
+      corStatus = '#fee2e2';
+      textoStatus = '#991b1b';
+    } else {
+      // Status "-" ou desconhecido = cinza
+      corStatus = '#f3f4f6';
+      textoStatus = '#374151';
+    }
+    
+    Logger.log('    [' + f.nome.substring(0, 30) + '] Comp2: "' + dataExibir + '" | Status2: "' + statusExibir + '"');
+    
+    return '<tr>' +
+      '<td style="padding:10px;border:1px solid #dddddd;background:#ffffff;">' + dataExibir + '</td>' +
+      '<td style="padding:10px;border:1px solid #dddddd;background:#ffffff;">' + (f.nome || '-') + '</td>' +
+      '<td style="padding:10px;border:1px solid #dddddd;background:#ffffff;text-align:center;">' +
+      '<span style="background-color:' + corStatus + ';color:' + textoStatus + ';padding:5px 12px;border-radius:8px;font-weight:bold;display:inline-block;">' + statusExibir + '</span>' +
+      '</td>' +
+      '</tr>';
+  }).join('');
+
+  // 🔥 TABELA COMPLETA
+  var tabelaHTML = 
+    '<table style="width:100%;border-collapse:collapse;margin:20px 0;font-family:Arial,sans-serif;" cellpadding="0" cellspacing="0">' +
+    '<thead>' +
+    '<tr>' +
+    '<th style="padding:12px;border:1px solid #dddddd;background-color:#f3f4f6;text-align:left;font-weight:bold;color:#555555;">Data Envio</th>' +
+    '<th style="padding:12px;border:1px solid #dddddd;background-color:#f3f4f6;text-align:left;font-weight:bold;color:#555555;">Registro/Fundo</th>' +
+    '<th style="padding:12px;border:1px solid #dddddd;background-color:#f3f4f6;text-align:center;font-weight:bold;color:#555555;">Status</th>' +
+    '</tr>' +
+    '</thead>' +
+    '<tbody>' +
+    linhasTabela +
+    '</tbody>' +
+    '</table>';
+
+  // HTML COMPLETO
+  var htmlCompleto = 
+    '<div style="background-color:#f4f4f4;padding:20px;font-family:Arial,sans-serif;">' +
+    '<table style="max-width:650px;margin:0 auto;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 5px rgba(0,0,0,0.1);" cellpadding="0" cellspacing="0">' +
+    '<tr>' +
+    '<td style="background-color:#2E7D32;padding:30px 20px;text-align:center;">' +
+    '<div style="font-size:40px;color:#ffffff;margin-bottom:10px;">✓</div>' +
+    '<h1 style="color:#ffffff;font-size:22px;margin:0;">Relatório de Conformidade CVM</h1>' +
+    '<p style="color:#a5d6a7;margin:5px 0 0 0;font-size:14px;">Status: 100% Regularizado</p>' +
+    '</td>' +
+    '</tr>' +
+    '<tr>' +
+    '<td style="padding:30px 25px;color:#333333;font-size:15px;line-height:1.6;">' +
+    '<p>Prezados,</p>' +
+    '<p>Informamos que, após a verificação mensal, <strong>todos os registros e obrigações junto à CVM encontram-se em conformidade</strong>.</p>' +
+    '<p>Abaixo listamos os envios realizados com sucesso referentes ao período de <strong>' + dataAtual + '</strong>:</p>' +
+    tabelaHTML +
+    '<div style="background-color:#e3f2fd;border-left:4px solid #2196F3;padding:15px;margin-top:20px;border-radius:0 4px 4px 0;">' +
+    '<p style="margin:0;font-weight:bold;color:#0d47a1;font-size:14px;">IMPORTANTE: Manutenção da Conformidade</p>' +
+    '<p style="margin:5px 0 0 0;font-size:13px;color:#444;">Embora estejamos em situação regular, solicitamos à equipe que mantenha o monitoramento constante dos prazos e exigências regulatórias. A vigilância contínua é essencial para evitar sanções futuras.</p>' +
+    '</div>' +
+    '</td>' +
+    '</tr>' +
+    '<tr>' +
+    '<td style="background-color:#f8f9fa;padding:20px;text-align:center;color:#888888;font-size:12px;border-top:1px solid #eeeeee;">' +
+    '<p style="margin:0;">Departamento de Inovação e Automação interno Asset</p>' +
+    '<p style="margin:5px 0 0 0;">Relatório gerado em ' + dataAtual + '</p>' +
+    '</td>' +
+    '</tr>' +
+    '</table>' +
+    '</div>';
+
+  // Enviar email
+  try {
+    MailApp.sendEmail({
+      to: destinatarios.join(','),
+      subject: '✅ Conformidade CVM - ' + nomeAba,
+      htmlBody: htmlCompleto
+    });
+    
+    Logger.log('  ✅ Email enviado com sucesso');
+  } catch (error) {
+    Logger.log('  ❌ Erro: ' + error.toString());
+    throw error;
+  }
+}
+
+// Função auxiliar mantida
+function obterMesPassadoFormatado() {
+  var hoje = new Date();
+  var mes = hoje.getMonth();
+  var ano = hoje.getFullYear();
+  if (mes === 0) {
+    mes = 12;
+    ano -= 1;
+  }
+  return (mes < 10 ? '0' + mes : mes) + '/' + ano;
+}
+
+/**
+ * 🧪 TESTE com dados reais da planilha
+ */
+function testarEmailComDadosReais() {
+  Logger.log('🧪 Testando com dados reais da planilha...');
+  
+  var ss = obterPlanilha();
+  var destinatarios = ['spandrade@banestes.com.br'];
+  var mesPassado = obterMesPassadoFormatado();
+  var dataAtualFormatada = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy HH:mm');
+  var urlPlanilha = obterURLPlanilha();
+  
+  // Testar Balancete (aba com AGUARDANDO)
+  processarAbaEmail(
+    ss.getSheetByName('Balancete'),
+    'Balancete (TESTE)',
+    destinatarios,
+    mesPassado,
+    dataAtualFormatada,
+    urlPlanilha,
+    'mensal'
+  );
+  
+  Logger.log('✅ Teste com Balancete concluído!');
+}
+
+// Função auxiliar: retorna o mês passado em formato "MM/YYYY"
+function obterMesPassadoFormatado() {
+  var hoje = new Date();
+  var mes = hoje.getMonth();
+  var ano = hoje.getFullYear();
+  if (mes === 0) {
+    mes = 12;
+    ano -= 1;
+  }
+  return (mes < 10 ? '0' + mes : mes) + '/' + ano;
+}
+
+// Função de teste: envia para você o modelo CONFORMIDADE e DESCONFORMIDADE com exemplos
+//function forcarEnvioDosDoisModelosEmail() {
+//  var destinatarioTeste = Session.getActiveUser().getEmail(); // Ou coloque o seu e-mail aqui
+
+  // --- Enviar modelo CONFORMIDADE ---
+//  var mesPassado = obterMesPassadoFormatado();
+//  var dataAtualFormatada = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy HH:mm');
+//  var htmlConformidade = HtmlService.createHtmlOutputFromFile('conformidade').getContent()
+//    .replace('[MÊS PASSADO]', mesPassado)
+//    .replace('[DATA ATUAL]', dataAtualFormatada);
+//  MailApp.sendEmail({
+//    to: destinatarioTeste,
+//    subject: 'TESTE: Modelo HTML de Conformidade',
+//    htmlBody: htmlConformidade
+//  });
+
+  // --- Enviar modelo DESCONFORMIDADE ---
+//  var htmlDesconformidade = HtmlService.createHtmlOutputFromFile('desconformidade').getContent()
+//    .replace('[INSERIR NOME/CÓDIGO DO FUNDO OU EMPRESA]', 'BANESTES INVEST AUTOMÁTICO (275709)')
+//    .replace('[INSERIR DESCRIÇÃO DA FALHA, EX: ENVIO DE LÂMINA EM ATRASO]', 'Envio da Lâmina em atraso')
+//    .replace('[INSERIR DATA]', Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy'))
+//    .replace('[INSERIR HORÁRIO]', '16:00')
+//    .replace('[LINK_PARA_SISTEMA_OU_INSTRUCOES]', 'https://docs.google.com/spreadsheets/d/1N6LP1ydsxnQO_Woatv9zWEccb0fOGaV_3EKK1GoSWZI/edit');
+//  MailApp.sendEmail({
+//    to: destinatarioTeste,
+//    subject: 'TESTE: Modelo HTML de Desconformidade',
+//    htmlBody: htmlDesconformidade
+//  });
+
+//  Logger.log('✅ Emails de teste enviados para: ' + destinatarioTeste);
+//}
 
 function atualizarStatusNaPlanilhaAutomaticoComEmail() {
   atualizarStatusNaPlanilhaAutomatico();
@@ -2035,4 +2415,75 @@ function testarFuncoes() {
   Logger.log('Último dia útil: ' + diaUtil);
   
   Logger.log('✅ Funções OK!');
+}
+
+// Gera tabela estilizada para o e-mail, com base no seu template
+function gerarTabelaDesconformidadeTemplate(fundos, tipoAba) {
+  if (!fundos.length) return '<div style="color:#666;font-size:14px;">Nenhuma desconformidade encontrada.</div>';
+  var rotuloData = 'Último envio';
+  return (
+    '<table class="data-table" style="border-collapse:collapse;width:100%;max-width:600px;margin:15px 0;font-size:13px;">' +
+    '<thead>' +
+    '<tr style="background:#f3f4f6;">' +
+      '<th style="padding:7px 5px;border:1px solid #e0e0e0;text-align:left;width:110px;">'+ rotuloData +'</th>' +
+      '<th style="padding:7px 5px;border:1px solid #e0e0e0;text-align:left;">Fundo</th>' +
+      '<th style="padding:7px 5px;border:1px solid #e0e0e0;text-align:center;width:110px;">Status 2</th>' +
+    '</tr>' +
+    '</thead>' +
+    '<tbody>' +
+    fundos.map(function(f) {
+      var dataVal = tipoAba === 'Diárias' ? (f.envio1 || '-') : (f.competencia1 || '-');
+      return (
+        '<tr class="table-row">' +
+          '<td style="padding:7px 5px;border:1px solid #e0e0e0;">' + dataVal + '</td>' +
+          '<td style="padding:7px 5px;border:1px solid #e0e0e0;max-width:320px;word-break:break-word;">' + (f.nome || '-') + '</td>' +
+          '<td style="padding:7px 5px;border:1px solid #e0e0e0;text-align:center;">' + (f.status2 || '-') + '</td>' +
+        '</tr>'
+      );
+    }).join('') +
+    '</tbody>' +
+    '</table>'
+  );
+}
+
+/**
+ * Criar trigger para enviar emails diariamente às 18:30
+ */
+function criarTriggerEmailDiario1830() {
+  Logger.log('🔧 Configurando trigger de emails...');
+  
+  // Remover triggers antigos de email (se existirem)
+  var triggers = ScriptApp.getProjectTriggers();
+  triggers.forEach(function(trigger) {
+    if (trigger.getHandlerFunction() === 'enviarEmailConformidadeOuDesconformidadeAvancado') {
+      ScriptApp.deleteTrigger(trigger);
+      Logger.log('  🗑️ Trigger antigo removido');
+    }
+  });
+  
+  // Criar novo trigger diário às 18:30
+  ScriptApp.newTrigger('enviarEmailConformidadeOuDesconformidadeAvancado')
+    .timeBased()
+    .atHour(18)
+    .nearMinute(30)  // Próximo aos 30 minutos (pode variar ±15 min)
+    .everyDays(1)
+    .create();
+  
+  Logger.log('\n✅ ═══════════════════════════════════════════');
+  Logger.log('✅ TRIGGER DE EMAILS ATIVADO!');
+  Logger.log('✅ ═══════════════════════════════════════════');
+  Logger.log('');
+  Logger.log('📧 Função: enviarEmailConformidadeOuDesconformidadeAvancado()');
+  Logger.log('⏰ Horário: 18:30 (diariamente)');
+  Logger.log('📅 Frequência: Todos os dias');
+  Logger.log('');
+  Logger.log('⚠️ IMPORTANTE: O Google Apps Script pode ter variação de ±15 minutos');
+  Logger.log('   (Pode executar entre 18:15 e 18:45)');
+  Logger.log('');
+  Logger.log('🎯 Próximo envio será hoje às 18:30 (se já passou, será amanhã)');
+  
+  return {
+    success: true,
+    message: 'Trigger criado! Emails serão enviados diariamente às 18:30'
+  };
 }
