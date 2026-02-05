@@ -924,41 +924,15 @@ function enviarEmailConformidadeOuDesconformidadeAvancado() {
     'sndemuner@banestes.com.br',
     'wffreitas@banestes.com.br'
   ];
-  
+
   var mesPassado = obterMesPassadoFormatado();
   var dataAtualFormatada = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy HH:mm');
   var urlPlanilha = obterURLPlanilha();
-  
+
   Logger.log('📧 Iniciando envio de emails...');
 
   // ============================================
-  // 1. BALANCETE
-  // ============================================
-  processarAbaEmail(
-    ss.getSheetByName('Balancete'),
-    'Balancete',
-    destinatarios,
-    mesPassado,
-    dataAtualFormatada,
-    urlPlanilha,
-    'mensal'
-  );
-
-  // ============================================
-  // 2. COMPOSIÇÃO
-  // ============================================
-  processarAbaEmail(
-    ss.getSheetByName('Composição'),
-    'Composição',
-    destinatarios,
-    mesPassado,
-    dataAtualFormatada,
-    urlPlanilha,
-    'mensal'
-  );
-
-  // ============================================
-  // 3. DIÁRIAS
+  // 1. DIÁRIAS (sempre enviar)
   // ============================================
   processarAbaEmail(
     ss.getSheetByName('Diárias'),
@@ -971,32 +945,104 @@ function enviarEmailConformidadeOuDesconformidadeAvancado() {
   );
 
   // ============================================
-  // 4. LÂMINA
+  // 2. Abas mensais: Balancete, Composição, Lâmina, Perfil Mensal
   // ============================================
-  processarAbaEmail(
-    ss.getSheetByName('Lâmina'),
-    'Lâmina',
-    destinatarios,
-    mesPassado,
-    dataAtualFormatada,
-    urlPlanilha,
-    'mensal'
-  );
+  ['Balancete', 'Composição', 'Lâmina', 'Perfil Mensal'].forEach(function(nomeAba) {
+    var aba = ss.getSheetByName(nomeAba);
+    if (!aba) return; // Pular se não existe
 
-  // ============================================
-  // 5. PERFIL MENSAL
-  // ============================================
-  processarAbaEmail(
-    ss.getSheetByName('Perfil Mensal'),
-    'Perfil Mensal',
-    destinatarios,
-    mesPassado,
-    dataAtualFormatada,
-    urlPlanilha,
-    'mensal'
-  );
+    if (deveEnviarEmailConformidade(aba)) {
+      enviarEmailConformidade(
+        nomeAba,
+        getFundosFormatadosParaEmail(aba),
+        destinatarios,
+        mesPassado,
+        dataAtualFormatada
+      );
+    } else if (deveEnviarEmailDesconformidade(aba)) {
+      enviarEmailDesconformidade(
+        nomeAba,
+        getFundosDesconformesParaEmail(aba),
+        destinatarios,
+        dataAtualFormatada,
+        urlPlanilha
+      );
+    }
+  });
 
   Logger.log('✅ Processo de envio de emails concluído!');
+}
+
+// Verifica se todas as linhas da aba possuem as competências 1/2 como datas E status 1/2 como OK
+function deveEnviarEmailConformidade(aba) {
+  var ultimaLinha = aba.getLastRow();
+  if (ultimaLinha < 4) return false;
+
+  var dados = aba.getRange(4, 3, ultimaLinha - 3, 4).getValues(); // C=Comp1, D=Status1, E=Comp2, F=Status2
+
+  // TODOS comp1/comp2 são datas E status1/status2 == 'OK'
+  return dados.every(function(linha) {
+    var comp1 = linha[0], status1 = linha[1], comp2 = linha[2], status2 = linha[3];
+    return isDataValida(comp1) && status1 === 'OK' &&
+           isDataValida(comp2) && status2 === 'OK';
+  });
+}
+
+// Verifica se existe alguma linha com competência 2 vazia E status 2 DESCONFORMIDADE
+function deveEnviarEmailDesconformidade(aba) {
+  var ultimaLinha = aba.getLastRow();
+  if (ultimaLinha < 4) return false;
+
+  var dados = aba.getRange(4, 5, ultimaLinha - 3, 2).getValues(); // E=Comp2, F=Status2
+
+  // Alguma comp2 está vazia E status2 == 'DESCONFORMIDADE'
+  return dados.some(function(linha) {
+    var comp2 = linha[0], status2 = (linha[1] || '').toString().trim().toUpperCase();
+    return (!comp2 || comp2 === '-' || (typeof comp2 === 'string' && comp2.trim() === '')) &&
+           status2 === 'DESCONFORMIDADE';
+  });
+}
+
+// Verifica se é data válida (Date objeto ou string DD/MM/YYYY)
+function isDataValida(valor) {
+  if (!valor) return false;
+  if (Object.prototype.toString.call(valor) === "[object Date]") return true;
+  return /^(\d{2})\/(\d{2})\/(\d{4})$/.test(valor);
+}
+
+// Adapte conforme sua estrutura:
+function getFundosFormatadosParaEmail(aba) {
+  var ultimaLinha = aba.getLastRow();
+  if (ultimaLinha < 4) return [];
+  return aba.getRange(4, 1, ultimaLinha - 3, 6).getValues().map(function(linha) {
+    return {
+      nome: linha[0],
+      codigo: linha[1],
+      competencia1: linha[2],
+      status1: linha[3],
+      competencia2: linha[4],
+      status2: linha[5]
+    };
+  });
+}
+
+function getFundosDesconformesParaEmail(aba) {
+  var ultimaLinha = aba.getLastRow();
+  if (ultimaLinha < 4) return [];
+  return aba.getRange(4, 1, ultimaLinha - 3, 6).getValues().filter(function(linha) {
+    var comp2 = linha[4], status2 = (linha[5] || '').toString().trim().toUpperCase();
+    return (!comp2 || comp2 === '-' || (typeof comp2 === 'string' && comp2.trim() === '')) &&
+           status2 === 'DESCONFORMIDADE';
+  }).map(function(linha) {
+    return {
+      nome: linha[0],
+      codigo: linha[1],
+      competencia1: linha[2],
+      status1: linha[3],
+      competencia2: linha[4],
+      status2: linha[5]
+    };
+  });
 }
 
 /**
