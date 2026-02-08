@@ -914,12 +914,45 @@ function testarCalculoDeStatus() {
  * Focando no STATUS 2 de cada aba
  */
 function enviarEmailConformidadeOuDesconformidadeAvancado() {
+  // ✅ NOVA VERIFICAÇÃO: Enviar e-mail apenas em dias úteis
+  var hoje = new Date();
+  var diaSemana = hoje.getDay();
+  
+  // Se é sábado (6) ou domingo (0), não enviar
+  if (diaSemana === 0 || diaSemana === 6) {
+    Logger.log('⏭️ Hoje é ' + (diaSemana === 0 ? 'domingo' : 'sábado') + '. E-mail não será enviado.');
+    return { skipped: true, reason: 'Fim de semana' };
+  }
+  
+  // Verificar se é feriado
+  try {
+    var ss = obterPlanilha();
+    var abaFeriados = ss.getSheetByName('FERIADOS');
+    if (abaFeriados) {
+      var feriados = abaFeriados.getRange('A2:A100').getValues();
+      var hojeFormatado = formatarData(hoje);
+      
+      for (var i = 0; i < feriados.length; i++) {
+        if (feriados[i][0]) {
+          var feriadoFormatado = formatarData(new Date(feriados[i][0]));
+          if (feriadoFormatado === hojeFormatado) {
+            Logger.log('⏭️ Hoje é feriado. E-mail não será enviado.');
+            return { skipped: true, reason: 'Feriado' };
+          }
+        }
+      }
+    }
+  } catch (error) {
+    Logger.log('⚠️ Erro ao verificar feriados, prosseguindo com envio: ' + error.toString());
+  }
+  
+  Logger.log('✅ Dia útil confirmado. Iniciando envio de e-mails...');
+
   var ss = obterPlanilha();
   var destinatarios = [
     'spandrade@banestes.com.br',
     'fabiooliveira@banestes.com.br',
     'iodutra@banestes.com.br',
-    'jcrepossi@banestes.com.br',
     'mcdias@banestes.com.br',
     'sndemuner@banestes.com.br',
     'wffreitas@banestes.com.br'
