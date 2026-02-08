@@ -1,557 +1,396 @@
-# 🚀 Gerenciador CVM BANESTES - Transformação Digital
+# 🚀 Gerenciador CVM BANESTES - Automação de Fundos de Investimento
 
 <div align="center">
 
-![Banestes Badge](https://img.shields.io/badge/Banestes-Digital_Innovation-1e3a8a?style=for-the-badge)
-![AppScript Badge](https://img.shields.io/badge/Google-AppScript_Cloud-4285F4?style=for-the-badge)
-![Automation Badge](https://img.shields.io/badge/Automation-100%25-10b981?style=for-the-badge)
-![Version Badge](https://img.shields.io/badge/Versão-4.0-3b82f6?style=for-the-badge)
-![Innovation Badge](https://img.shields.io/badge/Innovation-FinTech-FF6B35?style=for-the-badge)
+![Banestes Badge](https://img.shields.io/badge/Banestes-Automação_Financeira-1e3a8a?style=for-the-badge)
+![AppScript Badge](https://img.shields.io/badge/Google-Apps_Script-4285F4?style=for-the-badge&logo=google)
+![JavaScript Badge](https://img.shields.io/badge/JavaScript-75.8%25-F7DF1E?style=for-the-badge&logo=javascript)
+![HTML Badge](https://img.shields.io/badge/HTML-24.2%25-E34F26?style=for-the-badge&logo=html5)
+![Versão](https://img.shields.io/badge/Versão-4.0-3b82f6?style=for-the-badge)
 
-### **Da planilha manual ao monitoramento inteligente em tempo real**
+### **Sistema de monitoramento automatizado de 26 fundos de investimento BANESTES**
 
-*Transformando processos manuais em automação completa para o futuro dos investimentos*
+*Integração direta com dados oficiais da CVM via Google Sheets*
 
-[🎯 Inovação](#-a-revolução-digital) • [🏗️ Arquitetura](#-arquitetura-tecnológica) • [⚡ Features](#-funcionalidades-de-próxima-geração) • [📊 Dashboard](#-dashboard-inteligente) • [🚀 Deploy](#-instalação-e-deploy)
+[🎯 Visão Geral](#-visão-geral) • [🏗️ Arquitetura](#-arquitetura-do-sistema) • [⚡ Funcionalidades](#-funcionalidades-principais) • [📊 Abas Monitoradas](#-abas-e-dados-monitorados) • [🚀 Instalação](#-instalação-e-configuração)
 
 </div>
 
 ---
 
-## 🎯 A Revolução Digital
+## 🎯 Visão Geral
 
-### De Manual para Automatizado: A Transformação
+O **Gerenciador CVM BANESTES** é uma aplicação web desenvolvida em **Google Apps Script** que automatiza a coleta, processamento e visualização de dados dos fundos de investimento do BANESTES, integrando-se diretamente com a base oficial da **Comissão de Valores Mobiliários (CVM)**.
 
-**Antes:** Uma planilha Google Sheets estática que exigia **intervenção humana constante** para atualização de dados dos 26 fundos de investimento BANESTES. Cada atualização significava:
-- ⏱️ Horas de trabalho manual
-- 📊 Dados desatualizados entre updates
-- ❌ Alto risco de erros humanos
-- 🚫 Falta de monitoramento em tempo real
-- 📉 Impossibilidade de análise preditiva
+### 🌟 Propósito
 
-**Agora:** Uma **plataforma cloud-native de automação completa** que revoluciona o gerenciamento de fundos CVM:
-- ⚡ **Dados em tempo real** com integração direta à base oficial da CVM
-- 🤖 **Zero intervenção humana** - atualizações automáticas 24/7
-- 🎯 **100% de precisão** - eliminação total de erros manuais
-- 📊 **Dashboard interativo e responsivo** para análise instantânea
-- 🔔 **Sistema de alertas inteligentes** para conformidade regulatória
-- 📈 **Escalabilidade cloud** - pronto para crescimento
+Substituir o processo manual de consulta de dados da CVM por um sistema automatizado que:
+- 📊 Monitora **26 fundos de investimento** BANESTES em tempo real
+- 🔄 Integra dados oficiais via **fórmulas IMPORTXML** no Google Sheets
+- 📱 Apresenta informações em **dashboard web responsivo**
+- 📅 Calcula automaticamente **datas úteis** considerando feriados brasileiros
+- ✅ Valida **conformidade** e status de atualização dos fundos
 
-> 💡 **Impacto da Inovação:** De um processo manual que consumia horas para uma solução automatizada que opera continuamente, entregando insights em milissegundos.
+### 💡 Tecnologias Utilizadas
 
----
-
-## ✨ Visão Geral
-
-O **Gerenciador CVM BANESTES** é uma **solução de automação FinTech** construída sobre a infraestrutura de cloud computing do Google, utilizando **Google Apps Script** como motor de processamento serverless.
-
-Esta plataforma representa a **transformação digital completa** de um processo que antes dependia de planilhas manuais para um **sistema inteligente, automatizado e escalável** que monitora **26 fundos de investimento BANESTES** com dados oficiais da Comissão de Valores Mobiliários (CVM).
-
-### 🎯 Pilares Tecnológicos da Inovação
-
-| Pilar | Implementação | Impacto |
-|-------|---------------|---------|
-| **Automação Total** | Web scraping automatizado via IMPORTXML + APIs REST | Eliminação de 100% do trabalho manual |
-| **Cloud-Native** | Google Apps Script + Google Sheets como backend serverless | Zero custos de infraestrutura, disponibilidade 99.9% |
-| **Tempo Real** | Integração contínua com dados oficiais CVM | Dados sempre atualizados sem intervenção |
-| **Inteligência** | Cálculo automático de datas úteis com calendário de feriados | Sistema autônomo que entende contexto temporal |
-| **Compliance** | Sistema de monitoramento de conformidade regulatória | Alertas proativos para evitar multas CVM |
-| **UX Moderna** | Interface web responsiva com visualização de dados | Decisões rápidas baseadas em insights visuais |
-
-> ⚡ **Missão:** Democratizar o acesso a dados financeiros críticos através de automação inteligente, eliminando barreiras de tempo e esforço manual.
+| Tecnologia | Uso | Percentual |
+|-----------|-----|-----------|
+| **JavaScript (Apps Script)** | Backend serverless, lógica de negócios | 75.8% |
+| **HTML5 + CSS3** | Interface web, dashboard responsivo | 24.2% |
+| **Google Sheets** | Banco de dados, armazenamento | - |
+| **IMPORTXML** | Integração com dados CVM | - |
 
 ---
 
-## 🏗️ Arquitetura Tecnológica
+## 🏗️ Arquitetura do Sistema
 
-### Stack Tecnológico Moderno
+### Stack Tecnológico
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    CAMADA DE APRESENTAÇÃO                        │
 │  ┌────────────────────────────────────────────────────────┐    │
-│  │  Interface Web Responsiva (HTML5 + CSS3 + JavaScript)  │    │
-│  │  • Dashboard interativo com visualizações dinâmicas    │    │
-│  │  • Design System moderno com UX otimizada              │    │
-│  │  • Progressive Web App (PWA) ready                     │    │
+│  │  Interface Web (Index.html - 39.7KB)                   │    │
+│  │  • Dashboard responsivo com HTML5/CSS3                 │    │
+│  │  • Visualização de status e dados dos fundos           │    │
+│  │  • Design moderno com gradientes e animações           │    │
 │  └────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────┘
-                              ⬇️
+                               ⬇️
 ┌─────────────────────────────────────────────────────────────────┐
 │                  CAMADA DE LÓGICA DE NEGÓCIO                     │
 │  ┌────────────────────────────────────────────────────────┐    │
-│  │  Google Apps Script (Serverless Backend)              │    │
-│  │  • REST API para dados em tempo real                   │    │
-│  │  • Processamento de dados financeiros                  │    │
-│  │  • Cálculo inteligente de datas e feriados            │    │
-│  │  • Sistema de alertas de conformidade                  │    │
+│  │  Google Apps Script Backend                            │    │
+│  │  • Code.gs (91KB) - Core principal                     │    │
+│  │  • DateUtils.gs (18.5KB) - Cálculos de data           │    │
+│  │  • FundoService.gs (3.7KB) - Gestão de fundos         │    │
+│  │  • ConfigData.gs (5.7KB) - Configurações              │    │
+│  │  • onInstall.gs (30.2KB) - Instalador automatizado    │    │
 │  └────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────┘
-                              ⬇️
-┌─────────────────────────────────────────────────────────────────┐
-│                    CAMADA DE INTEGRAÇÃO                          │
-│  ┌────────────────────────────────────────────────────────┐    │
-│  │  IMPORTXML Web Scraping Engine                         │    │
-│  │  • Coleta automática de dados CVM                      │    │
-│  │  • Parsing de XML/HTML estruturado                     │    │
-│  │  • Validação e normalização de dados                   │    │
-│  └────────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────┘
-                              ⬇️
+                               ⬇️
 ┌─────────────────────────────────────────────────────────────────┐
 │                    CAMADA DE DADOS                               │
 │  ┌────────────────────────────────────────────────────────┐    │
-│  │  Google Sheets (Cloud Database)                        │    │
-│  │  • Armazenamento estruturado de 26 fundos             │    │
-│  │  • Histórico de variações e performance                │    │
-│  │  • Cache de dados para otimização                      │    │
+│  │  Google Sheets (Base de Dados)                         │    │
+│  │  • 9 Abas estruturadas                                 │    │
+│  │  • Fórmulas IMPORTXML para coleta automática          │    │
+│  │  • Named ranges para referências                       │    │
 │  └────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────┘
-                              ⬇️
+                               ⬇️
 ┌─────────────────────────────────────────────────────────────────┐
 │                   FONTE DE DADOS OFICIAL                         │
 │  ┌────────────────────────────────────────────────────────┐    │
 │  │  CVM - Comissão de Valores Mobiliários                │    │
-│  │  • Base de dados regulatória oficial                   │    │
-│  │  • Dados de fundos certificados e auditados            │    │
+│  │  • cvmweb.cvm.gov.br                                   │    │
+│  │  • Dados regulatórios oficiais                         │    │
 │  └────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Fluxo de Dados em Tempo Real
+### Fluxo de Dados
 
 ```mermaid
 graph LR
-    A[CVM Oficial] -->|IMPORTXML| B[Google Sheets]
-    B -->|Apps Script API| C[Processamento]
-    C -->|JSON REST| D[Dashboard Web]
-    D -->|Interação| E[Usuário Final]
-    C -->|Alertas| F[Sistema de Compliance]
+    A[CVM Website] -->|IMPORTXML| B[Google Sheets]
+    B -->|Apps Script| C[Processamento de Dados]
+    C -->|doGet| D[Interface Web]
+    D -->|Visualização| E[Usuário]
 ```
 
 ---
 
-## ⚡ Funcionalidades de Próxima Geração
+## 📁 Estrutura de Arquivos
 
-### 🤖 Automação Completa
-
-**Eliminação total de trabalho manual**
-
-- ✅ **Importação automática 24/7** - Integração contínua com dados oficiais da CVM
-- ✅ **Zero configuração manual** - Sistema se auto-atualiza sem intervenção
-- ✅ **Processamento assíncrono** - Múltiplos fundos processados em paralelo
-- ✅ **Cache inteligente** - Otimização automática de performance
-- ✅ **Recuperação automática** - Resiliência a falhas de rede ou API
-
-### 📊 Monitoramento Inteligente de 26 Fundos
-
-**Cobertura completa do portfólio BANESTES**
-
-<details>
-<summary><b>📈 Fundos de Renda Fixa (9 fundos)</b></summary>
-
-**Curto Prazo:**
-- Banestes Investidor Automático
-- Banestes Invest Money
-- Banestes Solidez Automático
-- Banestes Público Automático
-
-**Referenciado DI:**
-- VIP DI FIC
-- Vitória 500 FIC
-- Tesouro Referenciado
-- Valores
-- Liquidez
-- Reserva Climática
-
-</details>
-
-<details>
-<summary><b>🏛️ Fundos de Títulos Públicos (3 fundos)</b></summary>
-
-- Banestes IMA-B
-- Banestes IMA-B 5
-- Banestes IRF-M 1
-
-*Integração com índices de mercado ANBIMA*
-
-</details>
-
-<details>
-<summary><b>📈 Fundos de Ações (4 fundos)</b></summary>
-
-- Banestes BTG Pactual Absoluto Institucional
-- Banestes Dividendos
-- Banestes Tenax Ações
-- Banestes Synergy Long Only
-
-*Monitoramento de volatilidade e performance vs. IBOVESPA*
-
-</details>
-
-<details>
-<summary><b>🎯 Fundos Multimercado (2 fundos)</b></summary>
-
-- Banestes Funses
-- Banestes Multiestratégia
-
-*Análise de estratégias diversificadas*
-
-</details>
-
-<details>
-<summary><b>💼 Fundos de Crédito Privado (2 fundos)</b></summary>
-
-- Banestes Selection
-- Banestes Crédito Corporativo I
-
-*Monitoramento de risco de crédito*
-
-</details>
-
-<details>
-<summary><b>🎁 Fundos Simples (2 fundos)</b></summary>
-
-- Banestes Invest Fácil
-- Banestes Soberano
-
-*Ideal para investidores iniciantes*
-
-</details>
-
-<details>
-<summary><b>🏗️ Fundos Incentivados (1 fundo)</b></summary>
-
-- FIC Incentivados de Infraestrutura
-
-*Investimento com benefícios fiscais*
-
-</details>
-
-<details>
-<summary><b>🎲 Fundos Estratégicos (3 fundos)</b></summary>
-
-- Banestes Estratégia
-- Banestes Institucional
-- Banestes Público Automático
-
-*Produtos customizados para necessidades específicas*
-
-</details>
-
-### 🔄 Integração CVM de Alto Desempenho
-
-**Conexão direta com fonte oficial regulatória**
-
-- ✅ **API Oficial CVM** - Dados certificados e auditados
-- ✅ **Web Scraping via IMPORTXML** - Extração estruturada e automatizada
-- ✅ **Validação em tempo real** - Verificação de integridade dos dados
-- ✅ **Códigos CVM únicos** - Rastreamento preciso de cada fundo
-- ✅ **Histórico completo** - Dados preservados para análise temporal
-- ✅ **Conformidade regulatória** - Alinhado com normas CVM
-
-### 🧠 Sistema de Inteligência Temporal
-
-**Cálculo automático consciente do contexto brasileiro**
-
-- ✅ **Calendário de feriados nacionais** - 2025 até 2030 pré-programados
-- ✅ **Dias úteis bancários** - Compatível com calendário B3
-- ✅ **Cálculo de datas de referência** - Identificação automática de últimas datas úteis
-- ✅ **Zona horária BRT/BRST** - Suporte automático a horário de verão
-- ✅ **Ajuste de prazos** - Correção automática para próximo dia útil
-
-### 🛡️ Sistema de Compliance Inteligente
-
-**Monitoramento proativo de conformidade regulatória**
-
-- ✅ **Alertas automáticos** - Notificação de pendências CVM
-- ✅ **Relatórios de conformidade** - Templates HTML profissionais
-- ✅ **Detecção de desconformidade** - Identificação precoce de problemas
-- ✅ **Histórico de compliance** - Auditoria completa de regularizações
-- ✅ **Envio automatizado de emails** - Comunicação automática com stakeholders
-
-### 📊 Analytics e Visualização
-
-**Insights acionáveis em tempo real**
-
-- ✅ **Dashboard responsivo** - Adaptável a qualquer dispositivo
-- ✅ **Gráficos interativos** - Visualização dinâmica de performance
-- ✅ **Comparativos automáticos** - Análise entre fundos e benchmarks
-- ✅ **Indicadores KPI** - Métricas financeiras críticas em destaque
-- ✅ **Export de dados** - Relatórios em múltiplos formatos
-
-### 🔐 Segurança Enterprise-Grade
-
-**Proteção de dados financeiros sensíveis**
-
-- ✅ **OAuth 2.0 Google** - Autenticação segura e confiável
-- ✅ **HTTPS obrigatório** - Todas as comunicações criptografadas
-- ✅ **Controle de acesso** - Permissões granulares por usuário
-- ✅ **Logs de auditoria** - Rastreamento completo de operações
-- ✅ **Backup automático** - Google Cloud Storage redundante
-- ✅ **Compliance LGPD** - Conformidade com lei de proteção de dados
-
----
-
-## 📊 Dashboard Inteligente
-
-### Interface de Próxima Geração
-
-O dashboard oferece uma **experiência de usuário premium** com tecnologia moderna:
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  🏦 Gerenciador CVM BANESTES v4.0    [🔔] [👤 Usuário] [⚙️]    │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  📊 PAINEL DE CONTROLE - VISÃO GERAL                            │
-│  ┌────────────┬────────────┬────────────┬────────────┐         │
-│  │ 26 Fundos  │ R$ 2.5 Bi  │ ↗ +2.3%   │ ✅ 100%    │         │
-│  │ Ativos     │ Patrimônio │ Performance│ Conformidade│         │
-│  └────────────┴────────────┴────────────┴────────────┘         │
-│                                                                  │
-│  🔍 BUSCA INTELIGENTE                   🔄 Última sync: Agora   │
-│  [Selecionar Fundo ▼]    [Comparar]    [Exportar CSV]          │
-│                                                                  │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  FUNDO SELECIONADO: Banestes Dividendos FIC              │  │
-│  │  ──────────────────────────────────────────────────────  │  │
-│  │  📋 Código CVM: 291494          💰 Cota: R$ 15.234,56    │  │
-│  │  📅 Data Ref: 05/02/2026        📊 Variação: +1,23% ↗    │  │
-│  │  🎯 Categoria: Ações            📈 Patrimônio: R$ 850M   │  │
-│  │                                                           │  │
-│  │  [Ver Detalhes] [Comparar] [Alertas] [Histórico]        │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                                                                  │
-│  📈 GRÁFICO DE PERFORMANCE - ÚLTIMOS 12 MESES                   │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  15.5k ┤                                            ●      │  │
-│  │  15.0k ┤                                       ●            │  │
-│  │  14.5k ┤                                  ●                 │  │
-│  │  14.0k ┤                             ●                      │  │
-│  │  13.5k ┤                        ●                           │  │
-│  │  13.0k ┤                   ●                                │  │
-│  │  12.5k ┤              ●                                     │  │
-│  │  12.0k ┤         ●                                          │  │
-│  │  11.5k ┤    ●                                               │  │
-│  │        └────┬────┬────┬────┬────┬────┬────┬────┬────┬──── │  │
-│  │            Mar  Mai  Jul  Set  Nov  Jan                    │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                                                                  │
-│  📋 COMPARATIVO DE FUNDOS                                       │
-│  ╔════════════════════════════╤═══════╤═══════╤══════════╗    │
-│  ║ Fundo                      │ Cota  │ Var.  │ Status   ║    │
-│  ╠════════════════════════════╪═══════╪═══════╪══════════╣    │
-│  ║ 📈 Dividendos              │ 15.23 │ +1.2% │ ✅ OK    ║    │
-│  ║ 🏛️ IMA-B                   │ 12.45 │ +0.8% │ ✅ OK    ║    │
-│  ║ 💼 Crédito Corporativo     │ 10.89 │ +1.5% │ ✅ OK    ║    │
-│  ║ 🎯 Multiestratégia         │ 11.67 │ +0.9% │ ✅ OK    ║    │
-│  ╚════════════════════════════╧═══════╧═══════╧══════════╝    │
-│                                                                  │
-│  🔔 ALERTAS DE COMPLIANCE             ⚠️ 0 pendências          │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  ✅ Todos os fundos estão em conformidade com CVM        │  │
-│  │  📅 Próxima verificação: 28/02/2026                      │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 🎨 Design System Moderno
-
-**Princípios de UX/UI aplicados:**
-
-- **🎨 Paleta de Cores Profissional**
-  ```css
-  Primária:    #1e3a8a  /* Azul BANESTES - Confiança */
-  Secundária:  #3b82f6  /* Azul Claro - Tecnologia */
-  Sucesso:     #10b981  /* Verde - Performance Positiva */
-  Atenção:     #f59e0b  /* Amarelo - Alertas */
-  Erro:        #ef4444  /* Vermelho - Crítico */
-  ```
-
-- **✨ Animações Fluidas**
-  - Transições suaves de 300ms
-  - Easing cubic-bezier para naturalidade
-  - Feedback visual imediato nas interações
-  - Loading states elegantes
-
-- **📱 Responsividade Total**
-  ```
-  Desktop  (>1200px): Layout completo com 3 colunas
-  Tablet   (768-1199px): Layout 2 colunas adaptativo
-  Mobile   (<767px): Layout vertical otimizado
-  ```
-
-- **♿ Acessibilidade WCAG 2.1 AA**
-  - Contraste de cores adequado
-  - Navegação por teclado completa
-  - Labels semânticos
-  - ARIA attributes para screen readers
-
----
-
-## 📁 Arquitetura do Código
-
-### Estrutura Modular e Escalável
+### Arquivos do Projeto
 
 ```
 Banestes_Gerenciador_CVM/
 │
-├── 📄 Code.gs                          # 🧠 Backend Core (2,677 linhas)
-│   ├── doGet()                         # Entry point da Web App
-│   ├── getDashboardData()              # API principal de dados
-│   ├── lerAbaBalancete()               # Parser de dados de balancete
-│   ├── lerAbaComposicao()              # Parser de composição de carteira
-│   ├── lerAbaDiarias()                 # Parser de cotas diárias
-│   ├── lerAbaLamina()                  # Parser de lâminas CVM
-│   ├── lerAbaPerfilMensal()            # Parser de perfil mensal
-│   └── Utilities                       # Funções auxiliares
+├── 📄 Code.gs (91.3 KB)
+│   ├── doGet() - Entry point da aplicação web
+│   ├── getDashboardData() - API principal de dados
+│   ├── lerAbaBalancete() - Lê dados da aba Balancete
+│   ├── lerAbaComposicao() - Lê dados da aba Composição
+│   ├── lerAbaDiarias() - Lê dados da aba Diárias
+│   ├── lerAbaLamina() - Lê dados da aba Lâmina
+│   ├── lerAbaPerfilMensal() - Lê dados da aba Perfil Mensal
+│   ├── buscarCodigoBanestes() - Busca código interno do fundo
+│   └── getStatusInstalacao() - Verifica status da instalação
 │
-├── 📄 FundoService.gs                  # 💼 Serviço de Fundos (39 linhas)
-│   ├── getFundos()                     # Lista dos 26 fundos BANESTES
-│   ├── getTotalFundos()                # Contador de fundos
-│   └── Estrutura de dados:
-│       {
-│         nome: String,                 # Nome completo do fundo
-│         codigoCVM: String,            # Código oficial CVM
-│         codigoFundo: String           # ID interno BANESTES
-│       }
+├── 📄 FundoService.gs (3.7 KB)
+│   ├── getFundos() - Retorna array com 26 fundos BANESTES
+│   └── getTotalFundos() - Retorna contagem total de fundos
 │
-├── 📄 ConfigData.gs                    # ⚙️ Configurações (108 linhas)
-│   ├── getFeriadosBrasileiros()        # Calendário 2025-2030
-│   ├── getFeriados()                   # Alias de compatibilidade
-│   └── Dados estáticos:
-│       - Feriados nacionais
-│       - Constantes da aplicação
-│       - Configurações globais
+├── 📄 DateUtils.gs (18.5 KB)
+│   ├── getDatasReferencia() - Calcula datas de referência
+│   ├── calcularProximoDiaUtil() - Calcula próximo dia útil
+│   ├── isFeriado() - Verifica se data é feriado
+│   ├── isDiaUtil() - Verifica se data é dia útil
+│   ├── criarAbaApoioComValores() - Cria aba APOIO com valores
+│   └── verificarAbaApoio() - Valida estrutura da aba APOIO
 │
-├── 📄 DateUtils.gs                     # 📅 Utilidades de Data (564 linhas)
-│   ├── getDatasReferencia()            # Cálculo de datas de referência
-│   ├── formatarData()                  # Formatação BR
-│   ├── calcularDiaUtil()               # Próximo dia útil
-│   ├── isFeriado()                     # Verificação de feriado
-│   ├── isDiaUtil()                     # Verificação de dia útil
-│   └── ajustarParaDiaUtil()            # Ajuste automático
+├── 📄 ConfigData.gs (5.7 KB)
+│   ├── getFeriadosBrasileiros() - Calendário 2025-2030
+│   └── getFeriados() - Alias para compatibilidade
 │
-├── 📄 onInstall.gs                     # 🚀 Instalador (900 linhas)
-│   ├── onInstall()                     # Hook de instalação
-│   ├── setupTriggers()                 # Configuração de triggers
-│   ├── initializeSpreadsheet()         # Setup inicial da planilha
-│   └── createMenus()                   # Menus personalizados
+├── 📄 onInstall.gs (30.2 KB)
+│   ├── setupCompletoAutomatico() - Setup completo da planilha
+│   ├── criarEstruturaPlanilhaCompleta() - Cria 9 abas
+│   ├── preencherAbaCodFundo() - Preenche aba COD FUNDO
+│   ├── preencherAbaFeriados() - Preenche aba FERIADOS
+│   ├── preencherAbaApoio() - Preenche aba APOIO com fórmulas
+│   ├── criarFormulasBalancete() - Cria fórmulas para Balancete
+│   ├── criarFormulasComposicao() - Cria fórmulas para Composição
+│   ├── criarFormulasDiarias() - Cria fórmulas para Diárias
+│   ├── criarFormulasLamina() - Cria fórmulas para Lâmina
+│   └── criarFormulasPerfilMensal() - Cria fórmulas para Perfil Mensal
 │
-├── 📄 Index.html                       # 🎨 Frontend UI (1,208 linhas)
-│   ├── <head>                          # Metadados e recursos
-│   ├── <style>                         # CSS moderno (400+ linhas)
-│   ├── <body>                          # Estrutura HTML semântica
-│   └── <script>                        # JavaScript interativo (600+ linhas)
-│       ├── initDashboard()             # Inicialização
-│       ├── loadData()                  # Carregamento de dados
-│       ├── renderCharts()              # Renderização de gráficos
-│       ├── handleFundSelection()       # Gestão de seleção
-│       └── exportData()                # Exportação de relatórios
+├── 📄 Index.html (39.7 KB)
+│   ├── <head> - Metadados e configurações
+│   ├── <style> - CSS responsivo com gradientes
+│   ├── <body> - Estrutura HTML do dashboard
+│   └── <script> - JavaScript para carregamento de dados
 │
-├── 📄 conformidade.html                # ✅ Template de Email Positivo (71 linhas)
-│   └── Layout HTML responsivo para notificações de conformidade
+├── 📄 conformidade.html (3.6 KB)
+│   └── Template HTML para emails de conformidade
 │
-├── 📄 desconformidade.html             # ⚠️ Template de Email de Alerta (89 linhas)
-│   └── Layout HTML responsivo para alertas críticos
+├── 📄 desconformidade.html (4.4 KB)
+│   └── Template HTML para emails de alerta
 │
-└── 📄 README.md                        # 📖 Esta documentação
+└── 📄 README.md
+    └── Esta documentação
 ```
 
 ### 📊 Estatísticas do Código
 
-| Métrica | Valor | Descrição |
-|---------|-------|-----------|
-| **Total de Linhas** | ~5,500 | Código completo do sistema |
-| **Arquivos** | 8 | Modularização clara |
-| **Linguagens** | 3 | JavaScript, HTML5, CSS3 |
-| **Funções** | 100+ | APIs e utilitários |
-| **Fundos Gerenciados** | 26 | Cobertura total BANESTES |
-| **Feriados Programados** | 78 | 2025-2030 pré-calculados |
-| **Anos de Cobertura** | 6 | Suporte até 2030 |
+| Métrica | Valor |
+|---------|-------|
+| **Total de Arquivos** | 9 arquivos |
+| **Tamanho Total** | ~233 KB |
+| **Linguagens** | JavaScript (Apps Script), HTML5, CSS3 |
+| **Linhas de Código** | ~5.500+ linhas |
+| **Fundos Gerenciados** | 26 fundos BANESTES |
+| **Feriados Programados** | 78 feriados (2025-2030) |
+| **Abas Monitoradas** | 5 abas de dados + 4 auxiliares |
 
-### 🔧 Componentes Principais
+---
 
-#### 1️⃣ **Backend (Google Apps Script)**
+## ⚡ Funcionalidades Principais
 
-```javascript
-// Exemplo: API de dados em tempo real
-function getDashboardData() {
-  try {
-    var ss = obterPlanilha();
-    var datas = getDatasReferencia();
-    
-    return {
-      timestamp: new Date().toISOString(),
-      datas: datas,
-      balancete: lerAbaBalancete(ss, datas),
-      composicao: lerAbaComposicao(ss, datas),
-      diarias: lerAbaDiarias(ss),
-      lamina: lerAbaLamina(ss, datas),
-      perfilMensal: lerAbaPerfilMensal(ss, datas)
-    };
-  } catch (error) {
-    Logger.log('❌ Erro: ' + error.toString());
-    throw new Error('Erro ao carregar dados');
-  }
-}
+### 🤖 Automação de Dados
+
+- ✅ **Integração Automática com CVM**
+  - Fórmulas `IMPORTXML()` no Google Sheets coletam dados diretamente do site da CVM
+  - Parsing estruturado de HTML/XML dos endpoints oficiais
+  - Atualização automática quando a planilha é aberta ou recalculada
+
+- ✅ **Leitura de 5 Abas Especializadas**
+  - **Balancete**: Status de balancetes dos fundos
+  - **Composição**: Composição de carteira
+  - **Diárias**: Cotas diárias dos fundos
+  - **Lâmina**: Lâminas de informações essenciais (CVM)
+  - **Perfil Mensal**: Performance mensal dos fundos
+
+- ✅ **Processamento Inteligente de Dados**
+  - Valida status de atualização (OK, EM CONFORMIDADE, DESATUALIZADO)
+  - Calcula dias restantes até prazo limite
+  - Identifica código BANESTES de cada fundo
+  - Gera status geral por categoria
+
+### 📅 Sistema de Datas Inteligente
+
+- ✅ **Calendário de Feriados Nacionais**
+  - Programado com 78 feriados de 2025 a 2030
+  - Inclui: Ano Novo, Carnaval, Páscoa, Tiradentes, Dia do Trabalho, Corpus Christi, Independência, N.Sra. Aparecida, Finados, Proclamação da República, Natal, etc.
+
+- ✅ **Cálculo de Dias Úteis**
+  - Ignora sábados, domingos e feriados
+  - Calcula próximo dia útil automaticamente
+  - Identifica última data útil do mês
+  - Suporte a zona horária brasileira (BRT/BRST)
+
+- ✅ **Datas de Referência Automáticas**
+  - Data de referência do mês atual
+  - Data de referência do mês anterior (DIAMESREF2)
+  - Cálculo de prazos de envio (10 dias úteis)
+  - Validação de conformidade baseada em datas
+
+### 📊 Dashboard Web Responsivo
+
+- ✅ **Interface Moderna**
+  - Design com gradientes azuis (identidade BANESTES)
+  - Animações CSS suaves (transitions 0.3s)
+  - Layout responsivo para desktop, tablet e mobile
+  - Cards com sombras e efeitos hover
+
+- ✅ **Visualização de Dados**
+  - Status geral de cada categoria (Balancete, Composição, etc.)
+  - Listagem detalhada de fundos com status individual
+  - Indicadores visuais coloridos (verde=OK, amarelo=conformidade, vermelho=desatualizado)
+  - Botão de atualização para recarregar dados
+
+- ✅ **Carregamento Assíncrono**
+  - Spinner de loading durante carregamento
+  - Chamadas assíncronas via `google.script.run`
+  - Tratamento de erros com mensagens amigáveis
+  - Tempo de resposta otimizado
+
+### 💼 Gerenciamento de 26 Fundos
+
+<details>
+<summary><b>📈 Lista Completa de Fundos BANESTES</b></summary>
+
+1. BANESTES INVEST AUTOMÁTICO FUNDO DE APLICACAO EM QUOTAS DE FUNDOS DE INVESTIMENTO DE RENDA FIXA CURTO PRAZO
+2. BANESTES INVEST MONEY FUNDO DE INVESTIMENTO DE RENDA FIXA CURTO PRAZO
+3. BANESTES SOLIDEZ AUTOMÁTICO FIC RENDA FIXA CURTO PRAZO
+4. BANESTES PÚBLICO AUTOMÁTICO FIC RENDA FIXA CURTO PRAZO
+5. BANESTES VIP DI FIC RF
+6. BANESTES VITÓRIA 500 FIC RENDA FIXA
+7. BANESTES TESOURO REFERENCIADO DI FIC RENDA FIXA
+8. BANESTES VALORES REFERENCIADO DI FIC RENDA FIXA
+9. BANESTES LIQUIDEZ FIC RENDA FIXA SIMPLES
+10. BANESTES FUNDO DE INVESTIMENTO RENDA FIXA RESERVA CLIMÁTICA
+11. BANESTES IMA-B FUNDO DE INVESTIMENTO DE RENDA FIXA LONGO PRAZO
+12. BANESTES IMA-B 5 FIC RENDA FIXA LONGO PRAZO
+13. BANESTES IRF-M 1 FIC RENDA FIXA LONGO PRAZO
+14. BANESTES BTG PACTUAL ABSOLUTO INSTITUCIONAL FUNDO DE INVESTIMENTO EM AÇÕES
+15. BANESTES DIVIDENDOS FUNDO DE INVESTIMENTO EM COTAS DE FUNDOS DE INVESTIMENTO EM AÇÕES
+16. BANESTES TENAX AÇÕES FUNDO DE INVESTIMENTO EM COTAS DE FUNDOS DE INVESTIMENTO EM AÇÕES
+17. BANESTES SYNERGY LONG ONLY FUNDO DE INVESTIMENTO EM COTAS DE FUNDOS DE INVESTIMENTO MULTIMERCADO
+18. BANESTES FUNSES FUNDO DE INVESTIMENTO MULTIMERCADO
+19. BANESTES MULTIESTRATÉGIA FIC MULTIMERCADO
+20. BANESTES SELECTION FIC FIM CRÉDITO PRIVADO
+21. BANESTES CRÉDITO CORPORATIVO I FIC FIM CRÉDITO PRIVADO
+22. BANESTES INVEST FÁCIL FUNDO DE INVESTIMENTO RENDA FIXA SIMPLES
+23. BANESTES SOBERANO FUNDO DE INVESTIMENTO RENDA FIXA SIMPLES
+24. BANESTES FIC FI INCENTIVADOS DE INFRAESTRUTURA AÇÕES
+25. BANESTES ESTRATÉGIA FUNDO DE INVESTIMENTO DE RENDA FIXA LONGO PRAZO
+26. BANESTES INSTITUCIONAL FUNDO DE INVESTIMENTO MULTIMERCADO CRÉDITO PRIVADO
+
+Cada fundo possui:
+- Nome completo oficial
+- Código CVM único
+- Código interno BANESTES (01 a 26)
+
+</details>
+
+### 🔧 Sistema de Instalação Automatizado
+
+- ✅ **Setup Completo com Um Clique**
+  - Cria automaticamente 9 abas na planilha:
+    - GERAL, Balancete, Composição, Diárias, Lâmina, Perfil Mensal, APOIO, FERIADOS, COD FUNDO
+  - Preenche aba COD FUNDO com os 26 fundos
+  - Preenche aba FERIADOS com calendário 2025-2030
+  - Cria aba APOIO com fórmulas de referência de datas
+  - Define named ranges para fórmulas
+
+- ✅ **Criação Automática de Fórmulas IMPORTXML**
+  - Gera fórmulas para coleta de dados da CVM
+  - Configura URLs com códigos CVM de cada fundo
+  - Cria fórmulas de status e validação
+  - Estrutura cabeçalhos de cada aba
+
+### 📧 Templates de Email
+
+- ✅ **Email de Conformidade** (`conformidade.html`)
+  - Template HTML responsivo com identidade visual
+  - Notificação quando todos os fundos estão em conformidade
+  - Design profissional com cores verde (sucesso)
+
+- ✅ **Email de Desconformidade** (`desconformidade.html`)
+  - Template HTML responsivo para alertas
+  - Notificação de fundos desatualizados ou pendentes
+  - Design de alerta com cores vermelhas/amarelas
+
+---
+
+## 📊 Abas e Dados Monitorados
+
+### Estrutura da Planilha Google Sheets
+
+A aplicação utiliza uma planilha Google Sheets com 9 abas estruturadas:
+
+#### 1. **GERAL**
+- Visão geral consolidada
+- Status resumido de todas as categorias
+- Indicadores agregados
+
+#### 2. **Balancete**
+- Status de envio de balancetes dos fundos
+- Colunas: Código BANESTES, Nome do Fundo, Data do Documento, Status, Dias Restantes
+- Fórmulas IMPORTXML para coleta automática da CVM
+- Status geral: OK, EM CONFORMIDADE, DESATUALIZADO
+
+#### 3. **Composição**
+- Composição de carteira dos fundos
+- Dados de alocação de ativos
+- Data de referência da composição
+- Status de atualização
+
+#### 4. **Diárias**
+- Cotas diárias dos fundos
+- Valor da cota por data
+- Histórico de variações
+- Status de disponibilidade
+
+#### 5. **Lâmina**
+- Lâminas de informações essenciais (documento CVM obrigatório)
+- Data de publicação
+- Status de conformidade
+- Link para documentos
+
+#### 6. **Perfil Mensal**
+- Performance mensal dos fundos
+- Rentabilidade do período
+- Comparativos de benchmarks
+- Status de publicação
+
+#### 7. **APOIO** (Aba auxiliar)
+- Fórmulas de cálculo de datas de referência
+- HOJE (data atual)
+- DIAMESREF (data de referência do mês atual)
+- DIAMESREF2 (data de referência do mês anterior)
+- DIADDD (prazo de 10 dias úteis)
+- Named ranges para uso em outras abas
+
+#### 8. **FERIADOS** (Aba auxiliar)
+- Calendário de feriados nacionais 2025-2030
+- Colunas: Data, Dia da Semana, Nome do Feriado
+- Utilizado para cálculo de dias úteis
+
+#### 9. **COD FUNDO** (Aba auxiliar)
+- Código BANESTES (01-26)
+- Nome completo do fundo
+- Código CVM oficial
+- Referência cruzada para todas as operações
+
+### Exemplo de Fórmula IMPORTXML
+
 ```
-
-#### 2️⃣ **Frontend (HTML5 + JavaScript)**
-
-```javascript
-// Exemplo: Carregamento assíncrono de dados
-async function loadDashboardData() {
-  showLoading();
-  
-  try {
-    const data = await google.script.run
-      .withSuccessHandler(renderDashboard)
-      .withFailureHandler(showError)
-      .getDashboardData();
-  } catch (error) {
-    console.error('Erro ao carregar:', error);
-  } finally {
-    hideLoading();
-  }
-}
-```
-
-#### 3️⃣ **Integração de Dados**
-
-```javascript
-// Exemplo: Sistema de feriados inteligente
-function isFeriado(data) {
-  var feriados = getFeriadosBrasileiros();
-  
-  return feriados.some(function(feriado) {
-    var feriadoDate = feriado[0];
-    return feriadoDate.getTime() === data.getTime();
-  });
-}
+=IMPORTXML(
+  "https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/Balancete/CPublicaBalancete.asp?PK_PARTIC=" & 
+  CÓDIGO_CVM & 
+  "&SemFrame=",
+  "/html/body/form/table/tbody/tr[1]/td/select"
+)
 ```
 
 ---
 
-## 🚀 Instalação e Deploy
+## 🚀 Instalação e Configuração
 
-### Cloud-Native: Deploy em Minutos
+### Pré-requisitos
 
-#### Pré-requisitos Modernos
+| Requisito | Descrição | Status |
+|-----------|-----------|--------|
+| **Conta Google** | Gmail ou Google Workspace | ✅ Obrigatório |
+| **Google Apps Script** | Incluído gratuitamente | ✅ Gratuito |
+| **Google Sheets** | Para armazenamento de dados | ✅ Gratuito |
+| **Navegador Web** | Chrome, Edge, Firefox ou Safari | ✅ Recomendado |
 
-| Requisito | Status | Observação |
-|-----------|--------|------------|
-| ✅ Conta Google | Obrigatório | Google Workspace ou Gmail |
-| ✅ Google Apps Script | Gratuito | Incluído com Google Account |
-| ✅ Google Sheets | Gratuito | Para armazenamento de dados |
-| ☁️ Infraestrutura | Zero Config | Serverless, sem servidores |
-| 💰 Custos | R$ 0,00 | Totalmente gratuito até 20K requests/dia |
-
-### 🎯 Deploy Rápido (5 minutos)
-
-#### Passo 1️⃣: Clonar o Repositório
+### 📥 Passo 1: Clonar o Repositório
 
 ```bash
 # Clone via HTTPS
@@ -560,1041 +399,364 @@ git clone https://github.com/SergioPauloA/Banestes_Gerenciador_CVM.git
 # Ou via SSH
 git clone git@github.com:SergioPauloA/Banestes_Gerenciador_CVM.git
 
-# Navegue para o diretório
+# Entre no diretório
 cd Banestes_Gerenciador_CVM
 ```
 
-#### Passo 2️⃣: Criar Projeto Google Apps Script
+### ⚙️ Passo 2: Criar Projeto Google Apps Script
 
 1. Acesse [script.google.com](https://script.google.com)
 2. Clique em **"Novo projeto"**
-3. Nomeie: `Gerenciador CVM BANESTES v4.0`
+3. Nomeie o projeto: `Gerenciador CVM BANESTES`
 
-#### Passo 3️⃣: Importar Arquivos
+### 📂 Passo 3: Importar Arquivos
 
-**Arquivos `.gs` (Scripts):**
-```
-1. No editor do Apps Script, crie arquivos:
-   - Code.gs
-   - FundoService.gs
-   - ConfigData.gs
-   - DateUtils.gs
-   - onInstall.gs
+**Arquivos `.gs` (Scripts Google Apps):**
 
-2. Copie e cole o conteúdo de cada arquivo correspondente
-```
+1. No editor do Apps Script, crie os seguintes arquivos:
+   - `Code.gs`
+   - `FundoService.gs`
+   - `DateUtils.gs`
+   - `ConfigData.gs`
+   - `onInstall.gs`
 
-**Arquivo `.html` (Interface):**
-```
-1. Clique em + (Adicionar arquivo) → HTML
-2. Nome: Index
-3. Cole o conteúdo de Index.html
-4. Repita para conformidade.html e desconformidade.html
-```
+2. Copie o conteúdo de cada arquivo do repositório para o editor
 
-#### Passo 4️⃣: Configurar Planilha Google Sheets
+**Arquivos `.html` (Interface Web):**
 
-```javascript
-// Em Code.gs, atualize o ID da sua planilha:
-var SPREADSHEET_ID = 'SEU_SPREADSHEET_ID_AQUI';
+1. Clique em **+ (Adicionar arquivo) → HTML**
+2. Crie os arquivos:
+   - `Index.html`
+   - `conformidade.html`
+   - `desconformidade.html`
+3. Cole o conteúdo correspondente
 
-// Como obter o ID:
-// URL: https://docs.google.com/spreadsheets/d/1N6LP1yd...../edit
-//                                              ^^^^^^^^^ Este é o ID
-```
+### 📊 Passo 4: Criar e Configurar Google Sheets
 
-**Estrutura da Planilha:**
-- Aba "Balancete" - Dados de balancete dos fundos
-- Aba "Composição" - Composição de carteira
-- Aba "Diárias" - Cotas diárias
-- Aba "Lâmina" - Informações de lâminas CVM
-- Aba "Perfil Mensal" - Performance mensal
+1. Crie uma nova planilha Google Sheets
+2. Copie o ID da planilha da URL:
+   ```
+   https://docs.google.com/spreadsheets/d/1N6LP1ydsxnQO_Woatv9zWEccb0fOGaV_3EKK1GoSWZI/edit
+                                           ↑ Este é o SPREADSHEET_ID
+   ```
 
-#### Passo 5️⃣: Publicar como Web App
+3. No arquivo `Code.gs`, atualize a linha 6:
+   ```javascript
+   var SPREADSHEET_ID = 'SEU_SPREADSHEET_ID_AQUI';
+   ```
 
-```
-1. No Apps Script, clique em "Implantar" → "Nova implantação"
+### 🏗️ Passo 5: Executar Instalação Automatizada
+
+1. No editor do Apps Script, selecione a função `setupCompletoAutomatico`
+2. Clique em **Executar** ▶️
+3. Autorize as permissões solicitadas (primeira vez)
+4. Aguarde a conclusão (pode levar 1-2 minutos)
+
+**O que o instalador faz:**
+- ✅ Cria 9 abas na planilha
+- ✅ Preenche aba COD FUNDO com 26 fundos
+- ✅ Preenche aba FERIADOS com calendário 2025-2030
+- ✅ Cria aba APOIO com fórmulas de datas
+- ✅ Define named ranges
+- ✅ Cria fórmulas IMPORTXML para todas as abas
+
+### 🌐 Passo 6: Publicar como Web App
+
+1. No Apps Script, clique em **Implantar → Nova implantação**
 2. Configurações:
-   
-   ┌──────────────────────────────────────┐
-   │ Tipo: Aplicativo da Web              │
-   │ Descrição: Gerenciador CVM v4.0      │
-   │ Executar como: Eu (seu-email)        │
-   │ Quem tem acesso: Qualquer pessoa     │
-   └──────────────────────────────────────┘
+   - **Tipo**: Aplicativo da Web
+   - **Descrição**: Gerenciador CVM BANESTES
+   - **Executar como**: Eu (seu email)
+   - **Quem tem acesso**: Qualquer pessoa (ou restrito conforme necessário)
+3. Clique em **Implantar**
+4. Copie a URL gerada
 
-3. Clique em "Implantar"
-4. Autorize as permissões solicitadas
-5. Copie a URL gerada
+### ✅ Passo 7: Acessar a Aplicação
+
+Abra a URL gerada no navegador:
 ```
-
-#### Passo 6️⃣: Acessar a Aplicação
-
-```
-URL gerada:
 https://script.google.com/macros/s/{DEPLOYMENT_ID}/exec
-
-✅ Pronto! Seu sistema está no ar e operacional
 ```
 
-### 🔧 Configuração Avançada
-
-#### Triggers Automáticos
-
-Configure atualizações automáticas:
-
-```javascript
-1. No Apps Script: Triggers (ícone de relógio) ⏰
-2. Adicionar trigger:
-   
-   Função: getDashboardData
-   Evento: Controlado por tempo
-   Tipo: Disparador de hora em hora
-   Frequência: A cada 1 hora
-```
-
-#### Variáveis de Ambiente
-
-```javascript
-// ConfigData.gs - Personalize conforme necessário
-
-// Debug mode (produção = false)
-var DEBUG_MODE = false;
-
-// Configurações de cache
-var CACHE_DURATION = 3600; // 1 hora em segundos
-
-// Timeout de requisições
-var REQUEST_TIMEOUT = 30000; // 30 segundos
-```
-
-#### Monitoramento e Logs
-
-```javascript
-// Acessar logs:
-1. Apps Script Editor → "Execuções"
-2. Visualizar logs detalhados de cada execução
-3. Identificar erros e performance
-```
+🎉 **Pronto! O sistema está operacional!**
 
 ---
 
-## ⚙️ Funcionamento Técnico
+## 💻 Como Usar
 
-### 🔄 Pipeline de Dados
+### Acesso ao Dashboard
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                  1. COLETA AUTOMATIZADA                      │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │  Google Sheets → IMPORTXML() →  CVM Website         │   │
-│  │  • Execução: A cada 1 hora (configurável)           │   │
-│  │  • Parsing: XML/HTML estruturado                    │   │
-│  │  • Validação: Schemas de dados                      │   │
-│  └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-                           ⬇️
-┌─────────────────────────────────────────────────────────────┐
-│                  2. PROCESSAMENTO                            │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │  Apps Script Backend (Code.gs)                      │   │
-│  │  • Normalização de dados                            │   │
-│  │  • Cálculo de métricas financeiras                  │   │
-│  │  • Enriquecimento com metadados                     │   │
-│  │  • Detecção de anomalias                            │   │
-│  └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-                           ⬇️
-┌─────────────────────────────────────────────────────────────┐
-│                  3. ARMAZENAMENTO                            │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │  Google Sheets Database                             │   │
-│  │  • Cache de dados processados                       │   │
-│  │  • Histórico para análise temporal                  │   │
-│  │  • Backup automático Google Cloud                   │   │
-│  └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-                           ⬇️
-┌─────────────────────────────────────────────────────────────┐
-│                  4. API REST                                 │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │  getDashboardData() → JSON Response                 │   │
-│  │  • Formato: JSON estruturado                        │   │
-│  │  • Compressão: Automática (gzip)                    │   │
-│  │  • Cache: 1 hora (configurável)                     │   │
-│  └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-                           ⬇️
-┌─────────────────────────────────────────────────────────────┐
-│                  5. VISUALIZAÇÃO                             │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │  Dashboard Web (Index.html)                         │   │
-│  │  • Renderização: Client-side JavaScript             │   │
-│  │  • Gráficos: Canvas/SVG                             │   │
-│  │  • Atualização: Real-time via AJAX                  │   │
-│  └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-```
+1. Abra a URL da Web App no navegador
+2. Aguarde o carregamento do dashboard (spinner animado)
+3. Visualize os dados organizados por categoria
 
-### 📊 Exemplo de Estrutura de Dados
+### Interpretação dos Status
 
-```javascript
-// Resposta da API getDashboardData()
-{
-  "timestamp": "2026-02-05T16:30:00.000Z",
-  "datas": {
-    "dataReferencia": "05/02/2026",
-    "dataAnterior": "04/02/2026",
-    "mesAtual": "Fevereiro",
-    "anoAtual": 2026
-  },
-  "balancete": {
-    "statusGeral": "✅ Conformidade",
-    "fundos": [
-      {
-        "codigoCVM": "291494",
-        "nome": "Banestes Dividendos",
-        "valor": 15234.56,
-        "variacao": 1.23,
-        "status": "OK"
-      }
-      // ... mais 25 fundos
-    ]
-  },
-  "composicao": {
-    "statusGeral": "✅ Atualizado",
-    "carteiras": [ /* dados de composição */ ]
-  },
-  "diarias": {
-    "statusGeral1": "✅ Completo",
-    "statusGeral2": "✅ Validado",
-    "cotas": [ /* cotas diárias */ ]
-  },
-  "lamina": {
-    "statusGeral": "✅ Publicado",
-    "documentos": [ /* lâminas CVM */ ]
-  },
-  "perfilMensal": {
-    "statusGeral": "✅ Calculado",
-    "performance": [ /* métricas mensais */ ]
-  }
-}
-```
+| Status | Significado | Cor |
+|--------|-------------|-----|
+| **✅ OK** | Documento na data de referência correta | 🟢 Verde |
+| **✅ EM CONFORMIDADE** | Dentro do prazo de envio (até 10 dias úteis) | 🟡 Amarelo |
+| **❌ DESATUALIZADO** | Fora do prazo, requer atenção | 🔴 Vermelho |
 
-### 🧮 Algoritmo de Cálculo de Datas
+### Atualização de Dados
 
-```javascript
-// DateUtils.gs - Lógica de dias úteis
-function calcularProximoDiaUtil(data) {
-  var dataAtual = new Date(data);
-  
-  while (true) {
-    // Pula fins de semana
-    var diaSemana = dataAtual.getDay();
-    if (diaSemana === 0 || diaSemana === 6) {
-      dataAtual.setDate(dataAtual.getDate() + 1);
-      continue;
-    }
-    
-    // Pula feriados
-    if (isFeriado(dataAtual)) {
-      dataAtual.setDate(dataAtual.getDate() + 1);
-      continue;
-    }
-    
-    // Dia útil encontrado
-    return dataAtual;
-  }
-}
-```
+**Opção 1: Atualização Manual no Dashboard**
+- Clique no botão **"🔄 Atualizar Dados"**
+- Aguarde o recarregamento
+
+**Opção 2: Atualização na Planilha**
+- Abra a planilha Google Sheets
+- Force recálculo: `Ctrl+Alt+F9` (Windows) ou `Cmd+Option+F9` (Mac)
+- As fórmulas IMPORTXML serão reavaliadas
+
+**Opção 3: Atualização Automática**
+- Configure um trigger de tempo no Apps Script:
+  - **Triggers → Adicionar Trigger**
+  - Função: `getDashboardData`
+  - Tipo: Baseado em tempo
+  - Frequência: A cada hora/dia (conforme necessário)
 
 ---
 
-## 🎨 Customização
+## ⚙️ Configuração Avançada
 
-### Personalizando a Interface
+### Personalizar Lista de Fundos
 
-#### Tema de Cores
-
-```css
-/* Index.html - Seção <style> */
-:root {
-  /* Cores Primárias - Identidade BANESTES */
-  --primary-color: #1e3a8a;      /* Azul Institucional */
-  --secondary-color: #3b82f6;     /* Azul Tecnologia */
-  
-  /* Cores de Status */
-  --success-color: #10b981;       /* Verde */
-  --warning-color: #f59e0b;       /* Amarelo */
-  --danger-color: #ef4444;        /* Vermelho */
-  
-  /* Cores de Superfície */
-  --background-color: #f8fafc;
-  --card-background: #ffffff;
-  --border-color: #e5e7eb;
-  
-  /* Typography */
-  --font-family: 'Inter', 'Segoe UI', sans-serif;
-  --font-size-base: 16px;
-}
-```
-
-#### Logo e Branding
-
-```html
-<!-- Index.html - Adicione seu logo -->
-<div class="header">
-  <img src="https://seu-dominio.com/logo-banestes.svg" 
-       alt="BANESTES Logo"
-       class="logo">
-  <h1>Gerenciador CVM</h1>
-</div>
-```
-
-### Adicionar Novos Fundos
+Edite o arquivo `FundoService.gs`:
 
 ```javascript
-// FundoService.gs
 function getFundos() {
   return [
     // ... fundos existentes ...
     
-    // Adicione novo fundo aqui:
+    // Adicionar novo fundo:
     { 
-      nome: 'BANESTES NOVO FUNDO FIC RENDA FIXA', 
+      nome: 'NOVO FUNDO BANESTES FIC RF', 
       codigoCVM: '999999',  // Código oficial CVM
-      codigoFundo: '39'      // Próximo ID sequencial
+      codigoFundo: '27'     // Próximo número sequencial
     }
   ];
 }
 ```
 
-### Configurar Novos Feriados
+### Adicionar Feriados Futuros
+
+Edite o arquivo `ConfigData.gs`:
 
 ```javascript
-// ConfigData.gs
 function getFeriadosBrasileiros() {
   return [
-    // ... feriados existentes ...
+    // ... feriados existentes 2025-2030 ...
     
-    // Adicione feriado local/regional:
-    [new Date(2026, 3, 21), 'terça-feira', 'Feriado Local ES'],
+    // Adicionar feriados de 2031:
+    [new Date(2031, 0, 1), 'quarta-feira', 'Confraternização Universal'],
+    [new Date(2031, 2, 3), 'segunda-feira', 'Carnaval'],
+    // ... continue adicionando
   ];
 }
 ```
 
-### Personalizar Emails de Compliance
+### Personalizar Cores do Dashboard
 
-```html
-<!-- conformidade.html ou desconformidade.html -->
-<td bgcolor="#2E7D32" style="padding: 30px 20px;">
-  <!-- Personalize cabeçalho do email -->
-  <h1 style="color: #ffffff;">Seu Título Customizado</h1>
-  <p style="color: #a5d6a7;">Sua mensagem personalizada</p>
-</td>
-```
+Edite a seção `<style>` no arquivo `Index.html`:
 
----
-
-## 🛡️ Segurança e Compliance
-
-### 🔐 Camadas de Segurança
-
-#### 1. **Autenticação OAuth 2.0**
-```javascript
-// Autenticação automática via Google
-// Usuário deve estar logado em conta Google válida
-// Tokens gerenciados automaticamente pelo Google Apps Script
-```
-
-#### 2. **Autorização Granular**
-```javascript
-// Permissões configuráveis no deploy:
-// - Apenas leitura de planilhas específicas
-// - Escopo limitado de APIs
-// - Acesso controlado por usuário
-```
-
-#### 3. **Criptografia de Dados**
-```
-✅ HTTPS obrigatório (TLS 1.3)
-✅ Dados em trânsito criptografados
-✅ Google Cloud encryption at rest
-✅ Nenhum dado sensível em logs
-```
-
-#### 4. **Auditoria e Logs**
-```javascript
-// Logs automáticos de todas as operações
-Logger.log('✅ Operação: ' + operacao);
-Logger.log('👤 Usuário: ' + Session.getActiveUser().getEmail());
-Logger.log('🕐 Timestamp: ' + new Date().toISOString());
-```
-
-### 📋 Compliance Regulatório
-
-#### ✅ LGPD (Lei Geral de Proteção de Dados)
-- Não coleta dados pessoais sensíveis
-- Armazenamento em cloud regulamentada (Google)
-- Logs com retenção de 90 dias
-- Direito ao esquecimento respeitado
-
-#### ✅ CVM (Comissão de Valores Mobiliários)
-- Dados oficiais da fonte regulatória
-- Histórico auditável de todas as consultas
-- Alertas automáticos de desconformidade
-- Rastreabilidade completa
-
-#### ✅ Normas B3
-- Calendário de dias úteis alinhado
-- Horários de fechamento respeitados
-- Dados sincronizados com mercado
-
----
-
-## 📈 Performance e Otimização
-
-### ⚡ Benchmarks
-
-| Métrica | Valor | Observação |
-|---------|-------|------------|
-| **Tempo de Carga** | <2s | Dashboard completo |
-| **Primeira pintura** | <1s | Above the fold |
-| **API Response Time** | <500ms | Dados de 26 fundos |
-| **Tamanho da Página** | <500KB | HTML + CSS + JS |
-| **Requests HTTP** | 3 | Mínimo necessário |
-| **Cache Hit Rate** | >80% | Com cache configurado |
-
-### 🚀 Otimizações Implementadas
-
-#### 1. **Lazy Loading**
-```javascript
-// Carregamento sob demanda de dados pesados
-function loadChartData() {
-  // Carrega apenas quando usuário visualiza gráfico
-  if (isElementVisible('#chart-container')) {
-    fetchChartData();
-  }
+```css
+:root {
+  /* Cores principais */
+  --primary-color: #1e3a8a;      /* Azul BANESTES */
+  --secondary-color: #3b82f6;    /* Azul claro */
+  --success-color: #10b981;      /* Verde */
+  --warning-color: #f59e0b;      /* Amarelo */
+  --danger-color: #ef4444;       /* Vermelho */
 }
 ```
 
-#### 2. **Cache Inteligente**
-```javascript
-// Cache de 1 hora para dados que mudam pouco
-var cache = CacheService.getScriptCache();
-var cacheKey = 'dashboard_data';
-var cached = cache.get(cacheKey);
-
-if (cached != null) {
-  return JSON.parse(cached);
-} else {
-  var data = fetchFreshData();
-  cache.put(cacheKey, JSON.stringify(data), 3600); // 1 hora
-  return data;
-}
-```
-
-#### 3. **Minificação**
-```javascript
-// Código minificado em produção
-// HTML, CSS e JavaScript comprimidos
-// Redução de 40% no tamanho total
-```
-
-#### 4. **Compressão Gzip**
-```javascript
-// Resposta HTTP automaticamente comprimida
-// Redução adicional de 70% no tráfego
-// Ativado por padrão no Google Apps Script
-```
-
 ---
 
-## 🐛 Troubleshooting
+## 🐛 Solução de Problemas
 
-### ❌ Problemas Comuns e Soluções
+### ❌ Erro: "Não foi possível abrir a planilha"
 
-#### **Erro: "Não foi possível abrir a planilha"**
-
-**Causa:** `SPREADSHEET_ID` incorreto ou sem permissão
+**Causa:** `SPREADSHEET_ID` incorreto
 
 **Solução:**
-```javascript
-// 1. Verifique o ID em Code.gs
-var SPREADSHEET_ID = 'seu-id-aqui';
+1. Verifique o ID em `Code.gs` linha 6
+2. Confirme permissões de acesso à planilha
+3. Compartilhe a planilha com o email da conta que executa o script
 
-// 2. Confirme permissões na planilha
-// Compartilhe a planilha com o email da conta que executa o script
-```
+### ❌ Dados não aparecem no Dashboard
 
-#### **Dados não aparecem no Dashboard**
-
-**Causa:** Fórmulas IMPORTXML não executadas ou dados vazios
+**Causa:** Fórmulas IMPORTXML não executadas
 
 **Solução:**
-```javascript
-// 1. Abra a planilha Google Sheets
-// 2. Verifique se as fórmulas IMPORTXML estão calculadas
-// 3. Force recálculo: Ctrl+Alt+F9 (Windows) ou Cmd+Option+F9 (Mac)
-// 4. Aguarde 1-2 minutos para cálculo completo
-```
+1. Abra a planilha Google Sheets
+2. Verifique se as fórmulas estão preenchidas nas células
+3. Force recálculo: `Ctrl+Alt+F9`
+4. Aguarde 1-2 minutos para processamento
 
-#### **Erro 403: Permissão negada**
+### ❌ Erro 403: Permissão negada
 
-**Causa:** Falta de autorização do Apps Script
+**Causa:** Falta de autorização
 
 **Solução:**
-```
-1. Apps Script Editor → Run → doGet
+1. Apps Script Editor → **Run → doGet**
 2. Autorize as permissões solicitadas
 3. Aceite os termos de acesso
 4. Reimplante a aplicação
-```
 
-#### **Dashboard carrega lento**
+### ❌ Status "DESATUALIZADO" em todos os fundos
 
-**Causa:** Cache desabilitado ou muitas requisições simultâneas
-
-**Solução:**
-```javascript
-// Habilite cache em Code.gs
-var CACHE_ENABLED = true;
-var CACHE_DURATION = 3600; // 1 hora
-
-// Otimize consultas
-function optimizeQueries() {
-  // Busque todos os dados em uma única requisição
-  // Evite múltiplas chamadas ao backend
-}
-```
-
-#### **Feriados não reconhecidos**
-
-**Causa:** Ano não cadastrado em ConfigData.gs
+**Causa:** Datas de referência incorretas na aba APOIO
 
 **Solução:**
-```javascript
-// ConfigData.gs - Adicione feriados do novo ano
-function getFeriadosBrasileiros() {
-  return [
-    // ... feriados existentes ...
-    [new Date(2031, 0, 1), 'quarta-feira', 'Confraternização Universal'],
-    // ... continue adicionando ...
-  ];
-}
-```
-
-#### **Erro: "Script timeout"**
-
-**Causa:** Processamento de dados excede limite de 6 minutos do Apps Script
-
-**Solução:**
-```javascript
-// 1. Divida processamento em múltiplas execuções
-// 2. Use processamento assíncrono
-// 3. Reduza quantidade de dados processados por vez
-// 4. Otimize loops e iterações
-```
+1. Abra a planilha e vá para aba APOIO
+2. Verifique se as células A17, B17, C17 têm valores de data válidos
+3. Execute no Apps Script: `criarAbaApoioComValores()`
+4. Recarregue o dashboard
 
 ---
 
-## 📱 Compatibilidade Cross-Platform
+## 🔐 Segurança e Compliance
 
-| Plataforma | Desktop | Tablet | Mobile | Status |
-|------------|---------|--------|--------|--------|
-| **Windows** | ✅ Chrome<br>✅ Edge<br>✅ Firefox | ✅ Responsivo | ✅ Otimizado | 100% |
-| **macOS** | ✅ Chrome<br>✅ Safari<br>✅ Firefox | ✅ iPad<br>✅ Safari | ✅ iPhone<br>✅ Safari | 100% |
-| **Linux** | ✅ Chrome<br>✅ Firefox | ✅ Responsivo | ✅ Android | 100% |
-| **Android** | N/A | ✅ Chrome<br>✅ Samsung Internet | ✅ Chrome<br>✅ Opera | 100% |
-| **iOS** | N/A | ✅ Safari<br>✅ Chrome | ✅ Safari<br>✅ Chrome | 100% |
+### Segurança
 
-### 📱 Progressive Web App (PWA) Ready
+- ✅ **Autenticação Google OAuth 2.0**
+  - Login obrigatório com conta Google
+  - Tokens gerenciados automaticamente
 
-```html
-<!-- Index.html - Manifesto para instalação -->
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#1e3a8a">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-```
+- ✅ **HTTPS Obrigatório**
+  - Todas as comunicações criptografadas (TLS 1.3)
+  - Proteção contra man-in-the-middle
 
----
+- ✅ **Controle de Acesso**
+  - Permissões configuráveis no deploy
+  - Acesso restrito por domínio (opcional)
 
-## 🚀 Casos de Uso Empresariais
+- ✅ **Logs de Auditoria**
+  - Logger.log() em todas as operações críticas
+  - Rastreamento de execuções no Apps Script
 
-### 👨‍💼 Gerentes de Fundos
+### Compliance CVM
 
-**Desafio antes:** Horas compilando dados manualmente de múltiplas fontes
+- ✅ **Dados Oficiais**
+  - Integração direta com cvmweb.cvm.gov.br
+  - Dados certificados pela autoridade regulatória
 
-**Solução agora:**
-- ✅ Visão consolidada de 26 fundos em segundos
-- ✅ Relatórios automáticos diários/semanais/mensais
-- ✅ Alertas proativos de variações anormais
-- ✅ Comparativos instantâneos de performance
-- ✅ Export de dados para apresentações executivas
+- ✅ **Histórico Auditável**
+  - Dados preservados na planilha Google Sheets
+  - Versionamento automático do Google Drive
 
-**Impacto:** Redução de 90% no tempo gasto com coleta de dados
+- ✅ **Conformidade LGPD**
+  - Não coleta dados pessoais sensíveis
+  - Armazenamento em cloud regulamentada (Google Cloud)
 
 ---
 
-### 📊 Analistas Financeiros
+## 📈 Performance
 
-**Desafio antes:** Análise limitada a dados históricos desatualizados
+| Métrica | Valor |
+|---------|-------|
+| **Tempo de Carregamento** | < 3 segundos |
+| **Tamanho da Página** | ~40 KB (HTML) |
+| **Resposta da API** | < 1 segundo (26 fundos) |
+| **Requisições HTTP** | 1 por carregamento |
 
-**Solução agora:**
-- ✅ Dados em tempo real para análise técnica
-- ✅ Comparações automáticas vs. benchmarks (CDI, IBOVESPA, IMA-B)
-- ✅ Identificação de tendências e padrões
-- ✅ APIs disponíveis para integração com ferramentas de BI
-- ✅ Histórico completo para backtesting
+### Otimizações Implementadas
 
-**Impacto:** Decisões baseadas em dados atuais, não em snapshots antigos
-
----
-
-### 💼 Investidores Institucionais
-
-**Desafio antes:** Falta de transparência e atualização dos dados
-
-**Solução agora:**
-- ✅ Transparência total com dados oficiais CVM
-- ✅ Acesso 24/7 ao portfólio completo
-- ✅ Alertas de compliance para evitar surpresas
-- ✅ Due diligence facilitada com dados estruturados
-- ✅ Rastreabilidade e auditoria completas
-
-**Impacto:** Confiança aumentada, redução de risco operacional
+- ✅ Carregamento assíncrono de dados
+- ✅ CSS inline para reduzir requisições
+- ✅ JavaScript minificado
+- ✅ Processamento server-side para reduzir carga no cliente
 
 ---
 
-### 🎯 Equipe Comercial BANESTES
+## 📱 Compatibilidade
 
-**Desafio antes:** Dificuldade em apresentar dados atualizados a clientes
+### Navegadores Suportados
 
-**Solução agora:**
-- ✅ Dashboard profissional para apresentações
-- ✅ Dados sempre atualizados durante reuniões
-- ✅ Comparativos competitivos em tempo real
-- ✅ Informações técnicas precisas e confiáveis
-- ✅ Material de venda apoiado por dados oficiais
+| Navegador | Desktop | Mobile | Status |
+|-----------|---------|--------|--------|
+| **Chrome** | ✅ | ✅ | Recomendado |
+| **Edge** | ✅ | ✅ | Suportado |
+| **Firefox** | ✅ | ✅ | Suportado |
+| **Safari** | ✅ | ✅ | Suportado |
 
-**Impacto:** Credibilidade aumentada, fechamento de negócios mais rápido
+### Dispositivos
 
----
-
-### 🛡️ Departamento de Compliance
-
-**Desafio antes:** Monitoramento manual, reativo e sujeito a falhas
-
-**Solução agora:**
-- ✅ Sistema de alertas proativo de desconformidade
-- ✅ Relatórios automáticos de compliance
-- ✅ Rastreabilidade completa para auditoria
-- ✅ Notificações automáticas para stakeholders
-- ✅ Histórico de regularizações
-
-**Impacto:** Zero multas CVM, compliance 100% automatizado
-
----
-
-## 🔄 Integração com Outras Ferramentas
-
-### 📊 Power BI / Tableau
-
-```javascript
-// Export de dados para ferramentas de BI
-function exportToPowerBI() {
-  var data = getDashboardData();
-  
-  // Formato compatível com Power BI connector
-  return {
-    schema: {
-      funds: 'array',
-      metrics: 'object',
-      timestamp: 'datetime'
-    },
-    data: data
-  };
-}
-```
-
-### 📧 Integração com Email (Gmail API)
-
-```javascript
-// Envio automático de relatórios
-function sendDailyReport() {
-  var data = getDashboardData();
-  var html = buildReportHTML(data);
-  
-  GmailApp.sendEmail({
-    to: 'equipe@banestes.com.br',
-    subject: '📊 Relatório Diário - Fundos CVM',
-    htmlBody: html
-  });
-}
-```
-
-### 📱 Slack / Teams Webhook
-
-```javascript
-// Alertas em tempo real no Slack
-function sendSlackAlert(message) {
-  var webhook = 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL';
-  
-  UrlFetchApp.fetch(webhook, {
-    method: 'post',
-    contentType: 'application/json',
-    payload: JSON.stringify({
-      text: '🚨 Alerta CVM: ' + message,
-      channel: '#compliance'
-    })
-  });
-}
-```
-
-### 🔗 API REST Externa
-
-```javascript
-// Endpoint para consumo externo
-function doGet(e) {
-  var action = e.parameter.action;
-  
-  switch(action) {
-    case 'api':
-      return ContentService
-        .createTextOutput(JSON.stringify(getDashboardData()))
-        .setMimeType(ContentService.MimeType.JSON);
-    
-    case 'fund':
-      var fundId = e.parameter.id;
-      return ContentService
-        .createTextOutput(JSON.stringify(getFundById(fundId)))
-        .setMimeType(ContentService.MimeType.JSON);
-    
-    default:
-      return HtmlService.createTemplateFromFile('Index').evaluate();
-  }
-}
-```
-
----
-
-## 🎯 Roadmap e Inovações Futuras
-
-### 🚀 Em Desenvolvimento
-
-#### Q1 2026 - IA e Machine Learning
-- [ ] 🤖 **Previsão de Performance com IA**
-  - Modelos de ML para prever tendências de cotas
-  - Análise preditiva baseada em dados históricos
-  - Alertas inteligentes de oportunidades
-
-- [ ] 📊 **Análise de Sentimento de Mercado**
-  - NLP para analisar notícias relacionadas aos fundos
-  - Correlação entre sentimento e performance
-  - Dashboard de insights automatizados
-
-#### Q2 2026 - Mobile e UX
-- [ ] 📱 **App Mobile Nativo**
-  - iOS (Swift) e Android (Kotlin)
-  - Notificações push de alertas críticos
-  - Biometria para autenticação
-  - Modo offline com sincronização
-
-- [ ] 🎨 **Design System 2.0**
-  - Dark mode completo
-  - Temas personalizáveis por usuário
-  - Animações avançadas com Framer Motion
-  - Acessibilidade WCAG 2.2 AAA
-
-#### Q3 2026 - Analytics Avançado
-- [ ] 📈 **Dashboard de Analytics Preditivo**
-  - Métricas de Sharpe Ratio automatizadas
-  - Value at Risk (VaR) calculado em tempo real
-  - Análise de correlação entre fundos
-  - Simulação de cenários (Monte Carlo)
-
-- [ ] 🔔 **Sistema de Alertas Inteligentes**
-  - Configuração de thresholds personalizados
-  - Machine Learning para detectar anomalias
-  - Múltiplos canais de notificação (Email, SMS, Push, Slack)
-  - Alertas contextuais baseados em perfil do usuário
-
-#### Q4 2026 - Integrações Enterprise
-- [ ] 🔗 **APIs Públicas Documentadas**
-  - REST API completa com Swagger/OpenAPI
-  - Webhooks para eventos em tempo real
-  - SDKs em Python, JavaScript, Java
-  - Rate limiting e autenticação OAuth2
-
-- [ ] 🏢 **Integração SAP/ERP**
-  - Conector direto para SAP FI
-  - Sincronização bidirecional de dados
-  - Reconciliação automática
-  - Auditoria end-to-end
-
-### 🌟 Visão de Longo Prazo (2027+)
-
-- [ ] 🌐 **Plataforma Multi-Tenant**
-  - SaaS para outros bancos e gestoras
-  - White-label personalizável
-  - Infraestrutura escalável (Kubernetes)
-  - Multi-currency e multi-region
-
-- [ ] 🤝 **Marketplace de Integrações**
-  - Conectores desenvolvidos pela comunidade
-  - App store de plugins e extensões
-  - Certificação de integrações terceiras
-
-- [ ] 🧠 **Copilot Financeiro com IA**
-  - Assistente virtual para análise de fundos
-  - Respostas em linguagem natural
-  - Recomendações personalizadas
-  - Integração com ChatGPT/Claude
-
----
-
-## 📚 Recursos Adicionais
-
-### 📖 Documentação Técnica
-
-- [Google Apps Script Documentation](https://developers.google.com/apps-script)
-- [Google Sheets API](https://developers.google.com/sheets/api)
-- [CVM - Dados Abertos](https://www.gov.br/cvm/pt-br/acesso-a-informacao-cvm/dados-abertos)
-- [ANBIMA - Índices e Metodologia](https://www.anbima.com.br/pt_br/informar/precos-e-indices/indices.htm)
-
-### 🎓 Treinamento e Suporte
-
-**Onboarding para Novos Usuários:**
-1. 📹 Vídeo tutorial (15 min): Dashboard básico
-2. 📹 Vídeo tutorial (20 min): Funcionalidades avançadas
-3. 📄 Guia rápido (PDF): Primeiros passos
-4. 🎮 Ambiente sandbox: Prática sem risco
-
-**Suporte Técnico:**
-- 📧 Email: suporte@banestes.com.br
-- 💬 Slack: #gerenciador-cvm
-- 📞 Telefone: (27) 3383-xxxx (Horário comercial)
-- 🎫 Sistema de tickets: [support.banestes.com.br](https://support.banestes.com.br)
-
-**Comunidade:**
-- 💡 [GitHub Issues](https://github.com/SergioPauloA/Banestes_Gerenciador_CVM/issues) - Reporte bugs e sugira features
-- 🗣️ [GitHub Discussions](https://github.com/SergioPauloA/Banestes_Gerenciador_CVM/discussions) - Fórum da comunidade
-- 📚 [Wiki](https://github.com/SergioPauloA/Banestes_Gerenciador_CVM/wiki) - Guias e tutoriais
+- 🖥️ **Desktop**: Layout completo otimizado
+- 📱 **Tablet**: Layout responsivo adaptado
+- 📱 **Mobile**: Layout vertical otimizado
 
 ---
 
 ## 🤝 Contribuindo
 
-### Como Contribuir com o Projeto
+Este é um projeto interno do BANESTES. Para contribuições:
 
-Aceitamos contribuições! Para contribuir:
+1. Fork o repositório
+2. Crie uma branch: `git checkout -b feature/minha-feature`
+3. Commit suas mudanças: `git commit -m "✨ Add feature"`
+4. Push para a branch: `git push origin feature/minha-feature`
+5. Abra um Pull Request
 
-```bash
-# 1. Fork o repositório
-git clone https://github.com/seu-usuario/Banestes_Gerenciador_CVM.git
+### Diretrizes
 
-# 2. Crie uma branch para sua feature
-git checkout -b feature/minha-nova-feature
-
-# 3. Faça suas alterações e commit
-git commit -m "✨ Adiciona nova feature incrível"
-
-# 4. Push para sua branch
-git push origin feature/minha-nova-feature
-
-# 5. Abra um Pull Request no GitHub
-```
-
-### 📋 Diretrizes de Contribuição
-
-- ✅ Código limpo e bem documentado
-- ✅ Testes unitários quando aplicável
-- ✅ Commit messages descritivos (use emojis!)
-- ✅ Respeite o style guide do projeto
-- ✅ Atualize a documentação quando necessário
-
-### 🐛 Reportando Bugs
-
-Encontrou um bug? Abra uma issue com:
-
-```markdown
-**Descrição do Bug:**
-Descrição clara do problema
-
-**Passos para Reproduzir:**
-1. Vá para '...'
-2. Clique em '...'
-3. Veja o erro
-
-**Comportamento Esperado:**
-O que deveria acontecer
-
-**Screenshots:**
-Se aplicável
-
-**Ambiente:**
-- Navegador: Chrome 120.0
-- SO: Windows 11
-- Versão: 4.0
-```
+- ✅ Código limpo e bem comentado
+- ✅ Testes manuais antes do PR
+- ✅ Documentação atualizada
+- ✅ Commit messages descritivos
 
 ---
 
-## 📄 Licença e Direitos
-
-### © BANESTES - Propriedade Intelectual
+## 📄 Licença
 
 ```
 Copyright © 2025-2026 Banco do Estado do Espírito Santo S.A. (BANESTES)
 Todos os direitos reservados.
 
-Este software é propriedade exclusiva do BANESTES e está protegido por
-leis de direitos autorais e tratados internacionais.
-
-USO RESTRITO: O uso deste software está condicionado à autorização
-expressa do BANESTES.
-
-Distribuição, modificação ou uso comercial sem autorização é
-ESTRITAMENTE PROIBIDO e pode resultar em ações legais.
+Este software é propriedade exclusiva do BANESTES.
+Uso restrito e confidencial.
 ```
-
-### 📜 Termos de Uso
-
-- ✅ Uso interno BANESTES: Permitido
-- ✅ Visualização educacional: Permitido
-- ❌ Distribuição comercial: Proibido
-- ❌ Modificação sem autorização: Proibido
-- ❌ Uso em produção por terceiros: Proibido
-
-### 🔒 Confidencialidade
-
-Este sistema contém informações financeiras confidenciais e dados
-proprietários do BANESTES. Acesso não autorizado é crime federal.
-
----
-
-## 🙏 Agradecimentos
-
-### 💡 Tecnologias e Ferramentas
-
-Agradecemos às seguintes tecnologias que tornaram este projeto possível:
-
-- **Google Apps Script** - Plataforma serverless que eliminou custos de infraestrutura
-- **Google Sheets** - Database cloud-native gratuito e escalável
-- **CVM** - Fonte oficial de dados regulatórios confiáveis
-- **GitHub** - Versionamento e colaboração
-
-### 👥 Equipe
-
-**Desenvolvido com ❤️ pelo Departamento de Inovação e Automação BANESTES**
-
-- 🎨 Design e UX
-- 💻 Desenvolvimento Backend
-- 🌐 Desenvolvimento Frontend
-- 🔒 Segurança e Compliance
-- 📊 Análise de Dados
-- 📝 Documentação
-
-### 🌟 Parceiros
-
-- **Comissão de Valores Mobiliários (CVM)** - Dados oficiais
-- **ANBIMA** - Índices e benchmarks
-- **B3** - Calendário de negociação
 
 ---
 
 ## 📞 Contato
 
-### 🏢 BANESTES - Departamento de Tecnologia
+### 🏢 BANESTES
 
 **Endereço:**  
-Banco do Estado do Espírito Santo S.A.  
 Av. Princesa Isabel, 574 - Centro  
 Vitória - ES, CEP 29010-360
 
-**Telefone:**  
-(27) 3383-2000
+**Telefone:** (27) 3383-2000
 
-**Email:**  
-- 💼 Comercial: comercial@banestes.com.br
-- 🔧 Suporte Técnico: suporte.tech@banestes.com.br
-- 🛡️ Segurança: security@banestes.com.br
-
-**Redes Sociais:**  
-- 🌐 Website: [www.banestes.com.br](https://www.banestes.com.br)
-- 💼 LinkedIn: [@banestes](https://linkedin.com/company/banestes)
-- 📸 Instagram: [@banestesoficial](https://instagram.com/banestesoficial)
+**Website:** [www.banestes.com.br](https://www.banestes.com.br)
 
 ---
 
-## ✅ Status do Projeto
+## ✨ Status do Projeto
 
 <div align="center">
 
 ### 🟢 PROJETO ATIVO E EM PRODUÇÃO
 
-| Aspecto | Status | Métrica |
-|---------|--------|---------|
-| **Estabilidade** | 🟢 Estável | Uptime 99.9% |
-| **Performance** | 🟢 Otimizado | <2s load time |
-| **Segurança** | 🟢 Seguro | Última auditoria: Jan/2026 |
-| **Compliance** | 🟢 Conforme | 100% CVM compliant |
-| **Suporte** | 🟢 Ativo | Resposta <24h |
-| **Desenvolvimento** | 🟢 Ativo | Última release: v4.0 |
-
-### 📈 Estatísticas de Uso
-
-| Métrica | Valor |
-|---------|-------|
-| **Usuários Ativos** | 150+ colaboradores BANESTES |
-| **Fundos Monitorados** | 26 fundos |
-| **Patrimônio Total** | R$ 2.5 bilhões |
-| **Acessos/mês** | 10.000+ pageviews |
-| **Dados Processados** | 5.000+ registros/dia |
-| **Economia de Tempo** | 200+ horas/mês |
-
-</div>
+| Aspecto | Status |
+|---------|--------|
+| **Estabilidade** | 🟢 Estável |
+| **Manutenção** | 🟢 Ativa |
+| **Suporte** | 🟢 Disponível |
 
 ---
 
-<div align="center">
+![Made with ❤️](https://img.shields.io/badge/Made%20with-❤️-red?style=flat-square)
+![Google Apps Script](https://img.shields.io/badge/Google-Apps%20Script-4285F4?style=flat-square&logo=google)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat-square&logo=html5&logoColor=white)
 
-## 🚀 Transformação Digital em Ação
-
-### Da Planilha Manual ao Futuro Automatizado
-
-```
-┌──────────────────┐          ┌──────────────────┐          ┌──────────────────┐
-│                  │          │                  │          │                  │
-│   ONTEM 📋       │   ➜      │    HOJE ⚡       │   ➜      │  AMANHÃ 🤖      │
-│                  │          │                  │          │                  │
-│ • Manual         │          │ • Automatizado   │          │ • IA Preditiva   │
-│ • Demorado       │          │ • Instantâneo    │          │ • Autônomo       │
-│ • Propenso a erro│          │ • 100% preciso   │          │ • Adaptativo     │
-│ • Limitado       │          │ • Escalável      │          │ • Inteligente    │
-│                  │          │                  │          │                  │
-└──────────────────┘          └──────────────────┘          └──────────────────┘
-```
-
-### 🌟 A Inovação Continua
-
-**Este é apenas o começo da transformação digital dos processos financeiros do BANESTES.**
-
-*Construído com tecnologia de ponta, pensamento inovador e compromisso com a excelência.*
+**[⬆ Voltar ao Topo](#-gerenciador-cvm-banestes---automação-de-fundos-de-investimento)**
 
 ---
 
-![Made with ❤️](https://img.shields.io/badge/Made%20with-❤️-red?style=for-the-badge)
-![Google Apps Script](https://img.shields.io/badge/Google-Apps%20Script-4285F4?style=for-the-badge&logo=google)
-![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
-![HTML5](https://img.shields.io/badge/HTML5-E34C26?style=for-the-badge&logo=html5&logoColor=white)
-![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
-
-**[⬆ Voltar ao Topo](#-gerenciador-cvm-banestes---transformação-digital)**
-
----
-
-<sub>Documentação atualizada em: Fevereiro 2026 | Versão 4.0 | BANESTES © 2025-2026</sub>
+<sub>Documentação atualizada: Fevereiro 2026 | Versão 4.0 | BANESTES © 2025-2026</sub>
 
 </div>
