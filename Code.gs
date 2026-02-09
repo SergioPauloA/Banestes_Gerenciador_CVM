@@ -2566,3 +2566,110 @@ function criarTriggerEmailDiario1830() {
     message: 'Trigger criado! Emails serão enviados diariamente às 18:30'
   };
 }
+
+/**
+ * 🔍 DIAGNÓSTICO: Busca TODAS as datas de diárias de TODOS os fundos
+ * Execute no Apps Script Editor para ver o log completo
+ * Tempo estimado: ~15 segundos
+ */
+function diagnosticarTodasDatasDiarias() {
+  Logger.log('🔍 ===== DIAGNÓSTICO DE DATAS DIÁRIAS =====\n');
+  
+  var fundos = getFundos();
+  var totalFundos = fundos.length;
+  var fundosComSucesso = 0;
+  var fundosComErro = 0;
+  var totalDatas = 0;
+  
+  fundos.forEach(function(fundo, index) {
+    Logger.log('📊 [' + (index + 1) + '/' + totalFundos + '] ' + fundo.nome.substring(0, 40) + '...');
+    Logger.log('   Código CVM: ' + fundo.codigoCVM);
+    
+    var url = 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/InfDiario/CPublicaInfdiario.aspx?PK_PARTIC=' + fundo.codigoCVM + '&PK_SUBCLASSE=-1';
+    Logger.log('   URL: ' + url.substring(0, 80) + '...');
+    
+    try {
+      var response = UrlFetchApp.fetch(url, {
+        muteHttpExceptions: true,
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+        followRedirects: true
+      });
+      
+      var codigo = response.getResponseCode();
+      Logger.log('   Status HTTP: ' + codigo);
+      
+      if (codigo === 200) {
+        var html = response.getContentText();
+        
+        // Buscar TODAS as datas no formato DD/MM/YYYY
+        var regex = /(\d{2}\/\d{2}\/\d{4})/g;
+        var matches = html.match(regex);
+        
+        if (matches && matches.length > 0) {
+          // Remover duplicatas e ordenar (mais recente primeiro)
+          var datasUnicas = matches.filter(function(item, pos) {
+            return matches.indexOf(item) === pos;
+          }).sort(function(a, b) {
+            // Converter DD/MM/YYYY para comparação
+            var partsA = a.split('/');
+            var partsB = b.split('/');
+            var dateA = new Date(partsA[2], partsA[1] - 1, partsA[0]);
+            var dateB = new Date(partsB[2], partsB[1] - 1, partsB[0]);
+            return dateB - dateA; // Ordem decrescente (mais recente primeiro)
+          });
+          
+          Logger.log('   Total de datas únicas: ' + datasUnicas.length);
+          Logger.log('   Data mais recente: ' + datasUnicas[0]);
+          
+          // Mostrar primeiras 10 datas
+          Logger.log('   Primeiras 10 datas:');
+          for (var i = 0; i < Math.min(10, datasUnicas.length); i++) {
+            Logger.log('     [' + (i + 1) + '] ' + datasUnicas[i]);
+          }
+          
+          fundosComSucesso++;
+          totalDatas += datasUnicas.length;
+          Logger.log('   ✅ Sucesso\n');
+          
+        } else {
+          Logger.log('   ⚠️ Nenhuma data encontrada no HTML');
+          Logger.log('   ❌ Falha\n');
+          fundosComErro++;
+        }
+        
+      } else {
+        Logger.log('   ❌ Erro HTTP: ' + codigo + '\n');
+        fundosComErro++;
+      }
+      
+    } catch (error) {
+      Logger.log('   ❌ Erro: ' + error.toString() + '\n');
+      fundosComErro++;
+    }
+    
+    // Delay entre requisições (evitar bloqueio)
+    if (index < totalFundos - 1) {
+      Utilities.sleep(300);
+    }
+  });
+  
+  // Resumo final
+  Logger.log('\n========================================');
+  Logger.log('✅ RESUMO FINAL:');
+  Logger.log('   Total de fundos: ' + totalFundos);
+  Logger.log('   Fundos com sucesso: ' + fundosComSucesso);
+  Logger.log('   Fundos com erro: ' + fundosComErro);
+  if (fundosComSucesso > 0) {
+    Logger.log('   Média de datas por fundo: ' + Math.round(totalDatas / fundosComSucesso));
+    Logger.log('   Total de datas encontradas: ' + totalDatas);
+  }
+  Logger.log('========================================');
+  
+  return {
+    success: true,
+    totalFundos: totalFundos,
+    fundosComSucesso: fundosComSucesso,
+    fundosComErro: fundosComErro,
+    mediaDatas: fundosComSucesso > 0 ? Math.round(totalDatas / fundosComSucesso) : 0
+  };
+}
