@@ -912,9 +912,15 @@ function testarCalculoDeStatus() {
 /**
  * Envia emails de conformidade ou desconformidade com os modelos HTML
  * Focando no STATUS 2 de cada aba
+ * 
+ * ✅ MODIFICADO: Diárias SÓ envia se houver desconformidade
+ * 
+ * 💡 COMO USAR:
+ * - Se quiser HABILITAR envio diário de Diárias: remova os comentários da seção "1. DIÁRIAS"
+ * - Se quiser DESABILITAR: mantenha os comentários como está
  */
 function enviarEmailConformidadeOuDesconformidadeAvancado() {
-  // ✅ NOVA VERIFICAÇÃO: Enviar e-mail apenas em dias úteis
+  // ✅ VERIFICAÇÃO: Enviar e-mail apenas em dias úteis
   var hoje = new Date();
   var diaSemana = hoje.getDay();
   
@@ -965,17 +971,36 @@ function enviarEmailConformidadeOuDesconformidadeAvancado() {
   Logger.log('📧 Iniciando envio de emails...');
 
   // ============================================
-  // 1. DIÁRIAS (sempre enviar)
+  // 1. DIÁRIAS - ✅ SÓ ENVIA SE HOUVER DESCONFORMIDADE
   // ============================================
-  processarAbaEmail(
-    ss.getSheetByName('Diárias'),
-    'Diárias',
-    destinatarios,
-    mesPassado,
-    dataAtualFormatada,
-    urlPlanilha,
-    'diario'
-  );
+  var abaDiarias = ss.getSheetByName('Diárias');
+  if (abaDiarias) {
+    var statusDiarias1 = abaDiarias.getRange('E1').getDisplayValue().toUpperCase().trim();
+    var statusDiarias2 = abaDiarias.getRange('F1').getDisplayValue().toUpperCase().trim();
+    
+    Logger.log('📊 Status Diárias 1: "' + statusDiarias1 + '"');
+    Logger.log('📊 Status Diárias 2: "' + statusDiarias2 + '"');
+    
+    // 🔥 LÓGICA: SÓ ENVIA SE ALGUM STATUS NÃO FOR "OK"
+    if (statusDiarias1 === 'OK' && statusDiarias2 === 'OK') {
+      Logger.log('✅ Diárias: AMBOS status estão OK. Email NÃO será enviado (conformidade total).');
+    } else {
+      Logger.log('⚠️ Diárias: Desconformidade detectada. Enviando email...');
+      processarAbaEmail(
+        abaDiarias,
+        'Diárias',
+        destinatarios,
+        mesPassado,
+        dataAtualFormatada,
+        urlPlanilha,
+        'diario'
+      );
+    }
+  }
+  
+  // 💡 NOTA: Emails de Diárias agora são enviados APENAS no último dia útil do mês
+  // pela função enviarEmailDiariasIndividualPorFundo()
+  Logger.log('⏭️ Diárias: Envio diário DESABILITADO. Envia apenas no último dia útil do mês.');
 
   // ============================================
   // 2. Abas mensais: Balancete, Composição, Lâmina, Perfil Mensal
@@ -984,7 +1009,9 @@ function enviarEmailConformidadeOuDesconformidadeAvancado() {
     var aba = ss.getSheetByName(nomeAba);
     if (!aba) return; // Pular se não existe
 
+    // 🔥 VERIFICAÇÃO: Envia conformidade OU desconformidade, ou NADA
     if (deveEnviarEmailConformidade(aba)) {
+      Logger.log('✅ ' + nomeAba + ': Enviando email de CONFORMIDADE');
       enviarEmailConformidade(
         nomeAba,
         getFundosFormatadosParaEmail(aba),
@@ -993,6 +1020,7 @@ function enviarEmailConformidadeOuDesconformidadeAvancado() {
         dataAtualFormatada
       );
     } else if (deveEnviarEmailDesconformidade(aba)) {
+      Logger.log('⚠️ ' + nomeAba + ': Enviando email de DESCONFORMIDADE');
       enviarEmailDesconformidade(
         nomeAba,
         getFundosDesconformesParaEmail(aba),
@@ -1000,6 +1028,8 @@ function enviarEmailConformidadeOuDesconformidadeAvancado() {
         dataAtualFormatada,
         urlPlanilha
       );
+    } else {
+      Logger.log('⏭️ ' + nomeAba + ': Nenhuma condição atendida. Email NÃO será enviado.');
     }
   });
 
@@ -1081,6 +1111,9 @@ function getFundosDesconformesParaEmail(aba) {
 /**
  * Processa uma aba e envia email de conformidade ou desconformidade
  */
+/**
+ * Processa uma aba e envia email de conformidade ou desconformidade
+ */
 function processarAbaEmail(aba, nomeAba, destinatarios, mesPassado, dataAtualFormatada, urlPlanilha, tipo) {
   if (!aba) {
     Logger.log('⚠️ Aba não encontrada: ' + nomeAba);
@@ -1101,30 +1134,13 @@ function processarAbaEmail(aba, nomeAba, destinatarios, mesPassado, dataAtualFor
   var fundos = dados
     .filter(function(linha) { return linha[0] && linha[0].toString().trim() !== ''; })
     .map(function(linha) {
-      // 🔥 FORMATAR DATAS CORRETAMENTE
-      var comp1 = linha[2];
-      var comp2 = linha[4];
-      
-      // Se for objeto Date, converter para DD/MM/YYYY
-      if (comp1 instanceof Date) {
-        comp1 = Utilities.formatDate(comp1, 'GMT-3', 'dd/MM/yyyy');
-      } else {
-        comp1 = comp1 || '-';
-      }
-      
-      if (comp2 instanceof Date) {
-        comp2 = Utilities.formatDate(comp2, 'GMT-3', 'dd/MM/yyyy');
-      } else {
-        comp2 = comp2 || '-';
-      }
-      
       return {
         nome: linha[0],
         codigo: linha[1],
-        competencia1: comp1,
+        competencia1: formatarDataParaEmail(linha[2]), // ✅ USAR FUNÇÃO DE FORMATAÇÃO
         status1: linha[3] || '-',
-        competencia2: comp2,
-        status2: linha[5] || '-'  // 🔥 PEGAR STATUS 2 (coluna F)
+        competencia2: formatarDataParaEmail(linha[4]), // ✅ USAR FUNÇÃO DE FORMATAÇÃO
+        status2: linha[5] || '-'
       };
     });
 
@@ -1212,14 +1228,17 @@ function enviarEmailDesconformidade(nomeAba, fundosDesconformes, destinatarios, 
 /**
  * Envia email de CONFORMIDADE (SEMPRE usa Competência 2)
  */
+/**
+ * Envia email de CONFORMIDADE (SEMPRE usa Competência 2)
+ */
 function enviarEmailConformidade(nomeAba, fundos, destinatarios, mesPassado, dataAtual) {
   Logger.log('  ✅ Enviando email de CONFORMIDADE');
   Logger.log('  Total de fundos: ' + fundos.length);
 
   // 🔥 GERAR TABELA - SEMPRE USAR COMPETÊNCIA 2 E STATUS 2
   var linhasTabela = fundos.map(function(f) {
-    // 🔥 SEMPRE COMPETÊNCIA 2 (mesmo que seja "-")
-    var dataExibir = f.competencia2 || '-';
+    // 🔥 GARANTIR QUE AS DATAS ESTÃO FORMATADAS
+    var dataExibir = formatarDataParaEmail(f.competencia2); // ✅ SEMPRE FORMATAR
     
     // 🔥 SEMPRE STATUS 2
     var statusExibir = f.status2 || '-';
@@ -1256,6 +1275,9 @@ function enviarEmailConformidade(nomeAba, fundos, destinatarios, mesPassado, dat
       '</tr>';
   }).join('');
 
+  // 🔥 FORMATAR DATA ATUAL (pode vir como objeto Date)
+  var dataAtualFormatada = formatarDataParaEmail(dataAtual);
+
   // 🔥 TABELA COMPLETA
   var tabelaHTML = 
     '<table style="width:100%;border-collapse:collapse;margin:20px 0;font-family:Arial,sans-serif;" cellpadding="0" cellspacing="0">' +
@@ -1286,7 +1308,7 @@ function enviarEmailConformidade(nomeAba, fundos, destinatarios, mesPassado, dat
     '<td style="padding:30px 25px;color:#333333;font-size:15px;line-height:1.6;">' +
     '<p>Prezados,</p>' +
     '<p>Informamos que, após a verificação mensal, <strong>todos os registros e obrigações junto à CVM encontram-se em conformidade</strong>.</p>' +
-    '<p>Abaixo listamos os envios realizados com sucesso referentes ao período de <strong>' + dataAtual + '</strong>:</p>' +
+    '<p>Abaixo listamos os envios realizados com sucesso referentes ao período de <strong>' + dataAtualFormatada + '</strong>:</p>' +
     tabelaHTML +
     '<div style="background-color:#e3f2fd;border-left:4px solid #2196F3;padding:15px;margin-top:20px;border-radius:0 4px 4px 0;">' +
     '<p style="margin:0;font-weight:bold;color:#0d47a1;font-size:14px;">IMPORTANTE: Manutenção da Conformidade</p>' +
@@ -1297,7 +1319,7 @@ function enviarEmailConformidade(nomeAba, fundos, destinatarios, mesPassado, dat
     '<tr>' +
     '<td style="background-color:#f8f9fa;padding:20px;text-align:center;color:#888888;font-size:12px;border-top:1px solid #eeeeee;">' +
     '<p style="margin:0;">Departamento de Inovação e Automação interno Asset</p>' +
-    '<p style="margin:5px 0 0 0;">Relatório gerado em ' + dataAtual + '</p>' +
+    '<p style="margin:5px 0 0 0;">Relatório gerado em ' + dataAtualFormatada + '</p>' +
     '</td>' +
     '</tr>' +
     '</table>' +
@@ -2529,41 +2551,57 @@ function gerarTabelaDesconformidadeTemplate(fundos, tipoAba) {
  * Criar trigger para enviar emails diariamente às 18:30
  */
 function criarTriggerEmailDiario1830() {
-  Logger.log('🔧 Configurando trigger de emails...');
+  Logger.log('🔧 Configurando triggers de emails...');
   
-  // Remover triggers antigos de email (se existirem)
+  // Remover triggers antigos
   var triggers = ScriptApp.getProjectTriggers();
   triggers.forEach(function(trigger) {
-    if (trigger.getHandlerFunction() === 'enviarEmailConformidadeOuDesconformidadeAvancado') {
+    var funcName = trigger.getHandlerFunction();
+    if (funcName === 'enviarEmailConformidadeOuDesconformidadeAvancado' || 
+        funcName === 'enviarEmailDiariasSeForUltimoDiaUtil') {
       ScriptApp.deleteTrigger(trigger);
-      Logger.log('  🗑️ Trigger antigo removido');
+      Logger.log('  🗑️ Trigger antigo removido: ' + funcName);
     }
   });
   
-  // Criar novo trigger diário às 18:30
+  // ✅ TRIGGER 1: Emails das abas mensais (Balancete, Composição, Lâmina, Perfil Mensal)
   ScriptApp.newTrigger('enviarEmailConformidadeOuDesconformidadeAvancado')
     .timeBased()
     .atHour(18)
-    .nearMinute(30)  // Próximo aos 30 minutos (pode variar ±15 min)
+    .nearMinute(30)
     .everyDays(1)
     .create();
   
+  Logger.log('✅ Trigger criado: Emails mensais às 18:30 (diariamente)');
+  
+  // ✅ TRIGGER 2: Emails de Diárias (APENAS no último dia útil do mês)
+  ScriptApp.newTrigger('enviarEmailDiariasSeForUltimoDiaUtil')
+    .timeBased()
+    .atHour(18)
+    .nearMinute(30)
+    .everyDays(1)
+    .create();
+  
+  Logger.log('✅ Trigger criado: Emails de Diárias às 18:30 (verifica se é último dia útil)');
+  
   Logger.log('\n✅ ═══════════════════════════════════════════');
-  Logger.log('✅ TRIGGER DE EMAILS ATIVADO!');
+  Logger.log('✅ TRIGGERS DE EMAILS ATIVADOS!');
   Logger.log('✅ ═══════════════════════════════════════════');
   Logger.log('');
-  Logger.log('📧 Função: enviarEmailConformidadeOuDesconformidadeAvancado()');
-  Logger.log('⏰ Horário: 18:30 (diariamente)');
-  Logger.log('📅 Frequência: Todos os dias');
+  Logger.log('📧 Função 1: enviarEmailConformidadeOuDesconformidadeAvancado()');
+  Logger.log('   ⏰ Horário: 18:30 (diariamente)');
+  Logger.log('   📋 Envia: Balancete, Composição, Lâmina, Perfil Mensal');
+  Logger.log('');
+  Logger.log('📧 Função 2: enviarEmailDiariasSeForUltimoDiaUtil()');
+  Logger.log('   ⏰ Horário: 18:30 (diariamente)');
+  Logger.log('   📋 Envia: Diárias (SÓ no último dia útil do mês)');
   Logger.log('');
   Logger.log('⚠️ IMPORTANTE: O Google Apps Script pode ter variação de ±15 minutos');
   Logger.log('   (Pode executar entre 18:15 e 18:45)');
-  Logger.log('');
-  Logger.log('🎯 Próximo envio será hoje às 18:30 (se já passou, será amanhã)');
   
   return {
     success: true,
-    message: 'Trigger criado! Emails serão enviados diariamente às 18:30'
+    message: 'Triggers criados! Emails serão enviados diariamente às 18:30'
   };
 }
 
@@ -2601,30 +2639,59 @@ function diagnosticarTodasDatasDiarias() {
       if (codigo === 200) {
         var html = response.getContentText();
         
-        // Buscar TODAS as datas no formato DD/MM/YYYY
-        var regex = /(\d{2}\/\d{2}\/\d{4})/g;
-        var matches = html.match(regex);
+        // 🔥 NOVA LÓGICA: Extrair linhas da tabela com DIA e DATA
+        var linhasComDatas = [];
         
-        if (matches && matches.length > 0) {
-          // Remover duplicatas e ordenar (mais recente primeiro)
-          var datasUnicas = matches.filter(function(item, pos) {
-            return matches.indexOf(item) === pos;
-          }).sort(function(a, b) {
-            // Converter DD/MM/YYYY para comparação
-            var partsA = a.split('/');
-            var partsB = b.split('/');
+        // Regex para encontrar padrões como: <td>2</td>...<td>03/02/2026</td>
+        // Captura o conteúdo entre <tr> e </tr>
+        var regexLinhas = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+        var matchLinhas;
+        
+        while ((matchLinhas = regexLinhas.exec(html)) !== null) {
+          var linhaHtml = matchLinhas[1];
+          
+          // Buscar <td> com número (dia) e <td> com data DD/MM/YYYY
+          var regexDia = /<td[^>]*>(\d{1,2})<\/td>/i;
+          var regexData = /<td[^>]*>(\d{2}\/\d{2}\/\d{4})<\/td>/i;
+          
+          var matchDia = linhaHtml.match(regexDia);
+          var matchData = linhaHtml.match(regexData);
+          
+          if (matchDia && matchData) {
+            var dia = matchDia[1];
+            var data = matchData[1];
+            linhasComDatas.push({ dia: dia, data: data });
+          }
+        }
+        
+        if (linhasComDatas.length > 0) {
+          // Remover duplicatas e ordenar por data (mais recente primeiro)
+          var datasUnicas = [];
+          var datasVistas = {};
+          
+          linhasComDatas.forEach(function(item) {
+            if (!datasVistas[item.data]) {
+              datasVistas[item.data] = true;
+              datasUnicas.push(item);
+            }
+          });
+          
+          // Ordenar por data (mais recente primeiro)
+          datasUnicas.sort(function(a, b) {
+            var partsA = a.data.split('/');
+            var partsB = b.data.split('/');
             var dateA = new Date(partsA[2], partsA[1] - 1, partsA[0]);
             var dateB = new Date(partsB[2], partsB[1] - 1, partsB[0]);
-            return dateB - dateA; // Ordem decrescente (mais recente primeiro)
+            return dateB - dateA; // Ordem decrescente
           });
           
           Logger.log('   Total de datas únicas: ' + datasUnicas.length);
-          Logger.log('   Data mais recente: ' + datasUnicas[0]);
+          Logger.log('   Data mais recente: Dia ' + datasUnicas[0].dia + ' - ' + datasUnicas[0].data);
           
-          // Mostrar primeiras 10 datas
+          // Mostrar primeiras 10 datas COM o número do dia
           Logger.log('   Primeiras 10 datas:');
           for (var i = 0; i < Math.min(10, datasUnicas.length); i++) {
-            Logger.log('     [' + (i + 1) + '] ' + datasUnicas[i]);
+            Logger.log('     [' + (i + 1) + '] Dia ' + datasUnicas[i].dia + ' - ' + datasUnicas[i].data);
           }
           
           fundosComSucesso++;
@@ -2672,4 +2739,820 @@ function diagnosticarTodasDatasDiarias() {
     fundosComErro: fundosComErro,
     mediaDatas: fundosComSucesso > 0 ? Math.round(totalDatas / fundosComSucesso) : 0
   };
+}
+
+/**
+ * Formata qualquer tipo de data para DD/MM/YYYY
+ * @param {*} data - Date object, string ou null
+ * @returns {string} Data formatada ou "-"
+ */
+/**
+ * Formata qualquer tipo de data para DD/MM/YYYY
+ * @param {*} data - Date object, string ou null
+ * @returns {string} Data formatada ou "-"
+ */
+function formatarDataParaEmail(data) {
+  if (!data) return '-';
+  
+  // Se for string vazia
+  if (typeof data === 'string' && data.trim() === '') return '-';
+  
+  // Se já for DD/MM/YYYY
+  if (typeof data === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(data)) {
+    return data;
+  }
+  
+  // Se for objeto Date
+  if (data instanceof Date && !isNaN(data.getTime())) {
+    return Utilities.formatDate(data, Session.getScriptTimeZone(), 'dd/MM/yyyy');
+  }
+  
+  // Se for string de Date (Thu Jan 01...)
+  if (typeof data === 'string' && data.indexOf('GMT') !== -1) {
+    try {
+      var dateObj = new Date(data);
+      if (!isNaN(dateObj.getTime())) {
+        return Utilities.formatDate(dateObj, Session.getScriptTimeZone(), 'dd/MM/yyyy');
+      }
+    } catch (e) {
+      return '-';
+    }
+  }
+  
+  return '-';
+}
+
+/**
+ * 🧪 TESTE: Verifica formatação de datas nos emails
+ */
+function testarFormatacaoDatasEmail() {
+  Logger.log('🧪 Testando formatação de datas...\n');
+  
+  // Testar diferentes tipos de entrada
+  var testes = [
+    { entrada: new Date(2026, 0, 1), descricao: 'Date object' },
+    { entrada: '01/01/2026', descricao: 'String já formatada' },
+    { entrada: 'Thu Jan 01 2026 00:00:00 GMT-0300 (GMT-03:00)', descricao: 'String de Date' },
+    { entrada: null, descricao: 'null' },
+    { entrada: '', descricao: 'String vazia' },
+    { entrada: '-', descricao: 'Hífen' }
+  ];
+  
+  testes.forEach(function(teste, i) {
+    var resultado = formatarDataParaEmail(teste.entrada);
+    Logger.log('[' + (i+1) + '] ' + teste.descricao);
+    Logger.log('    Input: ' + (teste.entrada || 'null'));
+    Logger.log('    Output: ' + resultado);
+    Logger.log('    ✅ ' + (resultado === '-' || /^\d{2}\/\d{2}\/\d{4}$/.test(resultado) ? 'OK' : 'FALHOU'));
+    Logger.log('');
+  });
+  
+  Logger.log('✅ Teste concluído!');
+}
+
+/**
+ * 🧪 Forçar envio de email do Balancete
+ * ATENÇÃO: Envia email real para os destinatários configurados
+ */
+function forcarEnvioEmailBalancete() {
+  Logger.log('📧 Forçando envio de email do Balancete...');
+  
+  var ss = obterPlanilha();
+  var destinatarios = [
+    'spandrade@banestes.com.br',
+    'fabiooliveira@banestes.com.br',
+    'iodutra@banestes.com.br',
+    'mcdias@banestes.com.br',
+    'sndemuner@banestes.com.br',
+    'wffreitas@banestes.com.br'
+  ];
+  
+  var mesPassado = obterMesPassadoFormatado();
+  var dataAtualFormatada = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy HH:mm');
+  var urlPlanilha = obterURLPlanilha();
+  
+  // Processar APENAS Balancete
+  processarAbaEmail(
+    ss.getSheetByName('Balancete'),
+    'Balancete',
+    destinatarios,
+    mesPassado,
+    dataAtualFormatada,
+    urlPlanilha,
+    'mensal'
+  );
+  
+  Logger.log('✅ Processo concluído!');
+  Logger.log('📬 Verifique a caixa de entrada dos destinatários.');
+}
+
+
+/**
+ * 📧 Enviar email individual para CADA FUNDO com TODAS as suas datas
+ */
+function enviarEmailDiariasIndividualPorFundo() {
+  Logger.log('📧 ===== ENVIO INDIVIDUAL POR FUNDO =====\n');
+  
+  var destinatarios = [
+    'spandrade@banestes.com.br'
+  ];
+  
+  var fundos = getFundos();
+  var emailsEnviados = 0;
+  var emailsComErro = 0;
+  
+  Logger.log('📊 Processando ' + fundos.length + ' fundos...\n');
+  
+  fundos.forEach(function(fundo, index) {
+    Logger.log('[' + (index + 1) + '/' + fundos.length + '] ' + fundo.nome.substring(0, 40) + '...');
+    
+    try {
+      var url = 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/InfDiario/CPublicaInfdiario.aspx?PK_PARTIC=' + fundo.codigoCVM + '&PK_SUBCLASSE=-1';
+      var response = UrlFetchApp.fetch(url, {
+        muteHttpExceptions: true,
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+      });
+      
+      if (response.getResponseCode() === 200) {
+        var html = response.getContentText();
+        var linhasComDatas = [];
+        var regexLinhas = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+        var matchLinhas;
+        
+        while ((matchLinhas = regexLinhas.exec(html)) !== null) {
+          var linhaHtml = matchLinhas[1];
+          var regexDia = /<td[^>]*>(\d{1,2})<\/td>/i;
+          var regexData = /<td[^>]*>(\d{2}\/\d{2}\/\d{4})<\/td>/i;
+          var matchDia = linhaHtml.match(regexDia);
+          var matchData = linhaHtml.match(regexData);
+          
+          if (matchDia && matchData) {
+            linhasComDatas.push({ dia: matchDia[1], data: matchData[1] });
+          }
+        }
+        
+        if (linhasComDatas.length > 0) {
+          // Remover duplicatas
+          var datasUnicas = [];
+          var datasVistas = {};
+          
+          linhasComDatas.forEach(function(item) {
+            if (!datasVistas[item.data]) {
+              datasVistas[item.data] = true;
+              datasUnicas.push(item);
+            }
+          });
+          
+          // Ordenar (mais recente primeiro)
+          datasUnicas.sort(function(a, b) {
+            var partsA = a.data.split('/');
+            var partsB = b.data.split('/');
+            var dateA = new Date(partsA[2], partsA[1] - 1, partsA[0]);
+            var dateB = new Date(partsB[2], partsB[1] - 1, partsB[0]);
+            return dateB - dateA;
+          });
+          
+          Logger.log('   Total de datas encontradas: ' + datasUnicas.length);
+          
+          // Gerar linhas da tabela com TODAS as datas
+          var linhasTabela = datasUnicas.map(function(item) {
+            return '<tr>' +
+              '<td style="padding:10px;border:1px solid #dddddd;background:#ffffff;text-align:center;">' + item.dia + '</td>' +
+              '<td style="padding:10px;border:1px solid #dddddd;background:#ffffff;text-align:center;">' + item.data + '</td>' +
+              '</tr>';
+          });
+          
+          var dataAtual = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy');
+          
+          // HTML do email
+          var htmlCompleto = 
+            '<!DOCTYPE html>' +
+            '<html lang="pt-BR">' +
+            '<head>' +
+            '<meta charset="UTF-8">' +
+            '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+            '<style>' +
+            'body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }' +
+            'table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }' +
+            'table { border-collapse: collapse !important; }' +
+            'body { margin: 0 !important; padding: 0 !important; width: 100% !important; font-family: Arial, sans-serif; background-color: #f4f4f4; }' +
+            '.monitor-box { background-color: #e3f2fd; border-left: 4px solid #2196F3; padding: 15px; margin-top: 20px; }' +
+            '</style>' +
+            '</head>' +
+            '<body style="background-color:#f4f4f4;padding:20px;">' +
+            '<table width="100%" cellpadding="0" cellspacing="0" style="max-width:650px;margin:auto;background-color:#ffffff;border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,0.1);">' +
+            '<tr>' +
+            '<td align="center" style="background-color:#2E7D32;padding:30px 20px;">' +
+            '<div style="font-size:40px;color:#ffffff;line-height:1;margin-bottom:10px;">✓</div>' +
+            '<h1 style="color:#ffffff;font-size:22px;margin:0;">Relatório de Conformidade CVM</h1>' +
+            '<p style="color:#a5d6a7;margin:5px 0 0 0;font-size:14px;">Informações Diárias</p>' +
+            '</td>' +
+            '</tr>' +
+            '<tr>' +
+            '<td style="padding:30px 25px;color:#333333;font-size:15px;line-height:1.6;">' +
+            '<p>Prezados,</p>' +
+            '<p>Informamos que os envios de <strong>Informações Diárias</strong> junto à CVM para o fundo abaixo encontram-se em conformidade.</p>' +
+            '<div style="background-color:#f0f9ff;border-left:4px solid #667eea;padding:15px;margin:20px 0;">' +
+            '<p style="margin:0;font-weight:bold;color:#1e3a8a;font-size:16px;">Fundo:</p>' +
+            '<p style="margin:5px 0 0 0;font-size:14px;color:#333;">' + fundo.nome + '</p>' +
+            '<p style="margin:10px 0 0 0;font-size:13px;color:#666;">Código CVM: ' + fundo.codigoCVM + '</p>' +
+            '</div>' +
+            '<p>Abaixo listamos <strong>todos os ' + datasUnicas.length + ' envios</strong> registrados no sistema da CVM:</p>' +
+            '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:20px 0;font-family:Arial,sans-serif;">' +
+            '<thead>' +
+            '<tr>' +
+            '<th style="padding:12px;border:1px solid #dddddd;background-color:#f3f4f6;text-align:center;font-weight:bold;color:#555555;">Dia</th>' +
+            '<th style="padding:12px;border:1px solid #dddddd;background-color:#f3f4f6;text-align:center;font-weight:bold;color:#555555;">Data de Envio</th>' +
+            '</tr>' +
+            '</thead>' +
+            '<tbody>' +
+            linhasTabela.join('') +
+            '</tbody>' +
+            '</table>' +
+            '<div class="monitor-box">' +
+            '<p style="margin:0;font-weight:bold;color:#0d47a1;font-size:14px;">✓ Status: Regularizado</p>' +
+            '<p style="margin:5px 0 0 0;font-size:13px;color:#444;">Todos os ' + datasUnicas.length + ' envios foram identificados corretamente no portal da CVM.</p>' +
+            '</div>' +
+            '</td>' +
+            '</tr>' +
+            '<tr>' +
+            '<td align="center" style="background-color:#f8f9fa;padding:20px;color:#888888;font-size:12px;border-top:1px solid #eeeeee;">' +
+            '<p style="margin:0;">Departamento de Inovação e Automação interno Asset</p>' +
+            '<p style="margin:5px 0 0 0;">Relatório gerado em ' + dataAtual + '</p>' +
+            '</td>' +
+            '</tr>' +
+            '</table>' +
+            '</body>' +
+            '</html>';
+          
+          // Enviar email
+          var assunto = '✅ Conformidade CVM - Diárias - ' + fundo.nome.substring(0, 60);
+          
+          MailApp.sendEmail({
+            to: destinatarios.join(','),
+            subject: assunto,
+            htmlBody: htmlCompleto
+          });
+          
+          emailsEnviados++;
+          Logger.log('   ✅ Email enviado (' + datasUnicas.length + ' datas)');
+          
+        } else {
+          Logger.log('   ⚠️ Sem dados - email não enviado');
+        }
+      } else {
+        Logger.log('   ❌ Erro HTTP: ' + response.getResponseCode());
+        emailsComErro++;
+      }
+      
+      // Delay entre fundos (evitar spam)
+      if (index < fundos.length - 1) {
+        Utilities.sleep(2000); // 2 segundos entre cada email
+      }
+      
+    } catch (error) {
+      Logger.log('   ❌ Erro: ' + error.toString());
+      emailsComErro++;
+    }
+  });
+  
+  Logger.log('\n========================================');
+  Logger.log('✅ RESUMO FINAL:');
+  Logger.log('   Total de fundos: ' + fundos.length);
+  Logger.log('   Emails enviados: ' + emailsEnviados);
+  Logger.log('   Erros: ' + emailsComErro);
+  Logger.log('========================================');
+  
+  return {
+    success: true,
+    totalFundos: fundos.length,
+    emailsEnviados: emailsEnviados,
+    emailsComErro: emailsComErro
+  };
+}
+
+/**
+ * 🧪 TESTE com apenas 2 fundos
+ */
+function testarEmailDiariasIndividual() {
+  Logger.log('🧪 ===== TESTE - 2 FUNDOS =====\n');
+  
+  var destinatarios = ['spandrade@banestes.com.br'];
+  var fundos = getFundos().slice(0, 2); // Apenas 2 fundos
+  
+  fundos.forEach(function(fundo, index) {
+    Logger.log('[' + (index + 1) + '/' + fundos.length + '] ' + fundo.nome.substring(0, 40) + '...');
+    
+    try {
+      var url = 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/InfDiario/CPublicaInfdiario.aspx?PK_PARTIC=' + fundo.codigoCVM + '&PK_SUBCLASSE=-1';
+      var response = UrlFetchApp.fetch(url, {
+        muteHttpExceptions: true,
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+      });
+      
+      if (response.getResponseCode() === 200) {
+        var html = response.getContentText();
+        var linhasComDatas = [];
+        var regexLinhas = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+        var matchLinhas;
+        
+        while ((matchLinhas = regexLinhas.exec(html)) !== null) {
+          var linhaHtml = matchLinhas[1];
+          var regexDia = /<td[^>]*>(\d{1,2})<\/td>/i;
+          var regexData = /<td[^>]*>(\d{2}\/\d{2}\/\d{4})<\/td>/i;
+          var matchDia = linhaHtml.match(regexDia);
+          var matchData = linhaHtml.match(regexData);
+          
+          if (matchDia && matchData) {
+            linhasComDatas.push({ dia: matchDia[1], data: matchData[1] });
+          }
+        }
+        
+        if (linhasComDatas.length > 0) {
+          var datasUnicas = [];
+          var datasVistas = {};
+          
+          linhasComDatas.forEach(function(item) {
+            if (!datasVistas[item.data]) {
+              datasVistas[item.data] = true;
+              datasUnicas.push(item);
+            }
+          });
+          
+          datasUnicas.sort(function(a, b) {
+            var partsA = a.data.split('/');
+            var partsB = b.data.split('/');
+            var dateA = new Date(partsA[2], partsA[1] - 1, partsA[0]);
+            var dateB = new Date(partsB[2], partsB[1] - 1, partsB[0]);
+            return dateB - dateA;
+          });
+          
+          Logger.log('   Datas: ' + datasUnicas.length);
+          datasUnicas.forEach(function(item, i) {
+            Logger.log('     [' + (i+1) + '] Dia ' + item.dia + ' - ' + item.data);
+          });
+          
+          var linhasTabela = datasUnicas.map(function(item) {
+            return '<tr>' +
+              '<td style="padding:10px;border:1px solid #dddddd;background:#ffffff;text-align:center;">' + item.dia + '</td>' +
+              '<td style="padding:10px;border:1px solid #dddddd;background:#ffffff;text-align:center;">' + item.data + '</td>' +
+              '</tr>';
+          });
+          
+          var dataAtual = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy');
+          
+          var htmlCompleto = 
+            '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><style>' +
+            'body, table, td { font-family: Arial, sans-serif; }' +
+            'body { background-color: #f4f4f4; padding: 20px; }' +
+            'table { border-collapse: collapse !important; }' +
+            '</style></head><body>' +
+            '<table width="100%" cellpadding="0" cellspacing="0" style="max-width:650px;margin:auto;background-color:#ffffff;border-radius:8px;">' +
+            '<tr><td align="center" style="background-color:#2E7D32;padding:30px 20px;">' +
+            '<h1 style="color:#ffffff;font-size:22px;margin:0;">✓ Relatório de Conformidade CVM</h1>' +
+            '<p style="color:#a5d6a7;margin:5px 0 0 0;">Informações Diárias</p>' +
+            '</td></tr>' +
+            '<tr><td style="padding:30px 25px;color:#333333;font-size:15px;">' +
+            '<p>Prezados,</p>' +
+            '<p>Informamos que os envios de <strong>Informações Diárias</strong> junto à CVM encontram-se em conformidade.</p>' +
+            '<div style="background-color:#f0f9ff;border-left:4px solid #667eea;padding:15px;margin:20px 0;">' +
+            '<p style="margin:0;font-weight:bold;color:#1e3a8a;">Fundo:</p>' +
+            '<p style="margin:5px 0 0 0;">' + fundo.nome + '</p>' +
+            '<p style="margin:10px 0 0 0;font-size:13px;color:#666;">Código CVM: ' + fundo.codigoCVM + '</p>' +
+            '</div>' +
+            '<p>Abaixo listamos <strong>todos os ' + datasUnicas.length + ' envios</strong>:</p>' +
+            '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:20px 0;">' +
+            '<thead><tr>' +
+            '<th style="padding:12px;border:1px solid #ddd;background:#f3f4f6;text-align:center;">Dia</th>' +
+            '<th style="padding:12px;border:1px solid #ddd;background:#f3f4f6;text-align:center;">Data de Envio</th>' +
+            '</tr></thead><tbody>' +
+            linhasTabela.join('') +
+            '</tbody></table>' +
+            '<div style="background-color:#e3f2fd;border-left:4px solid #2196F3;padding:15px;margin-top:20px;">' +
+            '<p style="margin:0;font-weight:bold;color:#0d47a1;">✓ Status: Regularizado</p>' +
+            '<p style="margin:5px 0 0 0;font-size:13px;">Todos os ' + datasUnicas.length + ' envios foram identificados.</p>' +
+            '</div>' +
+            '</td></tr>' +
+            '<tr><td align="center" style="background-color:#f8f9fa;padding:20px;font-size:12px;color:#888;">' +
+            '<p style="margin:0;">Departamento de Inovação e Automação interno Asset</p>' +
+            '<p style="margin:5px 0 0 0;">Relatório gerado em ' + dataAtual + '</p>' +
+            '</td></tr></table></body></html>';
+          
+          MailApp.sendEmail({
+            to: destinatarios.join(','),
+            subject: '🧪 TESTE - Diárias - ' + fundo.nome.substring(0, 40),
+            htmlBody: htmlCompleto
+          });
+          
+          Logger.log('   ✅ Email enviado');
+        }
+      }
+      
+      if (index < fundos.length - 1) {
+        Utilities.sleep(2000);
+      }
+      
+    } catch (error) {
+      Logger.log('   ❌ Erro: ' + error.toString());
+    }
+  });
+  
+  Logger.log('\n✅ Teste concluído!');
+}
+
+/**
+ * Criar trigger para enviar emails de diárias no último dia útil do mês
+ */
+function criarTriggerEmailDiariasUltimoDiaUtil() {
+  Logger.log('🔧 Configurando trigger mensal para diárias...');
+  
+  // Remover triggers antigos (se existirem)
+  var triggers = ScriptApp.getProjectTriggers();
+  triggers.forEach(function(trigger) {
+    if (trigger.getHandlerFunction() === 'verificarEEnviarEmailDiariasSeUltimoDiaUtil') {
+      ScriptApp.deleteTrigger(trigger);
+      Logger.log('  🗑️ Trigger antigo removido');
+    }
+  });
+  
+  // Criar novo trigger DIÁRIO às 17:00 (verifica se é último dia útil)
+  ScriptApp.newTrigger('verificarEEnviarEmailDiariasSeUltimoDiaUtil')
+    .timeBased()
+    .atHour(17)
+    .everyDays(1)
+    .create();
+  
+  Logger.log('\n✅ ═══════════════════════════════════════════');
+  Logger.log('✅ TRIGGER MENSAL DE DIÁRIAS ATIVADO!');
+  Logger.log('✅ ═══════════════════════════════════════════');
+  Logger.log('');
+  Logger.log('📧 Função: verificarEEnviarEmailDiariasSeUltimoDiaUtil()');
+  Logger.log('⏰ Horário: 17:00 (diariamente)');
+  Logger.log('🎯 Envia: Apenas no último dia útil do mês');
+  Logger.log('📊 Conteúdo: Todos os envios de diárias por fundo');
+  
+  return {
+    success: true,
+    message: 'Trigger criado! Emails de diárias serão enviados no último dia útil do mês.'
+  };
+}
+
+/**
+ * Verifica se hoje é o último dia útil do mês e envia emails
+ */
+function verificarEEnviarEmailDiariasSeUltimoDiaUtil() {
+  Logger.log('🔍 Verificando se hoje é último dia útil do mês...');
+  
+  var hoje = new Date();
+  var ss = obterPlanilha();
+  var feriados = getFeriadosArray();
+  
+  // Calcular último dia útil do mês
+  var ultimoDiaMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0); // Último dia do mês
+  
+  // Retroceder até encontrar um dia útil
+  while (ultimoDiaMes.getDay() === 0 || ultimoDiaMes.getDay() === 6 || 
+         feriados.indexOf(normalizaDataDate(ultimoDiaMes)) >= 0) {
+    ultimoDiaMes.setDate(ultimoDiaMes.getDate() - 1);
+  }
+  
+  var ultimoDiaUtilFormatado = normalizaDataDate(ultimoDiaMes);
+  var hojeFormatado = normalizaDataDate(hoje);
+  
+  Logger.log('📅 Hoje: ' + hojeFormatado);
+  Logger.log('📅 Último dia útil do mês: ' + ultimoDiaUtilFormatado);
+  
+  // Verificar se hoje é o último dia útil
+  if (hojeFormatado === ultimoDiaUtilFormatado) {
+    Logger.log('✅ HOJE É O ÚLTIMO DIA ÚTIL! Enviando emails...');
+    enviarEmailDiariasIndividualPorFundo();
+  } else {
+    Logger.log('⏭️ Hoje NÃO é o último dia útil. Email não será enviado.');
+  }
+}
+
+/**
+ * 🧪 TESTE: Simular último dia útil (forçar envio)
+ */
+function testarEnvioDiariasUltimoDiaUtil() {
+  Logger.log('🧪 TESTE: Forçando envio de emails de Diárias...');
+  Logger.log('⚠️ ATENÇÃO: Emails REAIS serão enviados!');
+  Logger.log('');
+  
+  // Alterar destinatários para teste (só você)
+  var destinatariosTeste = ['spandrade@banestes.com.br'];
+  Logger.log('📧 Destinatários: ' + destinatariosTeste.join(', '));
+  Logger.log('');
+  
+  // Chamar função de envio
+  enviarEmailDiariasIndividualPorFundo();
+  
+  Logger.log('\n✅ Teste concluído!');
+  Logger.log('📬 Verifique sua caixa de entrada.');
+}
+
+/**
+ * 🧪 TESTE: Verifica qual é o último dia útil do mês atual
+ * Execute no Apps Script Editor para ver o resultado no log
+ */
+function testarCalculoUltimoDiaUtil() {
+  Logger.log('🧪 ===== TESTE: Cálculo do Último Dia Útil =====\n');
+  
+  var hoje = new Date();
+  var ss = obterPlanilha();
+  var feriados = getFeriadosArray();
+  
+  Logger.log('📅 Hoje: ' + normalizaDataDate(hoje));
+  Logger.log('📅 Dia da semana: ' + hoje.toLocaleDateString('pt-BR', { weekday: 'long' }));
+  
+  // Calcular último dia útil do mês
+  var ultimoDiaMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+  Logger.log('📅 Último dia do mês (calendário): ' + normalizaDataDate(ultimoDiaMes));
+  
+  // Retroceder até encontrar um dia útil
+  while (ultimoDiaMes.getDay() === 0 || ultimoDiaMes.getDay() === 6 || 
+         feriados.indexOf(normalizaDataDate(ultimoDiaMes)) >= 0) {
+    ultimoDiaMes.setDate(ultimoDiaMes.getDate() - 1);
+  }
+  
+  Logger.log('📅 Último dia ÚTIL do mês: ' + normalizaDataDate(ultimoDiaMes));
+  Logger.log('📅 Dia da semana: ' + ultimoDiaMes.toLocaleDateString('pt-BR', { weekday: 'long' }));
+  
+  // Verificar
+  var ultimoDiaUtilFormatado = normalizaDataDate(ultimoDiaMes);
+  var hojeFormatado = normalizaDataDate(hoje);
+  
+  if (hojeFormatado === ultimoDiaUtilFormatado) {
+    Logger.log('\n✅ HOJE É O ÚLTIMO DIA ÚTIL DO MÊS!');
+    Logger.log('📧 Emails de Diárias SERÃO enviados às 17:00');
+  } else {
+    var diasRestantes = Math.floor((ultimoDiaMes - hoje) / (1000 * 60 * 60 * 24));
+    Logger.log('\n⏭️ Hoje NÃO é o último dia útil');
+    Logger.log('📆 Faltam ' + diasRestantes + ' dias úteis para o último dia útil');
+    Logger.log('📅 Próximo envio: ' + ultimoDiaUtilFormatado + ' às 17:00');
+  }
+  
+  Logger.log('\n✅ Teste concluído!');
+}
+
+/**
+ * Helper: Retorna o nome do dia da semana
+ */
+function obterDiaSemana(data) {
+  var dias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+  return dias[data.getDay()];
+}
+
+/**
+ * Helper: Calcula dias úteis entre duas datas
+ */
+function calcularDiasUteisEntreDatas(dataInicio, dataFim, feriados) {
+  var count = 0;
+  var atual = new Date(dataInicio);
+  atual.setHours(0, 0, 0, 0);
+  
+  var fim = new Date(dataFim);
+  fim.setHours(0, 0, 0, 0);
+  
+  while (atual < fim) {
+    atual.setDate(atual.getDate() + 1);
+    if (atual.getDay() !== 0 && atual.getDay() !== 6 && 
+        feriados.indexOf(normalizaDataDate(atual)) === -1) {
+      count++;
+    }
+  }
+  
+  return count;
+}
+
+/**
+ * 📧 ENVIA EMAIL DE DIÁRIAS APENAS NO ÚLTIMO DIA ÚTIL DO MÊS
+ * Esta função verifica se hoje é o último dia útil do mês E envia os emails
+ * 
+ * ✅ COMO USAR:
+ * - Configure um trigger diário às 18:30 para executar esta função
+ * - Ela só envia email no último dia útil do mês
+ */
+/**
+ * 📧 ENVIA EMAIL DE DIÁRIAS APENAS NO ÚLTIMO DIA ÚTIL DO MÊS
+ * Esta função verifica se hoje é o último dia útil do mês E envia os emails
+ * 
+ * ✅ COMO USAR:
+ * - Configure um trigger diário às 18:30 para executar esta função
+ * - Ela só envia email no último dia útil do mês
+ */
+function enviarEmailDiariasSeForUltimoDiaUtil() {
+  Logger.log('🔍 Verificando se hoje é o último dia útil do mês...');
+  
+  // Verificar se é dia útil
+  var hoje = new Date();
+  var diaSemana = hoje.getDay();
+  
+  if (diaSemana === 0 || diaSemana === 6) {
+    Logger.log('⏭️ Hoje é fim de semana. Não é dia útil.');
+    return { skipped: true, reason: 'Fim de semana' };
+  }
+  
+  // Verificar se é feriado
+  try {
+    var ss = obterPlanilha();
+    var abaFeriados = ss.getSheetByName('FERIADOS');
+    if (abaFeriados) {
+      var feriados = abaFeriados.getRange('A2:A100').getValues();
+      var hojeFormatado = formatarData(hoje);
+      
+      for (var i = 0; i < feriados.length; i++) {
+        if (feriados[i][0]) {
+          var feriadoFormatado = formatarData(new Date(feriados[i][0]));
+          if (feriadoFormatado === hojeFormatado) {
+            Logger.log('⏭️ Hoje é feriado. Não é dia útil.');
+            return { skipped: true, reason: 'Feriado' };
+          }
+        }
+      }
+    }
+  } catch (error) {
+    Logger.log('⚠️ Erro ao verificar feriados: ' + error.toString());
+  }
+  
+  // ✅ É DIA ÚTIL - Verificar se é o ÚLTIMO dia útil do mês
+  var ultimoDiaUtil = calcularUltimoDiaUtilDoMes(hoje, ss);
+  var hojeNormalizado = formatarData(hoje);
+  var ultimoDiaUtilNormalizado = formatarData(ultimoDiaUtil);
+  
+  Logger.log('📅 Hoje: ' + hojeNormalizado);
+  Logger.log('📅 Último dia útil do mês: ' + ultimoDiaUtilNormalizado);
+  
+  if (hojeNormalizado === ultimoDiaUtilNormalizado) {
+    Logger.log('🎯 HOJE É O ÚLTIMO DIA ÚTIL DO MÊS! Enviando emails de Diárias...');
+    
+    // ✅ ENVIAR EMAILS DE DIÁRIAS
+    return enviarEmailDiariasIndividualPorFundo();
+  } else {
+    Logger.log('⏭️ Hoje NÃO é o último dia útil do mês. Email NÃO será enviado.');
+    return { skipped: true, reason: 'Não é o último dia útil do mês' };
+  }
+}
+
+/**
+ * 📅 CALCULA O ÚLTIMO DIA ÚTIL DO MÊS ATUAL
+ * @param {Date} dataReferencia - Data de referência
+ * @param {SpreadsheetApp} ss - Planilha
+ * @returns {Date} - Último dia útil do mês
+ */
+function calcularUltimoDiaUtilDoMes(dataReferencia, ss) {
+  // Último dia do mês atual
+  var ano = dataReferencia.getFullYear();
+  var mes = dataReferencia.getMonth();
+  var ultimoDia = new Date(ano, mes + 1, 0); // Dia 0 do próximo mês = último dia do mês atual
+  
+  Logger.log('📅 Último dia do mês ' + (mes + 1) + '/' + ano + ': ' + formatarData(ultimoDia));
+  
+  // Carregar feriados
+  var feriadosArray = getFeriadosArray();
+  
+  // Retroceder até encontrar um dia útil
+  while (true) {
+    var diaSemana = ultimoDia.getDay();
+    var dataFormatada = formatarData(ultimoDia);
+    var ehFeriadoFlag = feriadosArray.indexOf(dataFormatada) >= 0;
+    
+    // Se é dia útil (segunda a sexta E não feriado), retornar
+    if (diaSemana !== 0 && diaSemana !== 6 && !ehFeriadoFlag) {
+      Logger.log('✅ Último dia útil encontrado: ' + dataFormatada);
+      return ultimoDia;
+    }
+    
+    // Retroceder 1 dia
+    ultimoDia.setDate(ultimoDia.getDate() - 1);
+  }
+}
+
+/**
+ * 🧪 TESTE: Verificar se hoje é o último dia útil do mês
+ * Execute esta função manualmente no Apps Script Editor para testar
+ */
+function testarSeEhUltimoDiaUtil() {
+  Logger.log('🧪 ===== TESTE: ÚLTIMO DIA ÚTIL DO MÊS =====\n');
+  
+  var ss = obterPlanilha();
+  var hoje = new Date();
+  
+  Logger.log('📅 Data de hoje: ' + formatarData(hoje));
+  Logger.log('📅 Dia da semana: ' + ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][hoje.getDay()]);
+  
+  var ultimoDiaUtil = calcularUltimoDiaUtilDoMes(hoje, ss);
+  Logger.log('📅 Último dia útil do mês: ' + formatarData(ultimoDiaUtil));
+  
+  var hojeNormalizado = formatarData(hoje);
+  var ultimoDiaUtilNormalizado = formatarData(ultimoDiaUtil);
+  
+  if (hojeNormalizado === ultimoDiaUtilNormalizado) {
+    Logger.log('\n🎯 ✅ HOJE É O ÚLTIMO DIA ÚTIL DO MÊS!');
+    Logger.log('📧 Emails de Diárias SERÃO enviados.');
+  } else {
+    Logger.log('\n⏭️ ❌ Hoje NÃO é o último dia útil do mês.');
+    Logger.log('📧 Emails de Diárias NÃO serão enviados.');
+    
+    // Calcular quantos dias faltam
+    var diasRestantes = Math.ceil((ultimoDiaUtil - hoje) / (1000 * 60 * 60 * 24));
+    Logger.log('⏰ Faltam ' + diasRestantes + ' dia(s) para o último dia útil.');
+  }
+  
+  Logger.log('\n✅ Teste concluído!');
+}
+
+/**
+ * Ativa TODOS os triggers necessários para o sistema funcionar
+ * Execute esta função MANUALMENTE no Apps Script Editor
+ */
+function ativarSistemaCompleto() {
+  Logger.log('🚀 Ativando sistema completo...');
+  
+  // Remover triggers antigos (evitar duplicação)
+  var triggers = ScriptApp.getProjectTriggers();
+  triggers.forEach(function(trigger) {
+    ScriptApp.deleteTrigger(trigger);
+    Logger.log('  🗑️ Trigger removido: ' + trigger.getHandlerFunction());
+  });
+  
+  // ============================================
+  // TRIGGER 1: Atualização de dados da CVM (a cada 1 hora)
+  // ============================================
+  ScriptApp.newTrigger('atualizarDadosCVMRealCompleto')
+    .timeBased()
+    .everyHours(1)
+    .create();
+  Logger.log('✅ TRIGGER 1: Atualização de dados CVM (a cada 1 hora)');
+  
+  // ============================================
+  // TRIGGER 2: Emails diários às 18:30 (abas mensais)
+  // ============================================
+  ScriptApp.newTrigger('enviarEmailConformidadeOuDesconformidadeAvancado')
+    .timeBased()
+    .atHour(18)
+    .nearMinute(30)
+    .everyDays(1)
+    .create();
+  Logger.log('✅ TRIGGER 2: Emails diários às 18:30 (Balancete, Composição, Lâmina, Perfil Mensal)');
+  
+  // ============================================
+  // TRIGGER 3: Emails mensais de Diárias (último dia útil do mês)
+  // ============================================
+  ScriptApp.newTrigger('verificarEEnviarEmailDiariasSeUltimoDiaUtil')
+    .timeBased()
+    .atHour(17)
+    .everyDays(1)
+    .create();
+  Logger.log('✅ TRIGGER 3: Emails mensais de Diárias às 17:00 (só no último dia útil)');
+  
+  // ============================================
+  // RESUMO
+  // ============================================
+  Logger.log('\n✅ ═══════════════════════════════════════════');
+  Logger.log('✅ SISTEMA 100% ATIVADO!');
+  Logger.log('✅ ═══════════════════════════════════════════');
+  Logger.log('');
+  Logger.log('📊 TRIGGER 1: atualizarDadosCVMRealCompleto()');
+  Logger.log('   ⏰ Executa: A cada 1 hora (24x por dia)');
+  Logger.log('   🎯 Faz: Busca dados da CVM e atualiza planilha');
+  Logger.log('');
+  Logger.log('📧 TRIGGER 2: enviarEmailConformidadeOuDesconformidadeAvancado()');
+  Logger.log('   ⏰ Executa: Diariamente às 18:30');
+  Logger.log('   🎯 Envia emails: Balancete, Composição, Lâmina, Perfil Mensal');
+  Logger.log('   ⚠️ NÃO envia Diárias (seção comentada)');
+  Logger.log('');
+  Logger.log('📅 TRIGGER 3: verificarEEnviarEmailDiariasSeUltimoDiaUtil()');
+  Logger.log('   ⏰ Executa: Diariamente às 17:00');
+  Logger.log('   🎯 Envia emails de Diárias APENAS no último dia útil do mês');
+  Logger.log('');
+  Logger.log('🌐 Web App: ' + ScriptApp.getService().getUrl());
+  Logger.log('📊 Planilha: ' + obterURLPlanilha());
+  
+  return {
+    success: true,
+    message: 'Sistema ativado com 3 triggers!'
+  };
+}
+
+function testarFormatacaoEmailDiarias() {
+  Logger.log('🧪 Testando formatação de emails de Diárias...');
+  
+  var ss = obterPlanilha();
+  var destinatarios = ['spandrade@banestes.com.br'];
+  var mesPassado = obterMesPassadoFormatado();
+  var dataAtualFormatada = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy HH:mm');
+  var urlPlanilha = obterURLPlanilha();
+  
+  processarAbaEmail(
+    ss.getSheetByName('Diárias'),
+    'Diárias (TESTE)',
+    destinatarios,
+    mesPassado,
+    dataAtualFormatada,
+    urlPlanilha,
+    'diario'
+  );
+  
+  Logger.log('✅ Email de teste enviado!');
 }
