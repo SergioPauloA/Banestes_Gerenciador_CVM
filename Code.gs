@@ -3254,7 +3254,7 @@ function verificarEEnviarEmailDiariasSeUltimoDiaUtil() {
   // Verificar se hoje é o último dia útil
   if (hojeFormatado === ultimoDiaUtilFormatado) {
     Logger.log('✅ HOJE É O ÚLTIMO DIA ÚTIL! Enviando emails...');
-    enviarEmailDiariasIndividualPorFundo();
+    enviarRelatorioDiariasConsolidadoPDF();
   } else {
     Logger.log('⏭️ Hoje NÃO é o último dia útil. Email não será enviado.');
   }
@@ -3584,4 +3584,383 @@ function testarFormatacaoEmailDiarias() {
   );
   
   Logger.log('✅ Email de teste enviado!');
+}
+
+/**
+ * NOVA FUNÇÃO (VERSÃO FINAL COM LAYOUT RICO): 
+ * Gera PDF consolidado das Diárias (26 páginas) com layout estilizado (HTML/CSS) e envia 1 único e-mail.
+ * Substitui o envio de 26 e-mails individuais no final do mês.
+ */
+function enviarRelatorioDiariasConsolidadoPDF() {
+  Logger.log('🎨 Iniciando geração de PDF consolidado (Layout Rico)...');
+  
+  // 1. Configurações
+  var destinatarios = ['spandrade@banestes.com.br']; // Adicione outros e-mails aqui se necessário
+  var fundos = getFundos();
+  
+  // 2. Datas e Referência (Mês Anterior)
+  var hoje = new Date();
+  var dataMesAnterior = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+  
+  // Formatar Mês/Ano para o cabeçalho
+  var meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+  var nomeMes = meses[dataMesAnterior.getMonth()];
+  var ano = dataMesAnterior.getFullYear();
+  var formatadorMes = nomeMes + "/" + ano; 
+  
+  var dataGeracao = Utilities.formatDate(hoje, 'GMT-3', 'dd/MM/yyyy');
+
+  // 3. Início do HTML com CSS para forçar cores na impressão
+  var htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        /* Força a impressão de background e cores */
+        body { 
+          font-family: Arial, sans-serif; 
+          margin: 0; padding: 0; 
+          -webkit-print-color-adjust: exact; 
+          print-color-adjust: exact;
+          background-color: #ffffff;
+        }
+        .page-break { page-break-after: always; }
+      </style>
+    </head>
+    <body>
+  `;
+
+  // 4. Loop pelos Fundos
+  for (var i = 0; i < fundos.length; i++) {
+    var fundo = fundos[i];
+    Logger.log('[' + (i + 1) + '/' + fundos.length + '] Processando: ' + fundo.nome);
+
+    try {
+      // --- Lógica de busca na CVM ---
+      var url = 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/InfDiario/CPublicaInfdiario.aspx?PK_PARTIC=' + fundo.codigoCVM + '&PK_SUBCLASSE=-1';
+      var response = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0' }});
+      
+      var linhasTabelaHTML = "";
+      var totalEnvios = 0;
+
+      if (response.getResponseCode() === 200) {
+        var htmlResponse = response.getContentText();
+        var regexLinhas = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+        var matchLinhas;
+        var linhasComDatas = [];
+
+        // Extração de dados
+        while ((matchLinhas = regexLinhas.exec(htmlResponse)) !== null) {
+          var linhaHtml = matchLinhas[1];
+          var matchDia = linhaHtml.match(/<td[^>]*>(\d{1,2})<\/td>/i);
+          var matchData = linhaHtml.match(/<td[^>]*>(\d{2}\/\d{2}\/\d{4})<\/td>/i);
+          
+          if (matchDia && matchData) {
+            linhasComDatas.push({ dia: matchDia[1], data: matchData[1] });
+          }
+        }
+
+        if (linhasComDatas.length > 0) {
+          // Deduplicação
+          var datasUnicas = [];
+          var datasVistas = {};
+          linhasComDatas.forEach(function(item) {
+            if (!datasVistas[item.data]) {
+              datasVistas[item.data] = true;
+              datasUnicas.push(item);
+            }
+          });
+          // Ordenação (Mais recente primeiro)
+          datasUnicas.sort(function(a, b) {
+            var partsA = a.data.split('/');
+            var partsB = b.data.split('/');
+            return new Date(partsB[2], partsB[1] - 1, partsB[0]) - new Date(partsA[2], partsA[1] - 1, partsA[0]);
+          });
+          
+          totalEnvios = datasUnicas.length;
+          
+          // Montar linhas da tabela HTML
+          linhasTabelaHTML = datasUnicas.map(function(item) {
+            return `<tr>
+                      <td style="padding: 8px; border: 1px solid #dddddd; text-align: center;">${item.dia}</td>
+                      <td style="padding: 8px; border: 1px solid #dddddd; text-align: center;">${item.data}</td>
+                    </tr>`;
+          }).join('');
+        } else {
+          linhasTabelaHTML = `<tr><td colspan="2" style="padding: 10px; border: 1px solid #ddd;">- Sem dados encontrados -</td></tr>`;
+        }
+      } else {
+        linhasTabelaHTML = `<tr><td colspan="2" style="padding: 10px; border: 1px solid #ddd;">Erro de Conexão CVM</td></tr>`;
+      }
+
+      // --- Montagem do HTML da Página do Fundo (Layout Colorido) ---
+      htmlContent += `
+        <div style="padding: 20px; max-width: 700px; margin: 0 auto;">
+          
+          <div style="background-color: #2E7D32; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; -webkit-print-color-adjust: exact;">
+            <div style="font-size: 40px; margin-bottom: 5px;">✓</div>
+            <div style="font-size: 22px; margin: 0; font-weight: bold;">Relatório de Conformidade CVM</div>
+            <div style="color: #a5d6a7; margin: 5px 0 0 0; font-size: 14px;">Referência: ${formatadorMes}</div>
+          </div>
+          
+          <div style="padding: 20px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;">
+            <p style="font-family: Arial; font-weight: bold;">Informações Diárias</p>
+            
+            <div style="background-color: #f0f9ff; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0; border-radius: 4px; -webkit-print-color-adjust: exact;">
+              <p style="margin: 0; font-weight: bold; color: #1e3a8a; font-size: 16px;">Fundo:</p>
+              <p style="margin: 5px 0 0 0; font-size: 14px; color: #333;">${fundo.nome}</p>
+              <p style="margin: 10px 0 0 0; font-size: 13px; color: #666;">Código CVM: ${fundo.codigoCVM}</p>
+            </div>
+
+            <p>Histórico de envios identificados (${totalEnvios}):</p>
+
+            <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px;">
+              <thead>
+                <tr>
+                  <th width="30%" style="background-color: #f3f4f6; padding: 10px; border: 1px solid #dddddd; text-align: center; color: #555; -webkit-print-color-adjust: exact;">Dia</th>
+                  <th style="background-color: #f3f4f6; padding: 10px; border: 1px solid #dddddd; text-align: center; color: #555; -webkit-print-color-adjust: exact;">Data de Envio</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${linhasTabelaHTML}
+              </tbody>
+            </table>
+
+            <div style="background-color: #e3f2fd; border-left: 4px solid #2196F3; padding: 10px; margin-top: 20px; font-size: 13px; -webkit-print-color-adjust: exact;">
+              <strong>✓ Status: Regularizado</strong><br>
+              Todos os envios foram identificados no portal da CVM.
+            </div>
+
+            <div style="text-align: center; color: #888; font-size: 11px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;">
+              Departamento de Inovação e Automação interno Asset<br>
+              Relatório gerado em ${dataGeracao}
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Adiciona quebra de página se não for o último fundo
+      if (i < fundos.length - 1) {
+        htmlContent += `<div class="page-break"></div>`;
+      }
+
+    } catch (e) {
+      Logger.log("❌ Erro no fundo " + fundo.nome + ": " + e.toString());
+    }
+    
+    // Pequena pausa para evitar bloqueio
+    Utilities.sleep(600); 
+  }
+
+  // 5. Finaliza HTML e Converte para PDF
+  htmlContent += `</body></html>`;
+  
+  var blobHtml = Utilities.newBlob(htmlContent, MimeType.HTML, "relatorio_temp.html");
+  var pdfBlob = blobHtml.getAs(MimeType.PDF).setName(`Relatorio_Diarias_CVM_${formatadorMes.replace('/','-')}.pdf`);
+
+  // 6. Envia o E-mail Único
+  Logger.log('📧 Enviando e-mail consolidado...');
+  
+  MailApp.sendEmail({
+    to: destinatarios.join(','),
+    subject: '✅ Relatório Consolidado Diárias CVM (' + formatadorMes + ')',
+    htmlBody: `
+      <h3>Relatório Mensal de Conformidade CVM</h3>
+      <p>Prezados,</p>
+      <p>Segue em anexo o <strong>Relatório Consolidado de Informações Diárias</strong> referente ao mês de <strong>${formatadorMes}</strong>.</p>
+      <p>O arquivo contém o detalhamento dos envios de todos os <strong>${fundos.length} fundos</strong> monitorados.</p>
+      <br>
+      <p style="color:#666; font-size:12px;">Departamento de Inovação e Automação Asset</p>
+    `,
+    attachments: [pdfBlob]
+  });
+
+  Logger.log('✅ PDF enviado com sucesso!');
+}
+
+/**
+ * 🧪 TESTE VISUAL CORRIGIDO: Força as cores no PDF
+ * Usa estilos "inline" e print-color-adjust para garantir que o fundo verde e azul apareçam.
+ */
+function testarRelatorioPDFConsolidado() {
+  Logger.log('🎨 Iniciando geração de PDF (Modo Colorido Forçado)...');
+  
+  // 1. Configurações
+  var destinatariosTeste = ['spandrade@banestes.com.br'];
+  var fundos = getFundos();
+  
+  // --- OPCIONAL: Teste rápido com 3 fundos (descomente para testar) ---
+  // fundos = fundos.slice(0, 3); 
+  
+  // 2. Datas
+  var hoje = new Date();
+  var dataMesAnterior = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+  
+  // Formatar Mês em Inglês ou Português (ajuste conforme preferir)
+  var meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+  var nomeMes = meses[dataMesAnterior.getMonth()];
+  var ano = dataMesAnterior.getFullYear();
+  var formatadorMes = nomeMes + "/" + ano; 
+  
+  var dataGeracao = Utilities.formatDate(hoje, 'GMT-3', 'dd/MM/yyyy');
+
+  Logger.log('📅 Referência: ' + formatadorMes);
+
+  // 3. HTML com CSS INLINE (Crucial para cores no PDF)
+  // Note o uso de -webkit-print-color-adjust: exact;
+  var htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        /* Força a impressão de background */
+        body { 
+          font-family: Arial, sans-serif; 
+          margin: 0; padding: 0; 
+          -webkit-print-color-adjust: exact; 
+          print-color-adjust: exact;
+        }
+        .page-break { page-break-after: always; }
+      </style>
+    </head>
+    <body style="background-color: #ffffff;">
+  `;
+
+  // 4. Loop pelos Fundos
+  for (var i = 0; i < fundos.length; i++) {
+    var fundo = fundos[i];
+    Logger.log('   [' + (i + 1) + '] ' + fundo.nome);
+
+    try {
+      // --- Scraping ---
+      var url = 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/InfDiario/CPublicaInfdiario.aspx?PK_PARTIC=' + fundo.codigoCVM + '&PK_SUBCLASSE=-1';
+      var response = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0' }});
+      
+      var linhasTabelaHTML = "";
+      var totalEnvios = 0;
+
+      if (response.getResponseCode() === 200) {
+        var htmlResponse = response.getContentText();
+        var regexLinhas = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+        var matchLinhas;
+        var linhasComDatas = [];
+
+        while ((matchLinhas = regexLinhas.exec(htmlResponse)) !== null) {
+          var linhaHtml = matchLinhas[1];
+          var matchDia = linhaHtml.match(/<td[^>]*>(\d{1,2})<\/td>/i);
+          var matchData = linhaHtml.match(/<td[^>]*>(\d{2}\/\d{2}\/\d{4})<\/td>/i);
+          
+          if (matchDia && matchData) {
+            linhasComDatas.push({ dia: matchDia[1], data: matchData[1] });
+          }
+        }
+
+        if (linhasComDatas.length > 0) {
+          var datasUnicas = [];
+          var datasVistas = {};
+          linhasComDatas.forEach(function(item) {
+            if (!datasVistas[item.data]) {
+              datasVistas[item.data] = true;
+              datasUnicas.push(item);
+            }
+          });
+          datasUnicas.sort(function(a, b) {
+            var partsA = a.data.split('/');
+            var partsB = b.data.split('/');
+            return new Date(partsB[2], partsB[1] - 1, partsB[0]) - new Date(partsA[2], partsA[1] - 1, partsA[0]);
+          });
+          
+          totalEnvios = datasUnicas.length;
+          
+          linhasTabelaHTML = datasUnicas.map(function(item) {
+            return `<tr>
+                      <td style="padding: 8px; border: 1px solid #dddddd; text-align: center;">${item.dia}</td>
+                      <td style="padding: 8px; border: 1px solid #dddddd; text-align: center;">${item.data}</td>
+                    </tr>`;
+          }).join('');
+        } else {
+          linhasTabelaHTML = `<tr><td colspan="2" style="padding: 10px; border: 1px solid #ddd;">- Sem dados -</td></tr>`;
+        }
+      } else {
+        linhasTabelaHTML = `<tr><td colspan="2" style="padding: 10px; border: 1px solid #ddd;">Erro de Conexão CVM</td></tr>`;
+      }
+
+      // --- HTML INLINE (Cores forçadas aqui) ---
+      htmlContent += `
+        <div style="padding: 20px; max-width: 700px; margin: 0 auto;">
+          
+          <div style="background-color: #2E7D32; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; -webkit-print-color-adjust: exact;">
+            <div style="font-size: 40px; margin-bottom: 5px;">✓</div>
+            <div style="font-size: 22px; margin: 0; font-weight: bold;">Relatório de Conformidade CVM</div>
+            <div style="color: #a5d6a7; margin: 5px 0 0 0; font-size: 14px;">Referência: ${formatadorMes}</div>
+          </div>
+          
+          <div style="padding: 20px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;">
+            <p style="font-family: Arial; font-weight: bold;">Informações Diárias</p>
+            
+            <div style="background-color: #f0f9ff; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0; border-radius: 4px; -webkit-print-color-adjust: exact;">
+              <p style="margin: 0; font-weight: bold; color: #1e3a8a; font-size: 16px;">Fundo:</p>
+              <p style="margin: 5px 0 0 0; font-size: 14px; color: #333;">${fundo.nome}</p>
+              <p style="margin: 10px 0 0 0; font-size: 13px; color: #666;">Código CVM: ${fundo.codigoCVM}</p>
+            </div>
+
+            <p>Histórico de envios identificados (${totalEnvios}):</p>
+
+            <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px;">
+              <thead>
+                <tr>
+                  <th width="30%" style="background-color: #f3f4f6; padding: 10px; border: 1px solid #dddddd; text-align: center; color: #555; -webkit-print-color-adjust: exact;">Dia</th>
+                  <th style="background-color: #f3f4f6; padding: 10px; border: 1px solid #dddddd; text-align: center; color: #555; -webkit-print-color-adjust: exact;">Data de Envio</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${linhasTabelaHTML}
+              </tbody>
+            </table>
+
+            <div style="background-color: #e3f2fd; border-left: 4px solid #2196F3; padding: 10px; margin-top: 20px; font-size: 13px; -webkit-print-color-adjust: exact;">
+              <strong>✓ Status: Regularizado</strong><br>
+              Todos os envios foram identificados no portal da CVM.
+            </div>
+
+            <div style="text-align: center; color: #888; font-size: 11px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;">
+              Departamento de Inovação e Automação interno Asset<br>
+              Relatório gerado em ${dataGeracao}
+            </div>
+          </div>
+        </div>
+      `;
+
+      if (i < fundos.length - 1) {
+        htmlContent += `<div class="page-break"></div>`;
+      }
+
+    } catch (e) {
+      Logger.log("❌ Erro: " + e.toString());
+    }
+    Utilities.sleep(500);
+  }
+
+  htmlContent += `</body></html>`;
+
+  // Converter e Enviar
+  var blobHtml = Utilities.newBlob(htmlContent, MimeType.HTML, "relatorio.html");
+  var pdfBlob = blobHtml.getAs(MimeType.PDF).setName(`Relatorio_CVM_${formatadorMes.replace('/','-')}.pdf`);
+
+  Logger.log('📧 Enviando e-mail com cores corrigidas...');
+  
+  MailApp.sendEmail({
+    to: destinatariosTeste.join(','),
+    subject: '✅ Relatório Consolidado CVM (Cores Corrigidas)',
+    htmlBody: `
+      <h3>Relatório de Teste (Cores Forçadas)</h3>
+      <p>Tentativa de correção das cores de fundo (Cabeçalho Verde, Caixas Azuis).</p>
+      <p>Referência: ${formatadorMes}</p>
+    `,
+    attachments: [pdfBlob]
+  });
+
+  Logger.log('✅ Teste finalizado.');
 }
