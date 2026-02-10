@@ -971,7 +971,7 @@ function enviarEmailConformidadeOuDesconformidadeAvancado() {
   Logger.log('📧 Iniciando envio de emails...');
 
   // ============================================
-  // 1. DIÁRIAS - ✅ SÓ ENVIA SE HOUVER DESCONFORMIDADE
+  // 1. DIÁRIAS - ✅ APENAS DESCONFORMIDADE DIÁRIA
   // ============================================
   var abaDiarias = ss.getSheetByName('Diárias');
   if (abaDiarias) {
@@ -981,26 +981,55 @@ function enviarEmailConformidadeOuDesconformidadeAvancado() {
     Logger.log('📊 Status Diárias 1: "' + statusDiarias1 + '"');
     Logger.log('📊 Status Diárias 2: "' + statusDiarias2 + '"');
     
-    // 🔥 LÓGICA: SÓ ENVIA SE ALGUM STATUS NÃO FOR "OK"
-    if (statusDiarias1 === 'OK' && statusDiarias2 === 'OK') {
-      Logger.log('✅ Diárias: AMBOS status estão OK. Email NÃO será enviado (conformidade total).');
-    } else {
-      Logger.log('⚠️ Diárias: Desconformidade detectada. Enviando email...');
-      processarAbaEmail(
-        abaDiarias,
-        'Diárias',
-        destinatarios,
-        mesPassado,
-        dataAtualFormatada,
-        urlPlanilha,
-        'diario'
-      );
+    // ✅ LÓGICA: SÓ ENVIA SE HOUVER DESCONFORMIDADE
+    var ultimaLinha = abaDiarias.getLastRow();
+    if (ultimaLinha >= 4) {
+      var dadosStatus2 = abaDiarias.getRange('F4:F' + ultimaLinha).getValues();
+      
+      // Buscar fundos com desconformidade no STATUS 2
+      var fundosDesconformes = [];
+      
+      for (var i = 0; i < dadosStatus2.length; i++) {
+        var status2 = String(dadosStatus2[i][0]).toUpperCase().trim();
+        
+        // 🔥 CRITÉRIO: Status 2 diferente de "OK"
+        if (status2 !== 'OK' && status2 !== '' && status2 !== '-') {
+          var linhaAtual = i + 4;
+          var nomeFundo = abaDiarias.getRange(linhaAtual, 1).getValue();
+          var codigoFundo = abaDiarias.getRange(linhaAtual, 2).getValue();
+          var retorno1 = abaDiarias.getRange(linhaAtual, 3).getDisplayValue();
+          var status1 = abaDiarias.getRange(linhaAtual, 4).getValue();
+          var retorno2 = abaDiarias.getRange(linhaAtual, 5).getDisplayValue();
+          
+          fundosDesconformes.push({
+            nome: nomeFundo,
+            codigo: codigoFundo,
+            competencia1: retorno1,  // Na verdade é "retorno1" para Diárias
+            status1: status1,
+            competencia2: retorno2,  // Na verdade é "retorno2" para Diárias
+            status2: status2
+          });
+        }
+      }
+      
+      // 🎯 DECISÃO FINAL
+      if (fundosDesconformes.length > 0) {
+        Logger.log('⚠️ Diárias: ' + fundosDesconformes.length + ' fundos com desconformidade. Enviando email...');
+        enviarEmailDesconformidade(
+          'Diárias',
+          fundosDesconformes,
+          destinatarios,
+          dataAtualFormatada,
+          urlPlanilha
+        );
+      } else {
+        Logger.log('✅ Diárias: Todos status OK ou intermediários. Email NÃO será enviado.');
+        Logger.log('💡 Conformidade de Diárias só é enviada no último dia útil do mês.');
+      }
     }
   }
-  
-  // 💡 NOTA: Emails de Diárias agora são enviados APENAS no último dia útil do mês
-  // pela função enviarEmailDiariasIndividualPorFundo()
-  Logger.log('⏭️ Diárias: Envio diário DESABILITADO. Envia apenas no último dia útil do mês.');
+
+  Logger.log('⏭️ Diárias: Conformidade será enviada apenas no último dia útil do mês pela função enviarEmailDiariasIndividualPorFundo()');
 
   // ============================================
   // 2. Abas mensais: Balancete, Composição, Lâmina, Perfil Mensal
