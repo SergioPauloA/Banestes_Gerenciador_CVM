@@ -357,6 +357,9 @@ function criarFormulasBalancete(ss) {
   aba.setColumnWidth(5, 130);
   aba.setColumnWidth(6, 150);
   aba.setFrozenRows(3);
+
+  // 🆕 ADICIONAR CÉLULA DE CONTROLE
+  criarCelulaControleEmail(aba);
   
   Logger.log('  ✅ Balancete criado (6 colunas com competências)');
 }
@@ -748,4 +751,44 @@ function recriarAbaDiarias() {
     success: true,
     message: 'Aba Diárias recriada!'
   };
+}
+
+/**
+ * 🔧 Cria a célula G1 de controle em todas as abas mensais
+ * Adicionar ao final de criarFormulasBalancete(), criarFormulasComposicao(), etc.
+ */
+function criarCelulaControleEmail(aba) {
+  // Criar célula G1 com valor inicial "-"
+  aba.getRange('G1').setValue('-');
+  
+  // Formatar
+  aba.getRange('G1')
+    .setBackground('#f3f4f6')
+    .setFontColor('#6b7280')
+    .setFontWeight('normal')
+    .setHorizontalAlignment('center')
+    .setVerticalAlignment('middle');
+  
+  // Adicionar borda
+  aba.getRange('G1').setBorder(
+    true, true, true, true, 
+    false, false, 
+    '#9ca3af', 
+    SpreadsheetApp.BorderStyle.SOLID
+  );
+}
+
+function criarCelulasG1EmTodasAsAbas() {
+  var ss = obterPlanilha();
+  var abas = ['Balancete', 'Composição', 'Lâmina', 'Perfil Mensal'];
+  
+  abas.forEach(function(nomeAba) {
+    var aba = ss.getSheetByName(nomeAba);
+    if (aba) {
+      criarCelulaControleEmail(aba);
+      Logger.log('✅ ' + nomeAba + ': Célula G1 criada');
+    }
+  });
+  
+  Logger.log('✅ Todas as células G1 criadas!');
 }
