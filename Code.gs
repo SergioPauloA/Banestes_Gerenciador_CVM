@@ -1363,6 +1363,10 @@ function enviarEmailConformidade(nomeAba, fundos, destinatarios, mesPassado, dat
     });
     
     Logger.log('  ✅ Email enviado com sucesso');
+
+    // 🆕 MARCAR FLAG NA PLANILHA
+    marcarEmailEnviado(nomeAba, dataAtual);
+
   } catch (error) {
     Logger.log('  ❌ Erro: ' + error.toString());
     throw error;
@@ -2147,16 +2151,31 @@ function normalizaDataParaComparacao(data) {
 }
 
 function formatarCompetencia(dataStr) {
-  // Aceita "DD/MM/AAAA", "MM/AAAA", "-" ou ""
-  if (!dataStr || dataStr === "-") return "-";
-  var partes = String(dataStr).trim().split("/");
-  if (partes.length === 3) { // DD/MM/AAAA
+  if (!dataStr || dataStr === "-" || dataStr === "") return "-";
+  
+  // Se for objeto Date
+  if (dataStr instanceof Date) {
+    var mes = ('0' + (dataStr.getMonth() + 1)).slice(-2);
+    var ano = dataStr.getFullYear();
+    return mes + '/' + ano;
+  }
+  
+  // Se for string
+  var str = String(dataStr).trim();
+  var partes = str.split("/");
+  
+  if (partes.length === 3) { 
+    // DD/MM/AAAA → MM/AAAA
     return partes[1] + "/" + partes[2];
   }
-  if (partes.length === 2) { // MM/AAAA
-    return dataStr;
+  
+  if (partes.length === 2) { 
+    // MM/AAAA → Já está OK
+    return str;
   }
-  return dataStr;
+  
+  // Se chegou aqui, retornar como está
+  return str;
 }
 
 // ===== FUNÇÕES DE STATUS INDIVIDUAL E GERAL =====
@@ -2370,6 +2389,7 @@ function determinarCompetenciasEStatus(todasCompetencias) {
  * Atualiza as competências e status de uma aba mensal
  * @param {String} nomeAba - Nome da aba ("Balancete", "Composição", etc)
  */
+
 function atualizarCompetenciasAba(nomeAba) {
   Logger.log('\n📊 Atualizando competências: ' + nomeAba);
   
@@ -2386,45 +2406,183 @@ function atualizarCompetenciasAba(nomeAba) {
     return;
   }
   
+  // 🔍 VERIFICAR FLAG G1
+  var flagG1 = aba.getRange('G1').getValue();
+  var emailJaEnviado = flagG1 && flagG1.toString().indexOf('E-MAIL ENVIADO') !== -1;
+  
+  Logger.log('  🔍 Flag G1: "' + flagG1 + '"');
+  Logger.log('  📧 Email enviado? ' + (emailJaEnviado ? 'SIM ✅' : 'NÃO ⏸️'));
+  
   var fundos = getFundos();
   var totalDesconformidade = 0;
   
-  fundos.forEach(function(fundo, index) {
-    var linha = index + 4;
+  // ════════════════════════════════════════════════════
+  // 🔥 CENÁRIO 1: EMAIL FOI ENVIADO → VERIFICAR SE DEVE ROTACIONAR
+  // ════════════════════════════════════════════════════
+  if (emailJaEnviado) {
+    Logger.log('  🔄 Flag detectada! Verificando se deve rotacionar...\n');
     
-    // Ler todas as competências disponíveis da coluna C (IMPORTXML retorna a mais recente)
-    var comp1Bruta = aba.getRange(linha, 3).getDisplayValue();
-    var comp2Bruta = aba.getRange(linha, 5).getDisplayValue(); // Coluna E
+    // ════════════════════════════════════════════════════
+    // PASSO 1: LER DADOS ATUAIS DA PLANILHA
+    // ════════════════════════════════════════════════════
+    Logger.log('  📖 Lendo dados atuais da planilha...');
     
-    var todasCompetencias = [
-      formatarCompetencia(comp1Bruta),
-      formatarCompetencia(comp2Bruta)
-    ];
+    var primeiraLinha = 4;
+    var numLinhas = fundos.length;
     
-    // Determinar o que exibir
-    var resultado = determinarCompetenciasEStatus(todasCompetencias);
+    // Ler competências (C, D, E, F)
+    var todosValores = aba.getRange(primeiraLinha, 3, numLinhas, 4).getValues();
     
-    // Atualizar Competência 1 (colunas C e D)
-    aba.getRange(linha, 3).setValue(resultado.comp1);
-    aba.getRange(linha, 4).setValue(resultado.status1);
+    // ════════════════════════════════════════════════════
+    // PASSO 2: VERIFICAR SE CVM JÁ ENVIOU NOVO MÊS
+    // ════════════════════════════════════════════════════
+    var esperadas = calcularCompetenciasEsperadas();
+    var cvmJaEnviouNovoMes = false;
     
-    // Atualizar Competência 2 (colunas E e F)
-    aba.getRange(linha, 5).setValue(resultado.comp2);
-    aba.getRange(linha, 6).setValue(resultado.status2);
+    // Pegar primeiro fundo como referência
+    var comp1Bruta = todosValores[0][0]; // Valor bruto (pode ser Date ou String)
+    var comp2Bruta = todosValores[0][2]; // Valor bruto
     
-    // Contar desconformidades
-    if (resultado.status1 === 'DESCONFORMIDADE' || resultado.status2 === 'DESCONFORMIDADE') {
-      totalDesconformidade++;
+    // 🔥 CONVERTER PARA FORMATO MM/YYYY (string)
+    var comp1Formatada = formatarCompetencia(comp1Bruta);
+    var comp2Formatada = formatarCompetencia(comp2Bruta);
+    
+    Logger.log('  🔍 Verificando primeiro fundo:');
+    Logger.log('     Comp1 bruta: ' + comp1Bruta);
+    Logger.log('     Comp1 formatada: "' + comp1Formatada + '"');
+    Logger.log('     Comp2 bruta: ' + comp2Bruta);
+    Logger.log('     Comp2 formatada: "' + comp2Formatada + '"');
+    Logger.log('     Mês esperado (atual): "' + esperadas.comp2 + '"');
+    
+    // 🎯 COMPARAÇÃO CORRETA (string com string)
+    if (comp1Formatada === esperadas.comp2 || comp2Formatada === esperadas.comp2) {
+      cvmJaEnviouNovoMes = true;
+      Logger.log('  ✅ CVM já enviou o novo mês (' + esperadas.comp2 + ')');
+      Logger.log('  ⏸️  Rotação NÃO será executada (dados já estão atualizados)');
+    } else {
+      Logger.log('  ⏳ CVM ainda não enviou o mês ' + esperadas.comp2);
+      Logger.log('  🔄 Rotação SERÁ executada');
+    }
+    Logger.log('');
+    
+    // ════════════════════════════════════════════════════
+    // DECISÃO: ROTACIONAR OU NÃO?
+    // ════════════════════════════════════════════════════
+    if (!cvmJaEnviouNovoMes) {
+      // 🔄 CVM NÃO ENVIOU NOVO MÊS → FAZER ROTAÇÃO
+      Logger.log('  🔄 Executando rotação (Comp2 → Comp1)...\n');
+      
+      var novosValores = [];
+      
+      for (var i = 0; i < todosValores.length; i++) {
+        var linha = todosValores[i];
+        
+        var comp1Atual = linha[0];
+        var status1Atual = linha[1];
+        var comp2Atual = linha[2];
+        var status2Atual = linha[3];
+        
+        // Rotação: Comp2 → Comp1
+        var novaComp1 = comp2Atual;
+        var novoStatus1 = status2Atual;
+        var novaComp2 = '-';
+        var novoStatus2 = 'AGUARDANDO';
+        
+        novosValores.push([novaComp1, novoStatus1, novaComp2, novoStatus2]);
+        
+        // Debug (primeiros 3)
+        if (i < 3) {
+          Logger.log('  [' + (i + 1) + '] ' + fundos[i].nome.substring(0, 35) + '...');
+          Logger.log('      ANTES: Comp1="' + comp1Atual + '" | Comp2="' + comp2Atual + '"');
+          Logger.log('      DEPOIS: Comp1="' + novaComp1 + '" | Comp2="-"');
+          Logger.log('');
+        }
+      }
+      
+      // Escrever tudo de uma vez
+      aba.getRange(primeiraLinha, 3, numLinhas, 4).setValues(novosValores);
+      SpreadsheetApp.flush();
+      
+      Logger.log('  ✅ Rotação aplicada!\n');
+      
+    } else {
+      // ⏸️ CVM JÁ ENVIOU NOVO MÊS → APENAS RESETAR COMP2 E STATUS2
+      Logger.log('  ⏸️ CVM já atualizou! Apenas resetando Comp2/Status2...\n');
+      
+      var novosValores = [];
+      
+      for (var i = 0; i < todosValores.length; i++) {
+        var linha = todosValores[i];
+        
+        var comp1Atual = linha[0]; // Manter Comp1 atual (já é o mês novo)
+        var status1Atual = linha[1]; // Manter Status1
+        
+        // Resetar Comp2 e Status2
+        novosValores.push([comp1Atual, status1Atual, '-', 'AGUARDANDO']);
+        
+        if (i < 3) {
+          Logger.log('  [' + (i + 1) + '] ' + fundos[i].nome.substring(0, 35) + '...');
+          Logger.log('      Comp1: "' + comp1Atual + '" (mantido)');
+          Logger.log('      Comp2: "-" (resetado)');
+          Logger.log('');
+        }
+      }
+      
+      // Escrever
+      aba.getRange(primeiraLinha, 3, numLinhas, 4).setValues(novosValores);
+      SpreadsheetApp.flush();
+      
+      Logger.log('  ✅ Comp2/Status2 resetados!\n');
     }
     
-    if (index < 3) { // Debug primeiros 3
-      Logger.log('  [' + (index+1) + '] ' + fundo.nome.substring(0, 30) + '...');
-      Logger.log('      Comp1: ' + resultado.comp1 + ' → ' + resultado.status1);
-      Logger.log('      Comp2: ' + resultado.comp2 + ' → ' + resultado.status2);
-    }
-  });
+    // Resetar flag G1
+    resetarFlagEmail(nomeAba);
+    
+  } 
+  // ════════════════════════════════════════════════════
+  // ⏸️ CENÁRIO 2: EMAIL NÃO FOI ENVIADO → LÓGICA NORMAL
+  // ════════════════════════════════════════════════════
+  else {
+    Logger.log('  ⏸️ Sem flag de email. Processamento normal...\n');
+    
+    fundos.forEach(function(fundo, index) {
+      var linha = index + 4;
+      
+      // Ler competências brutas da CVM (IMPORTXML)
+      var comp1Bruta = aba.getRange(linha, 3).getDisplayValue();
+      var comp2Bruta = aba.getRange(linha, 5).getDisplayValue();
+      
+      var todasCompetencias = [
+        formatarCompetencia(comp1Bruta),
+        formatarCompetencia(comp2Bruta)
+      ];
+      
+      // Determinar o que exibir
+      var resultado = determinarCompetenciasEStatus(todasCompetencias);
+      
+      // Atualizar planilha
+      aba.getRange(linha, 3).setValue(resultado.comp1);
+      aba.getRange(linha, 4).setValue(resultado.status1);
+      aba.getRange(linha, 5).setValue(resultado.comp2);
+      aba.getRange(linha, 6).setValue(resultado.status2);
+      
+      // Contar desconformidades
+      if (resultado.status1 === 'DESCONFORMIDADE' || resultado.status2 === 'DESCONFORMIDADE') {
+        totalDesconformidade++;
+      }
+      
+      // Debug (primeiros 3)
+      if (index < 3) {
+        Logger.log('  [' + (index + 1) + '] ' + fundo.nome.substring(0, 30) + '...');
+        Logger.log('      Comp1: ' + resultado.comp1 + ' → ' + resultado.status1);
+        Logger.log('      Comp2: ' + resultado.comp2 + ' → ' + resultado.status2);
+      }
+    });
+  }
   
-  // === ATUALIZAR STATUS GERAL (E1) ===
+  // ════════════════════════════════════════════════════
+  // ATUALIZAR STATUS GERAL (E1)
+  // ════════════════════════════════════════════════════
   var statusGeral;
   if (totalDesconformidade > 0) {
     statusGeral = 'DESCONFORMIDADE';
@@ -2438,7 +2596,7 @@ function atualizarCompetenciasAba(nomeAba) {
   }
   
   aba.getRange('E1').setValue(statusGeral);
-  Logger.log('✅ Status Geral: ' + statusGeral);
+  Logger.log('  ✅ Status Geral (E1): ' + statusGeral + '\n');
 }
 
 /**
@@ -3963,4 +4121,134 @@ function testarRelatorioPDFConsolidado() {
   });
 
   Logger.log('✅ Teste finalizado.');
+}
+
+/**
+ * 🆕 NOVA FUNÇÃO: Marca que email foi enviado
+ */
+function marcarEmailEnviado(nomeAba, dataAtual) {
+  try {
+    var ss = obterPlanilha();
+    var aba = ss.getSheetByName(nomeAba);
+    
+    if (!aba) {
+      Logger.log('  ⚠️ Aba não encontrada: ' + nomeAba);
+      return;
+    }
+    
+    // 📝 Escrever na célula G1
+    var mensagem = 'E-MAIL ENVIADO\n' + dataAtual;
+    aba.getRange('G1').setValue(mensagem);
+    
+    // 🎨 Formatar célula (verde)
+    aba.getRange('G1')
+      .setBackground('#d1fae5')
+      .setFontColor('#065f46')
+      .setFontWeight('bold')
+      .setHorizontalAlignment('center')
+      .setVerticalAlignment('middle');
+    
+    Logger.log('  ✅ Flag "E-MAIL ENVIADO" marcada em ' + nomeAba + '!G1');
+    
+  } catch (error) {
+    Logger.log('  ❌ Erro ao marcar flag: ' + error.toString());
+  }
+}
+
+/**
+ * 🆕 NOVA FUNÇÃO: Força rotação de competências
+ */
+function forcarRotacaoCompetencias(todasCompetencias) {
+  Logger.log('  🔄 Forçando rotação...');
+  
+  // Filtrar e ordenar competências (mais recente primeiro)
+  var competenciasValidas = todasCompetencias
+    .filter(function(c) { return c && c !== '-' && c !== 'ERRO'; })
+    .sort()
+    .reverse();
+  
+  if (competenciasValidas.length === 0) {
+    return {
+      comp1: '-',
+      status1: 'DESCONFORMIDADE',
+      comp2: '-',
+      status2: 'AGUARDANDO'
+    };
+  }
+  
+  // 🎯 LÓGICA DE ROTAÇÃO FORÇADA
+  // Comp1 = mais recente da CVM
+  // Comp2 = resetar para aguardar próxima
+  return {
+    comp1: competenciasValidas[0],
+    status1: 'OK',
+    comp2: '-',
+    status2: 'AGUARDANDO'
+  };
+}
+
+/**
+ * 🆕 NOVA FUNÇÃO: Reseta flag após rotação
+ */
+function resetarFlagEmail(nomeAba) {
+  try {
+    var ss = obterPlanilha();
+    var aba = ss.getSheetByName(nomeAba);
+    
+    if (!aba) return;
+    
+    // 📝 Resetar para "-"
+    aba.getRange('G1').setValue('-');
+    
+    // 🎨 Formatar célula (cinza)
+    aba.getRange('G1')
+      .setBackground('#f3f4f6')
+      .setFontColor('#6b7280')
+      .setFontWeight('normal')
+      .setHorizontalAlignment('center')
+      .setVerticalAlignment('middle');
+    
+    Logger.log('  ✅ Flag resetada em ' + nomeAba + '!G1');
+    
+  } catch (error) {
+    Logger.log('  ❌ Erro ao resetar flag: ' + error.toString());
+  }
+}
+
+
+/**
+ * 🧪 TESTE 2: Verificar flags de todas as abas
+ */
+function verificarFlagsDeTodasAsAbas() {
+  Logger.log('🔍 Verificando flags G1...\n');
+  
+  var ss = obterPlanilha();
+  var abas = ['Balancete', 'Composição', 'Lâmina', 'Perfil Mensal'];
+  
+  abas.forEach(function(nomeAba) {
+    var aba = ss.getSheetByName(nomeAba);
+    if (aba) {
+      var flagG1 = aba.getRange('G1').getValue();
+      var emailEnviado = flagG1 && flagG1.toString().indexOf('E-MAIL ENVIADO') !== -1;
+      
+      Logger.log('📋 ' + nomeAba + ':');
+      Logger.log('   G1: "' + flagG1 + '"');
+      Logger.log('   Email enviado? ' + (emailEnviado ? '✅ SIM' : '❌ NÃO'));
+      Logger.log('');
+    }
+  });
+}
+
+// 1. Marcar flag manualmente em todas as abas
+function marcarFlagEmTodasAsAbas() {
+  var abas = ['Balancete', 'Composição', 'Lâmina', 'Perfil Mensal'];
+  var dataAtual = Utilities.formatDate(new Date(), 'GMT-3', 'dd/MM/yyyy HH:mm');
+  
+  abas.forEach(function(nomeAba) {
+    marcarEmailEnviado(nomeAba, dataAtual);
+    Logger.log('✅ Flag marcada em: ' + nomeAba);
+  });
+  
+  Logger.log('\n✅ Todas as flags marcadas!');
+  Logger.log('💡 Agora execute: atualizarTodasCompetencias()');
 }
