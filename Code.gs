@@ -957,11 +957,11 @@ function enviarEmailConformidadeOuDesconformidadeAvancado() {
   var ss = obterPlanilha();
   var destinatarios = [
     'spandrade@banestes.com.br',
-    'fabiooliveira@banestes.com.br',
-    'iodutra@banestes.com.br',
-    'mcdias@banestes.com.br',
-    'sndemuner@banestes.com.br',
-    'wffreitas@banestes.com.br'
+    //'fabiooliveira@banestes.com.br',
+    //'iodutra@banestes.com.br',
+    //'mcdias@banestes.com.br',
+    //'sndemuner@banestes.com.br',
+    //'wffreitas@banestes.com.br'
   ];
 
   var mesPassado = obterMesPassadoFormatado();
@@ -2386,230 +2386,177 @@ function determinarCompetenciasEStatus(todasCompetencias) {
 }
 
 /**
- * Atualiza as competências e status de uma aba mensal
- * @param {String} nomeAba - Nome da aba ("Balancete", "Composição", etc)
+ * Atualiza colunas C, D, E, F nas abas Balancete, Composição, Lâmina, Perfil Mensal
+ * Corrige as falhas 1 e 2 conforme especificação.
  */
-
 function atualizarCompetenciasAba(nomeAba) {
-  Logger.log('\n📊 Atualizando competências: ' + nomeAba);
-  
+  Logger.log('\n📊 [ATUALIZAÇÃO DE COMPETÊNCIAS] ' + nomeAba);
+
   var ss = obterPlanilha();
   var aba = ss.getSheetByName(nomeAba);
   if (!aba) {
     Logger.log('❌ Aba não encontrada: ' + nomeAba);
     return;
   }
-  
+
   var ultimaLinha = aba.getLastRow();
   if (ultimaLinha < 4) {
     Logger.log('⚠️ Aba sem dados');
     return;
   }
-  
-  // 🔍 VERIFICAR FLAG G1
-  var flagG1 = aba.getRange('G1').getValue();
-  var emailJaEnviado = flagG1 && flagG1.toString().indexOf('E-MAIL ENVIADO') !== -1;
-  
-  Logger.log('  🔍 Flag G1: "' + flagG1 + '"');
-  Logger.log('  📧 Email enviado? ' + (emailJaEnviado ? 'SIM ✅' : 'NÃO ⏸️'));
-  
-  var fundos = getFundos();
-  var totalDesconformidade = 0;
-  
-  // ════════════════════════════════════════════════════
-  // 🔥 CENÁRIO 1: EMAIL FOI ENVIADO → VERIFICAR SE DEVE ROTACIONAR
-  // ════════════════════════════════════════════════════
-  if (emailJaEnviado) {
-    Logger.log('  🔄 Flag detectada! Verificando se deve rotacionar...\n');
-    
-    // ════════════════════════════════════════════════════
-    // PASSO 1: LER DADOS ATUAIS DA PLANILHA
-    // ════════════════════════════════════════════════════
-    Logger.log('  📖 Lendo dados atuais da planilha...');
-    
-    var primeiraLinha = 4;
-    var numLinhas = fundos.length;
-    
-    // Ler competências (C, D, E, F)
-    var todosValores = aba.getRange(primeiraLinha, 3, numLinhas, 4).getValues();
-    
-    // ════════════════════════════════════════════════════
-    // PASSO 2: VERIFICAR SE CVM JÁ ENVIOU NOVO MÊS
-    // ════════════════════════════════════════════════════
-    var esperadas = calcularCompetenciasEsperadas();
-    var cvmJaEnviouNovoMes = false;
-    
-    // Pegar primeiro fundo como referência
-    var comp1Bruta = todosValores[0][0]; // Valor bruto (pode ser Date ou String)
-    var comp2Bruta = todosValores[0][2]; // Valor bruto
-    
-    // 🔥 CONVERTER PARA FORMATO MM/YYYY (string)
-    var comp1Formatada = formatarCompetencia(comp1Bruta);
-    var comp2Formatada = formatarCompetencia(comp2Bruta);
-    
-    Logger.log('  🔍 Verificando primeiro fundo:');
-    Logger.log('     Comp1 bruta: ' + comp1Bruta);
-    Logger.log('     Comp1 formatada: "' + comp1Formatada + '"');
-    Logger.log('     Comp2 bruta: ' + comp2Bruta);
-    Logger.log('     Comp2 formatada: "' + comp2Formatada + '"');
-    Logger.log('     Mês esperado (atual): "' + esperadas.comp2 + '"');
-    
-    // 🎯 COMPARAÇÃO CORRETA (string com string)
-    if (comp1Formatada === esperadas.comp2 || comp2Formatada === esperadas.comp2) {
-      cvmJaEnviouNovoMes = true;
-      Logger.log('  ✅ CVM já enviou o novo mês (' + esperadas.comp2 + ')');
-      Logger.log('  ⏸️  Rotação NÃO será executada (dados já estão atualizados)');
-    } else {
-      Logger.log('  ⏳ CVM ainda não enviou o mês ' + esperadas.comp2);
-      Logger.log('  🔄 Rotação SERÁ executada');
-    }
-    Logger.log('');
-    
-    // ════════════════════════════════════════════════════
-    // DECISÃO: ROTACIONAR OU NÃO?
-    // ════════════════════════════════════════════════════
-    if (!cvmJaEnviouNovoMes) {
-      // 🔄 CVM NÃO ENVIOU NOVO MÊS → FAZER ROTAÇÃO
-      Logger.log('  🔄 Executando rotação (Comp2 → Comp1)...\n');
-      
-      var novosValores = [];
-      
-      for (var i = 0; i < todosValores.length; i++) {
-        var linha = todosValores[i];
-        
-        var comp1Atual = linha[0];
-        var status1Atual = linha[1];
-        var comp2Atual = linha[2];
-        var status2Atual = linha[3];
-        
-        // Rotação: Comp2 → Comp1
-        var novaComp1 = comp2Atual;
-        var novoStatus1 = status2Atual;
-        var novaComp2 = '-';
-        var novoStatus2 = 'AGUARDANDO';
-        
-        novosValores.push([novaComp1, novoStatus1, novaComp2, novoStatus2]);
-        
-        // Debug (primeiros 3)
-        if (i < 3) {
-          Logger.log('  [' + (i + 1) + '] ' + fundos[i].nome.substring(0, 35) + '...');
-          Logger.log('      ANTES: Comp1="' + comp1Atual + '" | Comp2="' + comp2Atual + '"');
-          Logger.log('      DEPOIS: Comp1="' + novaComp1 + '" | Comp2="-"');
-          Logger.log('');
+
+  // Buscar para cada linha:
+  // C = competência atual
+  // E = nova data mais recente (se houver)
+  // F = status da nova data ("OK" ou "AGUARDANDO")
+
+  var linhasDados = aba.getRange(4, 1, ultimaLinha - 3, 6).getValues(); // A:F
+  var houveNovaData = false;
+  var novaDataMaisRecente = null;
+  var novaDataArray = [];
+  var novaStatusArray = [];
+  var competenciaArray = [];
+
+  // Passo 1: Descobrir a data mais recente disponível nas colunas relacionadas ao scraping
+  // Suporte flexível: pode vir de IMPORTXML ou scraping, aqui consideramos coluna E (índice 4) após fórmulas já em vigor
+  for (var i = 0; i < linhasDados.length; i++) {
+    var linha = linhasDados[i];
+    var dataAtual = (linha[2] || '').toString().trim(); // C
+    var possivelNovaData = (linha[4] || '').toString().trim(); // E
+    competenciaArray.push(dataAtual);
+
+    // Se nova data está preenchida e não "-", e é maior que a atual, considerar como candidato
+    if (possivelNovaData && possivelNovaData !== '-' && isDataMaisRecente(possivelNovaData, dataAtual)) {
+      if (!novaDataMaisRecente) {
+        novaDataMaisRecente = possivelNovaData;
+      } else {
+        // Fica com a maior
+        if (isDataMaisRecente(possivelNovaData, novaDataMaisRecente)) {
+          novaDataMaisRecente = possivelNovaData;
         }
       }
-      
-      // Escrever tudo de uma vez
-      aba.getRange(primeiraLinha, 3, numLinhas, 4).setValues(novosValores);
-      SpreadsheetApp.flush();
-      
-      Logger.log('  ✅ Rotação aplicada!\n');
-      
-    } else {
-      // ⏸️ CVM JÁ ENVIOU NOVO MÊS → APENAS RESETAR COMP2 E STATUS2
-      Logger.log('  ⏸️ CVM já atualizou! Apenas resetando Comp2/Status2...\n');
-      
-      var novosValores = [];
-      
-      for (var i = 0; i < todosValores.length; i++) {
-        var linha = todosValores[i];
-        
-        var comp1Atual = linha[0]; // Manter Comp1 atual (já é o mês novo)
-        var status1Atual = linha[1]; // Manter Status1
-        
-        // Resetar Comp2 e Status2
-        novosValores.push([comp1Atual, status1Atual, '-', 'AGUARDANDO']);
-        
-        if (i < 3) {
-          Logger.log('  [' + (i + 1) + '] ' + fundos[i].nome.substring(0, 35) + '...');
-          Logger.log('      Comp1: "' + comp1Atual + '" (mantido)');
-          Logger.log('      Comp2: "-" (resetado)');
-          Logger.log('');
-        }
-      }
-      
-      // Escrever
-      aba.getRange(primeiraLinha, 3, numLinhas, 4).setValues(novosValores);
-      SpreadsheetApp.flush();
-      
-      Logger.log('  ✅ Comp2/Status2 resetados!\n');
-    }
-    
-    // Resetar flag G1
-    resetarFlagEmail(nomeAba);
-    
-  } 
-  // ════════════════════════════════════════════════════
-  // ⏸️ CENÁRIO 2: EMAIL NÃO FOI ENVIADO → LÓGICA NORMAL
-  // ════════════════════════════════════════════════════
-  else {
-    Logger.log('  ⏸️ Sem flag de email. Processamento normal...\n');
-    
-    fundos.forEach(function(fundo, index) {
-      var linha = index + 4;
-      
-      // Ler competências brutas da CVM (IMPORTXML)
-      var comp1Bruta = aba.getRange(linha, 3).getDisplayValue();
-      var comp2Bruta = aba.getRange(linha, 5).getDisplayValue();
-      
-      var todasCompetencias = [
-        formatarCompetencia(comp1Bruta),
-        formatarCompetencia(comp2Bruta)
-      ];
-      
-      // Determinar o que exibir
-      var resultado = determinarCompetenciasEStatus(todasCompetencias);
-      
-      // Atualizar planilha
-      aba.getRange(linha, 3).setValue(resultado.comp1);
-      aba.getRange(linha, 4).setValue(resultado.status1);
-      aba.getRange(linha, 5).setValue(resultado.comp2);
-      aba.getRange(linha, 6).setValue(resultado.status2);
-      
-      // Contar desconformidades
-      if (resultado.status1 === 'DESCONFORMIDADE' || resultado.status2 === 'DESCONFORMIDADE') {
-        totalDesconformidade++;
-      }
-      
-      // Debug (primeiros 3)
-      if (index < 3) {
-        Logger.log('  [' + (index + 1) + '] ' + fundo.nome.substring(0, 30) + '...');
-        Logger.log('      Comp1: ' + resultado.comp1 + ' → ' + resultado.status1);
-        Logger.log('      Comp2: ' + resultado.comp2 + ' → ' + resultado.status2);
-      }
-    });
-  }
-  
-  // ════════════════════════════════════════════════════
-  // ATUALIZAR STATUS GERAL (E1)
-  // ════════════════════════════════════════════════════
-  var statusGeral;
-  if (totalDesconformidade > 0) {
-    statusGeral = 'DESCONFORMIDADE';
-  } else {
-    var esperadas = calcularCompetenciasEsperadas();
-    if (esperadas.dentrodoPrazo) {
-      statusGeral = 'OK (' + esperadas.diasRestantes + ' dias restantes)';
-    } else {
-      statusGeral = 'OK';
     }
   }
-  
-  aba.getRange('E1').setValue(statusGeral);
-  Logger.log('  ✅ Status Geral (E1): ' + statusGeral + '\n');
+
+  // Passo 2: Percorrer linhas para atualizar E e F conforme regra 1 e 2
+  var todasEComNova = true; // check para rotação
+  var todasFok = true;      // check para rotação
+
+  for (var i = 0; i < linhasDados.length; i++) {
+    var linha = linhasDados[i];
+    var dataAtual = (linha[2] || '').toString().trim(); // C
+    var dataNova = '-';
+    var statusNova = "AGUARDANDO";
+
+    // Se há uma nova data mais recente para esta linha:
+    if (novaDataMaisRecente && isDataMaisRecente(novaDataMaisRecente, dataAtual)) {
+      dataNova = novaDataMaisRecente;
+      // Se há algum retorno (caso queira validar mais fortemente, adicione lógica própria)
+      // Aqui, para padronizar, consideramos que o fato de aparecer a nova data já indica envio.
+      // Se quiser validação por scraping direto aqui, insira na função abaixo.
+      var houveRetorno = true; // INSIRA LÓGICA se quiser refinar
+      if (houveRetorno) {
+        statusNova = "OK";
+      } else {
+        statusNova = "AGUARDANDO";
+        todasFok = false;
+      }
+      novaStatusArray.push(statusNova);
+      novaDataArray.push(dataNova);
+    } else {
+      // Não há nova data mais recente
+      dataNova = '-';
+      statusNova = "AGUARDANDO";
+      novaDataArray.push(dataNova);
+      novaStatusArray.push(statusNova);
+      todasEComNova = false;
+      todasFok = false;
+    }
+    // Escreve em E e F
+    aba.getRange(i + 4, 5).setValue(dataNova);      // Coluna E: Nova Data
+    aba.getRange(i + 4, 6).setValue(statusNova);    // Coluna F: Status Nova
+  }
+
+  // Passo 3: Se TODAS as linhas têm E igual à nova data e F="OK", faz a rotação:
+  // - C recebe E, D recebe F
+  // - E = "-", F = "AGUARDANDO"
+
+  if (
+    novaDataMaisRecente &&
+    novaDataArray.every(function(e) { return e === novaDataMaisRecente; }) &&
+    novaStatusArray.every(function(s) { return s === "OK"; }) &&
+    novaDataArray.length === linhasDados.length
+  ) {
+    Logger.log('🔁 Rotação automática: Nova data será aplicada como competência atual.');
+    for (var i = 0; i < linhasDados.length; i++) {
+      aba.getRange(i + 4, 3).setValue(novaDataMaisRecente);     // C: Data competência atual = nova
+      aba.getRange(i + 4, 4).setValue("OK");                    // D: Status competência atual = OK
+      aba.getRange(i + 4, 5).setValue('-');                     // E: Nova Data = "-"
+      aba.getRange(i + 4, 6).setValue("AGUARDANDO");            // F: Status Nova = "AGUARDANDO"
+    }
+    // Atualize dashboard, status geral e etc depois deste ponto (fora desta função).
+    Logger.log('✅ Rotação aplicada com sucesso.');
+  }
+
+  // -- Atualiza status geral do dashboard (diretamente aqui ou via outra função)
+  // -- O cálculo de dias restantes precisa ser ajustado na função correspondente (abaixo).
+
+  Logger.log('✅ Atualização das colunas concluída para ' + nomeAba);
 }
 
 /**
- * Atualiza todas as abas mensais (Balancete, Composição, Lâmina, Perfil Mensal)
+ * Verifica se dataPossivel é mais recente que dataAtual
+ * Ambas são string no formato "DD/MM/YYYY"
+ */
+function isDataMaisRecente(dataPossivel, dataAtual) {
+  if (!dataAtual || dataAtual === "-") return true;
+  var p1 = dataPossivel.split('/'); // DD/MM/YYYY
+  var p2 = dataAtual.split('/');
+  var d1 = new Date(parseInt(p1[2]), parseInt(p1[1])-1, parseInt(p1[0]));
+  var d2 = new Date(parseInt(p2[2]), parseInt(p2[1])-1, parseInt(p2[0]));
+  return d1 > d2;
+}
+
+/**
+ * Chamada direta do ciclo de atualização: chama atualizarCompetenciasAba para todas as abas e atualiza dashboard geral.
+ * Para garantir a aplicação das FALHAS 1 e 2.
+ * Use esta função para atualizar tudo corretamente.
  */
 function atualizarTodasCompetencias() {
-  Logger.log('🔄 Atualizando todas as competências...');
-  
-  ['Balancete', 'Composição', 'Lâmina', 'Perfil Mensal'].forEach(function(nomeAba) {
-    atualizarCompetenciasAba(nomeAba);
+  Logger.log('🔄 Atualizando todas as competências e dashboards...');
+  var abas = ['Balancete', 'Composição', 'Lâmina', 'Perfil Mensal'];
+  var ss = obterPlanilha();
+  var dashboardStatus = [];
+
+  abas.forEach(function(nomeAba, idx) {
+    atualizarCompetenciasAba(nomeAba); // FALHA 1
+
+    var aba = ss.getSheetByName(nomeAba);
+    var ultimaLinha = aba.getLastRow();
+    var linhas = aba.getRange(4, 1, ultimaLinha - 3, 6).getValues(); // A:F
+
+    // Para coluna C (Competência Atual, índice 2)
+    var competenciasAtuais = linhas.map(function(l) { return (l[2] || '').toString().trim(); });
+    var statusGeral = calcularStatusGeralDaAbaComPrazo(linhas, "mensal", competenciasAtuais); // FALHA 2
+    aba.getRange('E1').setValue(statusGeral);
+
+    dashboardStatus[idx] = statusGeral;
   });
-  
-  Logger.log('✅ Todas as competências atualizadas!');
+
+  // Atualiza painel Dashboard Geral (aba GERAL)
+  var abaGeral = ss.getSheetByName('GERAL');
+  if (abaGeral) {
+    // A4 = Balancete
+    // B4 = Composição
+    // E4 = Lâmina
+    // F4 = Perfil Mensal
+    abaGeral.getRange('A4').setValue(dashboardStatus[0]);
+    abaGeral.getRange('B4').setValue(dashboardStatus[1]);
+    abaGeral.getRange('E4').setValue(dashboardStatus[2]);
+    abaGeral.getRange('F4').setValue(dashboardStatus[3]);
+  }
+
+  Logger.log('✅ Competências e dashboard atualizados.');
 }
 
 // ============================================
@@ -4251,4 +4198,53 @@ function marcarFlagEmTodasAsAbas() {
   
   Logger.log('\n✅ Todas as flags marcadas!');
   Logger.log('💡 Agora execute: atualizarTodasCompetencias()');
+}
+
+/**
+ * Calcula o status geral com contador OK (X dias restantes) baseado na coluna C.
+ * Este método SUPERA a lógica anterior e implementa a Falha 2 completa.
+ * Para Balancete, Composição, Lâmina, Perfil Mensal.
+ * 
+ * @param {Array} dados Linhas da planilha (A:F)
+ * @param {String} tipo Tipo de aba ('mensal')
+ * @param {Array} competenciasAtuais Array de datas na coluna C (usado para status)
+ * @returns {String} Status geral do dashboard ("OK (X dias restantes)" ou "DESCONFORMIDADE")
+ */
+function calcularStatusGeralDaAbaComPrazo(dados, tipo, competenciasAtuais) {
+  // Supondo uma planilha padronizada
+  var totalFundos = dados.length;
+  var okFundos = 0;
+  if (!competenciasAtuais || competenciasAtuais.length === 0)
+    return "AGUARDANDO DADOS";
+
+  // Considerar status "OK" se coluna D = "OK" para todos
+  for (var i = 0; i < totalFundos; i++) {
+    var linha = dados[i];
+    var statusCompAtual = (linha[3] || '').toString().trim(); // Coluna D
+    if (statusCompAtual === "OK") okFundos++;
+  }
+
+  if (okFundos === totalFundos) {
+    // Pegar a data da competência atual (da primeira linha, pois todas devem estar iguais)
+    var competenciaBase = (competenciasAtuais[0] || '').toString().trim();
+    if (!competenciaBase || competenciaBase === "-" || competenciaBase === "") return "OK";
+
+    // Calcula 10º dia útil do mês X+2
+    var partes = competenciaBase.split('/');
+    if (partes.length !== 3) return "OK";
+    var dia = 1;
+    var mes = parseInt(partes[1], 10) - 1; // base 0
+    var ano = parseInt(partes[2], 10);
+
+    var dataPrazo = new Date(ano, mes + 2, 1);
+    var decimoDiaUtil = calcularDiaUtil(dataPrazo, 10, obterPlanilha());
+    var diasRestantes = calcularDiasUteisEntre(new Date(), decimoDiaUtil, obterPlanilha());
+
+    // Normaliza: se prazo já passou, mostrar 0
+    if (diasRestantes < 0) diasRestantes = 0;
+
+    return "OK (" + diasRestantes + " dias restantes)";
+  } else {
+    return "DESCONFORMIDADE";
+  }
 }
