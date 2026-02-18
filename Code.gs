@@ -4267,3 +4267,44 @@ function calcularStatusGeralDaAbaComPrazo(dados, tipo, competenciasAtuais) {
     return "DESCONFORMIDADE";
   }
 }
+
+//Function para testar retorno de colorações e respostas
+function testeSLAExemploUnico() {
+  var ss = SpreadsheetApp.openById('1N6LP1ydsxnQO_Woatv9zWEccb0fOGaV_3EKK1GoSWZI');
+  // Simulação do cenário
+  var competencia1 = "01/01/2026";
+  var hoje = new Date(2026, 1, 18); // 18/02/2026
+  var partes = competencia1.split('/');
+  var dataComp1 = new Date(parseInt(partes[2],10), parseInt(partes[1],10)-1, parseInt(partes[0],10));
+  var mesReferencia = new Date(dataComp1.getFullYear(), dataComp1.getMonth(), 1);
+  var mesPrazo = new Date(mesReferencia.getFullYear(), mesReferencia.getMonth() + 2, 1);
+  var decimoDiaUtil = calcularDiaUtil(mesPrazo, 10, ss);
+  var diasFaltantes = calcularDiasUteisEntre(hoje, decimoDiaUtil, ss);
+
+  var cor, dashboardStatus;
+  if (diasFaltantes > 15) {
+    cor = 'VERDE';
+    dashboardStatus = 'OK (' + diasFaltantes + ' dias restantes)';
+  } else if (diasFaltantes >= 6) {
+    cor = 'AMARELA';
+    dashboardStatus = 'OK (' + diasFaltantes + ' dias restantes)';
+  } else if (diasFaltantes >= 0) {
+    cor = 'VERMELHA';
+    dashboardStatus = 'OK (' + diasFaltantes + ' dias restantes)';
+  } else {
+    cor = 'VENCIDO';
+    dashboardStatus = 'DESCONFORMIDADE';
+  }
+  Logger.log(
+    'Hoje: %s | Competência: %s | Prazo: %s | Dias úteis faltantes: %s | Cor: %s | Dashboard: %s',
+    formatarData(hoje), competencia1, formatarData(decimoDiaUtil), diasFaltantes, cor, dashboardStatus
+  );
+}
+
+// Suas funções de apoio:
+function formatarData(dateObj) {
+  var dd = String(dateObj.getDate()).padStart(2,'0');
+  var mm = String(dateObj.getMonth()+1).padStart(2,'0');
+  var yyyy = dateObj.getFullYear();
+  return dd + '/' + mm + '/' + yyyy;
+}
