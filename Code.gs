@@ -4262,7 +4262,12 @@ function calcularStatusGeralDaAbaComPrazo(dados, tipo, competenciasAtuais) {
     // Normaliza: se prazo já passou, mostrar 0
     if (diasRestantes < 0) diasRestantes = 0;
 
-    return "OK (" + diasRestantes + " dias restantes)";
+    // ⚡️ Alteração: Exibir "OK" puro só se dias > 15, senão sempre "OK (X dias restantes)"
+    if (diasRestantes > 15) {
+      return "OK";
+    } else {
+      return "OK (" + diasRestantes + " dias restantes)";
+    }
   } else {
     return "DESCONFORMIDADE";
   }
@@ -4307,4 +4312,23 @@ function formatarData(dateObj) {
   var mm = String(dateObj.getMonth()+1).padStart(2,'0');
   var yyyy = dateObj.getFullYear();
   return dd + '/' + mm + '/' + yyyy;
+}
+
+function debugStatusGeral() {
+  var diasRestantesTestes = [20, 10, 3, -2]; // valores para testar casos verde, amarelo, vermelho e vencido
+  var statusGeralOriginal = "OK"; // simula que todos envios estão OK
+
+  diasRestantesTestes.forEach(function(diasRestantes) {
+    var substatus = calcularCorStatusOk(diasRestantes);
+    var displayStatus;
+    
+    if (diasRestantes < 0) {
+      displayStatus = "DESCONFORMIDADE";
+      substatus = "ok-vermelho"; // No vencido, pode forçar vermelho (ou exibir só DESCONFORMIDADE)
+    } else {
+      displayStatus = `OK (${diasRestantes} dias restantes)`;
+    }
+    
+    Logger.log("Dias Restantes: %d | Status Geral: %s | Substatus (cor): %s", diasRestantes, displayStatus, substatus);
+  });
 }
