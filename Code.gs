@@ -1257,9 +1257,6 @@ function enviarEmailDesconformidade(nomeAba, fundosDesconformes, destinatarios, 
 /**
  * Envia email de CONFORMIDADE (SEMPRE usa Competência 2)
  */
-/**
- * Envia email de CONFORMIDADE (SEMPRE usa Competência 2)
- */
 function enviarEmailConformidade(nomeAba, fundos, destinatarios, mesPassado, dataAtual) {
   Logger.log('  ✅ Enviando email de CONFORMIDADE');
   Logger.log('  Total de fundos: ' + fundos.length);
@@ -1304,8 +1301,30 @@ function enviarEmailConformidade(nomeAba, fundos, destinatarios, mesPassado, dat
       '</tr>';
   }).join('');
 
-  // 🔥 FORMATAR DATA ATUAL (pode vir como objeto Date)
-  var dataAtualFormatada = formatarDataParaEmail(dataAtual);
+  // 🔥 FORMATAR DATA ATUAL (corrigido para garantir formato dd/MM/yyyy)
+  var dataAtualFormatada;
+  if (dataAtual instanceof Date && !isNaN(dataAtual.getTime())) {
+    dataAtualFormatada = Utilities.formatDate(dataAtual, Session.getScriptTimeZone(), 'dd/MM/yyyy');
+  } else if (typeof dataAtual === 'string') {
+    // Se recebido com data e hora, tentar separar e pegar apenas a data
+    var regexData = /(\d{2}\/\d{2}\/\d{4})/;
+    var match = dataAtual.match(regexData);
+    if (match && match[1]) {
+      dataAtualFormatada = match[1];
+    } else {
+      // Tentar parsear string em Date
+      var tentativaDt = new Date(dataAtual);
+      if (!isNaN(tentativaDt.getTime())) {
+        dataAtualFormatada = Utilities.formatDate(tentativaDt, Session.getScriptTimeZone(), 'dd/MM/yyyy');
+      } else {
+        // Último recurso: coloca data de agora
+        dataAtualFormatada = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy');
+      }
+    }
+  } else {
+    // fallback
+    dataAtualFormatada = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy');
+  }
 
   // 🔥 TABELA COMPLETA
   var tabelaHTML = 
@@ -1365,7 +1384,7 @@ function enviarEmailConformidade(nomeAba, fundos, destinatarios, mesPassado, dat
     Logger.log('  ✅ Email enviado com sucesso');
 
     // 🆕 MARCAR FLAG NA PLANILHA
-    marcarEmailEnviado(nomeAba, dataAtual);
+    marcarEmailEnviado(nomeAba, dataAtualFormatada);
 
   } catch (error) {
     Logger.log('  ❌ Erro: ' + error.toString());
