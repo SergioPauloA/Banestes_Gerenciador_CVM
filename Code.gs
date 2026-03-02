@@ -4282,14 +4282,14 @@ function calcularStatusGeralDaAbaComPrazo(dados, tipo, competenciasAtuais) {
     var competenciaBase = (competenciasAtuais[0] || '').toString().trim();
     if (!competenciaBase || competenciaBase === "-" || competenciaBase === "") return "OK";
 
-    // Calcula 10º dia útil do mês X+2
+    // Calcula 10º dia útil do mês X+1
     var partes = competenciaBase.split('/');
     if (partes.length !== 3) return "OK";
     var dia = 1;
     var mes = parseInt(partes[1], 10) - 1; // base 0
     var ano = parseInt(partes[2], 10);
 
-    var dataPrazo = new Date(ano, mes + 2, 1);
+    var dataPrazo = new Date(ano, mes + 1, 1);
     var decimoDiaUtil = calcularDiaUtil(dataPrazo, 10, obterPlanilha());
     var diasRestantes = calcularDiasUteisEntre(new Date(), decimoDiaUtil, obterPlanilha());
 
@@ -4316,7 +4316,7 @@ function testeSLAExemploUnico() {
   var partes = competencia1.split('/');
   var dataComp1 = new Date(parseInt(partes[2],10), parseInt(partes[1],10)-1, parseInt(partes[0],10));
   var mesReferencia = new Date(dataComp1.getFullYear(), dataComp1.getMonth(), 1);
-  var mesPrazo = new Date(mesReferencia.getFullYear(), mesReferencia.getMonth() + 2, 1);
+  var mesPrazo = new Date(mesReferencia.getFullYear(), mesReferencia.getMonth() + 1, 1);
   var decimoDiaUtil = calcularDiaUtil(mesPrazo, 10, ss);
   var diasFaltantes = calcularDiasUteisEntre(hoje, decimoDiaUtil, ss);
 
