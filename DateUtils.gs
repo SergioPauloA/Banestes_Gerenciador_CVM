@@ -31,9 +31,9 @@ function getDatasReferencia() {
   var mesReferencia = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth() - 1, 1); // X
   var diaMesRef = formatarData(mesReferencia);
 
-  // PRAZO: 10º dia útil do mês X+2
-  var mesMaisDois = new Date(mesReferencia.getFullYear(), mesReferencia.getMonth() + 2, 1); // X+2
-  var decimoDiaUtil = calcularDiaUtil(mesMaisDois, 10, ss);
+  // PRAZO: 10º dia útil do mês ATUAL
+  var mesAtual = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth(), 1);
+  var decimoDiaUtil = calcularDiaUtil(mesAtual, 10, ss);
   var diaMesRef2 = formatarData(decimoDiaUtil);
   
   // Calcular dias restantes até o prazo

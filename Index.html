@@ -1228,8 +1228,8 @@
       // Normalizar o status (remover quebras de linha e espaços extras)
       var statusNormalizado = status.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase();
       
-      // Verificar se é exatamente "OK" (sem parênteses)
-      if (statusNormalizado === 'OK') return 'status-ok';
+      // Verificar se é exatamente "OK" ou começa com "OK (" (ex: "OK (8 dias restantes)")
+      if (statusNormalizado === 'OK' || statusNormalizado.indexOf('OK (') === 0) return 'status-ok';
       
       // Verificar se contém "CONFORMIDADE" (cobre "EM CONFORMIDADE" e "DESCONFORMIDADE")
       if (statusNormalizado.indexOf('EM CONFORMIDADE') !== -1) return 'status-conformidade';

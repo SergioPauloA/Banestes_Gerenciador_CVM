@@ -137,7 +137,9 @@ function lerAbaBalancete(ss, datas) {
   if (statusGeral && statusGeral.indexOf('DESCONFORMIDADE') !== -1) {
     substatus = 'ok-vermelho';
   } else if (statusGeral === 'OK' || statusGeral.indexOf('OK') !== -1) {
-    substatus = calcularCorStatusOk(datas.diasRestantes);
+    var okDisplay = calcularStatusOkDisplay(statusGeralDisplay, datas.diasRestantes);
+    substatus = okDisplay.substatus;
+    statusGeralDisplay = okDisplay.statusGeralDisplay;
   }
   
   return {
@@ -186,7 +188,9 @@ function lerAbaComposicao(ss, datas) {
   if (statusGeral && statusGeral.indexOf('DESCONFORMIDADE') !== -1) {
     substatus = 'ok-vermelho';
   } else if (statusGeral === 'OK' || statusGeral.indexOf('OK') !== -1) {
-    substatus = calcularCorStatusOk(datas.diasRestantes);
+    var okDisplay = calcularStatusOkDisplay(statusGeralDisplay, datas.diasRestantes);
+    substatus = okDisplay.substatus;
+    statusGeralDisplay = okDisplay.statusGeralDisplay;
   }
   
   return {
@@ -276,7 +280,9 @@ function lerAbaLamina(ss, datas) {
   if (statusGeral && statusGeral.indexOf('DESCONFORMIDADE') !== -1) {
     substatus = 'ok-vermelho';
   } else if (statusGeral === 'OK' || statusGeral.indexOf('OK') !== -1) {
-    substatus = calcularCorStatusOk(datas.diasRestantes);
+    var okDisplay = calcularStatusOkDisplay(statusGeralDisplay, datas.diasRestantes);
+    substatus = okDisplay.substatus;
+    statusGeralDisplay = okDisplay.statusGeralDisplay;
   }
   
   return {
@@ -325,7 +331,9 @@ function lerAbaPerfilMensal(ss, datas) {
   if (statusGeral && statusGeral.indexOf('DESCONFORMIDADE') !== -1) {
     substatus = 'ok-vermelho';
   } else if (statusGeral === 'OK' || statusGeral.indexOf('OK') !== -1) {
-    substatus = calcularCorStatusOk(datas.diasRestantes);
+    var okDisplay = calcularStatusOkDisplay(statusGeralDisplay, datas.diasRestantes);
+    substatus = okDisplay.substatus;
+    statusGeralDisplay = okDisplay.statusGeralDisplay;
   }
   
   return {
@@ -340,6 +348,21 @@ function calcularCorStatusOk(diasRestantes) {
   if (diasRestantes > 15) return 'ok-verde';      // Mais de 15 dias = Verde
   if (diasRestantes >= 5) return 'ok-amarelo';    // 5 a 15 dias = Amarelo
   return 'ok-vermelho';                            // Menos de 5 dias = Vermelho
+}
+
+/**
+ * Calcula substatus e texto de exibição para status OK com base nos dias úteis restantes.
+ * @param {string} statusGeralAtual - Texto atual do status (ex: "OK")
+ * @param {number} diasRestantes - Dias úteis restantes até o prazo
+ * @returns {{substatus: string, statusGeralDisplay: string}}
+ */
+function calcularStatusOkDisplay(statusGeralAtual, diasRestantes) {
+  var substatus = calcularCorStatusOk(diasRestantes);
+  var statusGeralDisplay = statusGeralAtual;
+  if (diasRestantes > 0 && diasRestantes <= 15) {
+    statusGeralDisplay = 'OK (' + formatarDiasRestantes(diasRestantes) + ')';
+  }
+  return { substatus: substatus, statusGeralDisplay: statusGeralDisplay };
 }
 
 // ============================================
