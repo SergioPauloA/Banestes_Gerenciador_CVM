@@ -3007,7 +3007,12 @@ function enviarEmailDiariasIndividualPorFundo() {
   Logger.log('📧 ===== ENVIO INDIVIDUAL POR FUNDO =====\n');
   
   var destinatarios = [
-    'spandrade@banestes.com.br'
+    //'spandrade@banestes.com.br',
+    'fabiooliveira@banestes.com.br',
+    //'iodutra@banestes.com.br',
+    'mcdias@banestes.com.br',
+    'sndemuner@banestes.com.br',
+    'wffreitas@banestes.com.br'
   ];
   
   var fundos = getFundos();
@@ -3719,7 +3724,13 @@ function enviarRelatorioDiariasConsolidadoPDF() {
   Logger.log('🎨 Iniciando geração de PDF consolidado (Layout Rico)...');
   
   // 1. Configurações
-  var destinatarios = ['spandrade@banestes.com.br']; // Adicione outros e-mails aqui se necessário
+  var destinatarios = [ 
+    //'spandrade@banestes.com.br',
+    'fabiooliveira@banestes.com.br',
+    //'iodutra@banestes.com.br',
+    'mcdias@banestes.com.br',
+    'sndemuner@banestes.com.br',
+    'wffreitas@banestes.com.br']; // Adicione outros e-mails aqui se necessário
   var fundos = getFundos();
   
   // 2. Datas e Referência (Mês Anterior)
@@ -4331,4 +4342,81 @@ function debugStatusGeral() {
     
     Logger.log("Dias Restantes: %d | Status Geral: %s | Substatus (cor): %s", diasRestantes, displayStatus, substatus);
   });
+}
+
+function criarTriggerEmailDiariasMensal() {
+  // Remove triggers antigos (evitar duplicação)
+  var triggers = ScriptApp.getProjectTriggers();
+  triggers.forEach(function(trigger) {
+    if (trigger.getHandlerFunction() === 'enviarRelatorioDiariasConsolidadoMensalPrimeiroDiaUtil') {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  });
+
+  // Cria novo trigger DIÁRIO às 18h
+  ScriptApp.newTrigger('enviarRelatorioDiariasConsolidadoMensalPrimeiroDiaUtil')
+    .timeBased()
+    .atHour(18)
+    .everyDays(1)
+    .create();
+}
+
+function enviarRelatorioDiariasConsolidadoMensalPrimeiroDiaUtil() {
+  Logger.log('⏰ Verificando envio consolidado mensal das diárias...');
+  var hoje = new Date();
+
+  // Verifica se é útil
+  var diaSemana = hoje.getDay();
+  if (diaSemana === 0 || diaSemana === 6) {
+    Logger.log('⏭️ Hoje é fim de semana/Não é dia útil');
+    return;
+  }
+
+  // Verifica se é feriado
+  var ss = obterPlanilha();
+  var abaFeriados = ss.getSheetByName('FERIADOS');
+  if (abaFeriados) {
+    var feriados = abaFeriados.getRange('A2:A100').getValues().map(function(r) {
+      var d = r[0];
+      if (d instanceof Date) {
+        return Utilities.formatDate(d, 'GMT-3', 'dd/MM/yyyy');
+      }
+      return d;
+    });
+    var hojeFormatado = Utilities.formatDate(hoje, 'GMT-3', 'dd/MM/yyyy');
+    if (feriados.indexOf(hojeFormatado) != -1) {
+      Logger.log('⏭️ Hoje é feriado/Não é dia útil');
+      return;
+    }
+  }
+
+  // Só deve enviar se HOJE é o PRIMEIRO DIA ÚTIL do mês
+  var mesAtual = hoje.getMonth();
+  var anoAtual = hoje.getFullYear();
+  var primeiroDiaUtil = new Date(anoAtual, mesAtual, 1);
+  // Encontra o primeiro dia útil ignorando feriado
+  while (primeiroDiaUtil.getDay() === 0 || primeiroDiaUtil.getDay() === 6 ||
+    (abaFeriados && feriados.indexOf(Utilities.formatDate(primeiroDiaUtil, 'GMT-3', 'dd/MM/yyyy')) !== -1)) {
+    primeiroDiaUtil.setDate(primeiroDiaUtil.getDate() + 1);
+  }
+  // Só executa se hoje == primeiroDiaUtil
+  var hojeFormatado2 = Utilities.formatDate(hoje, 'GMT-3', 'dd/MM/yyyy');
+  var primeiroDiaUtilFormatado = Utilities.formatDate(primeiroDiaUtil, 'GMT-3', 'dd/MM/yyyy');
+  if (hojeFormatado2 !== primeiroDiaUtilFormatado) {
+    Logger.log('⏭️ Hoje NÃO é o primeiro dia útil do mês. Não vai enviar mensal.');
+    return;
+  }
+
+  Logger.log('✅ Hoje é o primeiro dia útil. Vai enviar o relatório mensal consolidado.');
+
+  // Chama sua função normal de envio do PDF consolidado mensal
+  enviarRelatorioDiariasConsolidadoPDF();
+}
+
+function testarContagemDiasUteis() {
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var inicio = new Date(2026, 2, 2); // 02/03/2026
+  var fim = new Date(2026, 2, 13);   // 13/03/2026
+  var dias = calcularDiasUteisEntre(inicio, fim, ss);
+  Logger.log('Dias úteis entre 02/03 e 13/03/2026: ' + dias); // Deve ser 10
 }
