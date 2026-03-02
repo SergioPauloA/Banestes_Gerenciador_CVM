@@ -956,9 +956,9 @@ function enviarEmailConformidadeOuDesconformidadeAvancado() {
 
   var ss = obterPlanilha();
   var destinatarios = [
-    'spandrade@banestes.com.br',
+    //'spandrade@banestes.com.br',
     'fabiooliveira@banestes.com.br',
-    'iodutra@banestes.com.br',
+    //'iodutra@banestes.com.br',
     'mcdias@banestes.com.br',
     'sndemuner@banestes.com.br',
     'wffreitas@banestes.com.br'
