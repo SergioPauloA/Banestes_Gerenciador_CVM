@@ -27,13 +27,13 @@ function getDatasReferencia() {
   var dataD2 = calcularDiaUtil(diaParaCalculo, -1, ss);
   var diaD2 = formatarData(dataD2);
   
-  // DIAMESREF (1º dia do mês anterior)
-  var mesAnterior = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth() - 1, 1);
-  var diaMesRef = formatarData(mesAnterior);
-  
-  // DIAMESREF2 (10º dia útil do mês atual)
-  var mesAtual = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth(), 1);
-  var decimoDiaUtil = calcularDiaUtil(mesAtual, 10, ss);
+  // Supondo que o mês de referência é "mesAnterior" (competência X):
+  var mesReferencia = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth() - 1, 1); // X
+  var diaMesRef = formatarData(mesReferencia);
+
+  // PRAZO: 10º dia útil do mês X+2
+  var mesMaisDois = new Date(mesReferencia.getFullYear(), mesReferencia.getMonth() + 2, 1); // X+2
+  var decimoDiaUtil = calcularDiaUtil(mesMaisDois, 10, ss);
   var diaMesRef2 = formatarData(decimoDiaUtil);
   
   // Calcular dias restantes até o prazo
