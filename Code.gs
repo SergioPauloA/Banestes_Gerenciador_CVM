@@ -4376,17 +4376,21 @@ function criarTriggerEmailDiariasMensal() {
     }
   });
 
-  // Cria novo trigger DIÁRIO às 18h
+  // Cria novo trigger DIÁRIO às 18:30 (fuso do projeto: America/Sao_Paulo = GMT-3)
   ScriptApp.newTrigger('enviarRelatorioDiariasConsolidadoMensalPrimeiroDiaUtil')
     .timeBased()
     .atHour(18)
+    .nearMinute(30)
     .everyDays(1)
     .create();
+
+  Logger.log('✅ Trigger criado: Relatório mensal de Diárias às 18:30 (verifica se é 1º dia útil)');
 }
 
 function enviarRelatorioDiariasConsolidadoMensalPrimeiroDiaUtil() {
-  Logger.log('⏰ Verificando envio consolidado mensal das diárias...');
   var hoje = new Date();
+  var horaGMT3 = Utilities.formatDate(hoje, 'GMT-3', 'dd/MM/yyyy HH:mm');
+  Logger.log('⏰ Verificando envio consolidado mensal das diárias... (' + horaGMT3 + ' GMT-3)');
 
   // Verifica se é útil
   var diaSemana = hoje.getDay();
