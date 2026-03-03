@@ -4376,17 +4376,21 @@ function criarTriggerEmailDiariasMensal() {
     }
   });
 
-  // Cria novo trigger DIÁRIO às 18h
+  // Cria novo trigger DIÁRIO às 18:30 (fuso do projeto: America/Sao_Paulo = GMT-3)
   ScriptApp.newTrigger('enviarRelatorioDiariasConsolidadoMensalPrimeiroDiaUtil')
     .timeBased()
     .atHour(18)
+    .nearMinute(30)
     .everyDays(1)
     .create();
+
+  Logger.log('✅ Trigger criado: Relatório mensal de Diárias às 18:30 (verifica se é 1º dia útil)');
 }
 
 function enviarRelatorioDiariasConsolidadoMensalPrimeiroDiaUtil() {
-  Logger.log('⏰ Verificando envio consolidado mensal das diárias...');
   var hoje = new Date();
+  var horaGMT3 = Utilities.formatDate(hoje, 'GMT-3', 'dd/MM/yyyy HH:mm');
+  Logger.log('⏰ Verificando envio consolidado mensal das diárias... (' + horaGMT3 + ' GMT-3)');
 
   // Verifica se é útil
   var diaSemana = hoje.getDay();
@@ -4414,9 +4418,14 @@ function enviarRelatorioDiariasConsolidadoMensalPrimeiroDiaUtil() {
   }
 
   // Só deve enviar se HOJE é o PRIMEIRO DIA ÚTIL do mês
-  var mesAtual = hoje.getMonth();
-  var anoAtual = hoje.getFullYear();
-  var primeiroDiaUtil = new Date(anoAtual, mesAtual, 1);
+  // Extrai mês/ano a partir da data já formatada em GMT-3 para garantir consistência.
+  // Usa 12:00:00 (meio-dia) ao construir a data, pois Apps Script roda em UTC: meia-noite UTC
+  // equivale a 21h do dia anterior em GMT-3, deslocando a data erroneamente; meio-dia UTC (09h GMT-3)
+  // permanece sempre no mesmo dia calendário independente do fuso.
+  var partsHojeGMT3 = Utilities.formatDate(hoje, 'GMT-3', 'dd/MM/yyyy').split('/');
+  var mesAtual = parseInt(partsHojeGMT3[1]) - 1; // 0-indexed
+  var anoAtual = parseInt(partsHojeGMT3[2]);
+  var primeiroDiaUtil = new Date(anoAtual, mesAtual, 1, 12, 0, 0);
   // Encontra o primeiro dia útil ignorando feriado
   while (primeiroDiaUtil.getDay() === 0 || primeiroDiaUtil.getDay() === 6 ||
     (abaFeriados && feriados.indexOf(Utilities.formatDate(primeiroDiaUtil, 'GMT-3', 'dd/MM/yyyy')) !== -1)) {
