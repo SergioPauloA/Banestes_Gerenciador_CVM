@@ -577,12 +577,55 @@ function preencherAbaApoio(ss) {
   
   aba.getRange(2, 3, urls.length, 4).setValues(urls);
   
+  // Override LINKD2 (E4) com fórmula dinâmica para filtrar por período atual
+  // Isso evita o "tempo de carregamento excedido" ao limitar os dados retornados pela CVM
+  aba.getRange('E4').setFormula(montarFormulaLinkD2Diarias_());
+  
   aba.getRange('F4').setFormula('=CONCATENAR("/html/body/form/table[2]/tbody/tr[";2;"]";"/td[8]")');
   aba.getRange('G4').setFormula('=CONCATENAR("/html/body/form/table[2]/tbody/tr[";3;"]";"/td[8]")');
   
   aba.getRange('A11').setFormula('=HOJE()');
   
   Logger.log('  ✅ APOIO preenchida');
+}
+
+/**
+ * Retorna a fórmula do Google Sheets para LINKD2 (célula E4 da aba APOIO).
+ * A fórmula monta dinamicamente os parâmetros DT_INI e DT_FIM com o intervalo
+ * do mês atual, limitando os dados retornados pelo CVM e evitando timeout.
+ * @returns {string} Fórmula para ser usada em setFormula()
+ */
+function montarFormulaLinkD2Diarias_() {
+  var dataIni = 'SUBSTITUIR(TEXTO(DATA(ANO(HOJE());MÊS(HOJE());1);"DD/MM/AAAA");"/";"%2F")';
+  var dataFim = 'SUBSTITUIR(TEXTO(HOJE();"DD/MM/AAAA");"/";"%2F")';
+  return '="&PK_SUBCLASSE=-1&DT_INI="&' + dataIni + '&"&DT_FIM="&' + dataFim;
+}
+
+/**
+ * Atualiza LINKD2 na aba APOIO de instalações existentes para incluir filtro de
+ * datas dinâmico. Isso resolve o "tempo de carregamento excedido" das fórmulas
+ * IMPORTXML da aba Diárias causado pelo novo endereço do Fundos.Net.
+ * Execute esta função UMA VEZ para corrigir a instalação atual.
+ */
+function atualizarLinkDiariasApoio() {
+  Logger.log('🔧 Atualizando LINKD2 na aba APOIO com filtro de datas...');
+  
+  var ss = obterPlanilha();
+  var aba = ss.getSheetByName('APOIO');
+  
+  if (!aba) {
+    Logger.log('❌ Aba APOIO não encontrada!');
+    return { success: false, message: 'Aba APOIO não encontrada.' };
+  }
+  
+  // Atualizar E4 (LINKD2) com fórmula que inclui DT_INI e DT_FIM do mês atual
+  aba.getRange('E4').setFormula(montarFormulaLinkD2Diarias_());
+  
+  Logger.log('✅ LINKD2 atualizado com filtro dinâmico de datas!');
+  Logger.log('   As fórmulas IMPORTXML da aba Diárias agora consultarão apenas o mês atual.');
+  Logger.log('   Isso deve eliminar o "tempo de carregamento excedido".');
+  
+  return { success: true, message: 'LINKD2 atualizado com sucesso!' };
 }
 
 // ============================================

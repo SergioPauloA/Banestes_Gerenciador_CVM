@@ -1561,6 +1561,25 @@ function testarIMPORTXMLManual() {
   Logger.log('👁️ Display: ' + display);
 }
 
+/**
+ * Monta a URL da CVM para Informações Diárias com filtro de período.
+ * Limitar o intervalo de datas reduz o volume de dados retornados e evita
+ * o erro de "tempo de carregamento excedido" causado pelo novo endereço do Fundos.Net.
+ * @param {string} codigoCVM - Código CVM do fundo
+ * @param {Date} dataInicio - Data de início do período
+ * @param {Date} dataFim - Data de fim do período
+ * @returns {string} URL completa com parâmetros de data
+ */
+function montarUrlInfDiario(codigoCVM, dataInicio, dataFim) {
+  var dtIni = Utilities.formatDate(dataInicio, 'GMT-3', 'dd/MM/yyyy');
+  var dtFim = Utilities.formatDate(dataFim, 'GMT-3', 'dd/MM/yyyy');
+  return 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/InfDiario/CPublicaInfdiario.aspx' +
+    '?PK_PARTIC=' + codigoCVM +
+    '&PK_SUBCLASSE=-1' +
+    '&DT_INI=' + encodeURIComponent(dtIni) +
+    '&DT_FIM=' + encodeURIComponent(dtFim);
+}
+
 function atualizarDadosCVMRealCompleto() {
   Logger.log('🚀 Buscando dados COMPLETOS da CVM (com Lâmina corrigida)...');
   Logger.log('⏱️ Tempo estimado: 40-60 segundos');
@@ -1756,11 +1775,16 @@ function atualizarDadosCVMRealCompleto() {
   var hoje = normalizaDataDate(hojeObj);
   var feriados = getFeriadosArray();
   var diaD1 = calculaUltimoDiaUtil(hojeObj, feriados);
+
+  // Limitar a busca aos últimos 30 dias para reduzir o volume de dados e evitar timeout
+  var dtFimDiarias = hojeObj;
+  var dtIniDiarias = new Date(hojeObj);
+  dtIniDiarias.setDate(dtIniDiarias.getDate() - 30);
   
   fundos.forEach(function(fundo, index) {
     try {
       var linha = index + 4;
-      var url = 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/InfDiario/CPublicaInfdiario.aspx?PK_PARTIC=' + fundo.codigoCVM + '&PK_SUBCLASSE=-1';
+      var url = montarUrlInfDiario(fundo.codigoCVM, dtIniDiarias, dtFimDiarias);
       var response = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0' }});
 
       if (response.getResponseCode() === 200) {
@@ -3041,6 +3065,11 @@ function enviarEmailDiariasIndividualPorFundo() {
   var fundos = getFundos();
   var emailsEnviados = 0;
   var emailsComErro = 0;
+
+  // Usar o mês anterior como período de referência do relatório
+  var hojeEmail = new Date();
+  var dtIniEmail = new Date(hojeEmail.getFullYear(), hojeEmail.getMonth() - 1, 1);
+  var dtFimEmail = new Date(hojeEmail.getFullYear(), hojeEmail.getMonth(), 0);
   
   Logger.log('📊 Processando ' + fundos.length + ' fundos...\n');
   
@@ -3048,7 +3077,7 @@ function enviarEmailDiariasIndividualPorFundo() {
     Logger.log('[' + (index + 1) + '/' + fundos.length + '] ' + fundo.nome.substring(0, 40) + '...');
     
     try {
-      var url = 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/InfDiario/CPublicaInfdiario.aspx?PK_PARTIC=' + fundo.codigoCVM + '&PK_SUBCLASSE=-1';
+      var url = montarUrlInfDiario(fundo.codigoCVM, dtIniEmail, dtFimEmail);
       var response = UrlFetchApp.fetch(url, {
         muteHttpExceptions: true,
         headers: { 'User-Agent': 'Mozilla/5.0' }
@@ -3220,12 +3249,17 @@ function testarEmailDiariasIndividual() {
   
   var destinatarios = ['spandrade@banestes.com.br'];
   var fundos = getFundos().slice(0, 2); // Apenas 2 fundos
+
+  // Usar o mês anterior como período de referência do relatório
+  var hojeTeste = new Date();
+  var dtIniTeste = new Date(hojeTeste.getFullYear(), hojeTeste.getMonth() - 1, 1);
+  var dtFimTeste = new Date(hojeTeste.getFullYear(), hojeTeste.getMonth(), 0);
   
   fundos.forEach(function(fundo, index) {
     Logger.log('[' + (index + 1) + '/' + fundos.length + '] ' + fundo.nome.substring(0, 40) + '...');
     
     try {
-      var url = 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/InfDiario/CPublicaInfdiario.aspx?PK_PARTIC=' + fundo.codigoCVM + '&PK_SUBCLASSE=-1';
+      var url = montarUrlInfDiario(fundo.codigoCVM, dtIniTeste, dtFimTeste);
       var response = UrlFetchApp.fetch(url, {
         muteHttpExceptions: true,
         headers: { 'User-Agent': 'Mozilla/5.0' }
@@ -3759,6 +3793,7 @@ function enviarRelatorioDiariasConsolidadoPDF() {
   // 2. Datas e Referência (Mês Anterior)
   var hoje = new Date();
   var dataMesAnterior = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+  var dtFimMesAnterior = new Date(hoje.getFullYear(), hoje.getMonth(), 0); // Último dia do mês anterior
   
   // Formatar Mês/Ano para o cabeçalho
   var meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
@@ -3795,8 +3830,8 @@ function enviarRelatorioDiariasConsolidadoPDF() {
     Logger.log('[' + (i + 1) + '/' + fundos.length + '] Processando: ' + fundo.nome);
 
     try {
-      // --- Lógica de busca na CVM ---
-      var url = 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/InfDiario/CPublicaInfdiario.aspx?PK_PARTIC=' + fundo.codigoCVM + '&PK_SUBCLASSE=-1';
+      // --- Lógica de busca na CVM (limitado ao mês anterior para evitar timeout) ---
+      var url = montarUrlInfDiario(fundo.codigoCVM, dataMesAnterior, dtFimMesAnterior);
       var response = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0' }});
       
       var linhasTabelaHTML = "";
@@ -3954,6 +3989,7 @@ function testarRelatorioPDFConsolidado() {
   // 2. Datas
   var hoje = new Date();
   var dataMesAnterior = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+  var dtFimMesAnteriorTeste = new Date(hoje.getFullYear(), hoje.getMonth(), 0); // Último dia do mês anterior
   
   // Formatar Mês em Inglês ou Português (ajuste conforme preferir)
   var meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
@@ -3992,8 +4028,8 @@ function testarRelatorioPDFConsolidado() {
     Logger.log('   [' + (i + 1) + '] ' + fundo.nome);
 
     try {
-      // --- Scraping ---
-      var url = 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/InfDiario/CPublicaInfdiario.aspx?PK_PARTIC=' + fundo.codigoCVM + '&PK_SUBCLASSE=-1';
+      // --- Scraping (limitado ao mês anterior para evitar timeout) ---
+      var url = montarUrlInfDiario(fundo.codigoCVM, dataMesAnterior, dtFimMesAnteriorTeste);
       var response = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0' }});
       
       var linhasTabelaHTML = "";
