@@ -1794,10 +1794,20 @@ function atualizarDadosCVMRealCompleto() {
         }
 
         if (datasExtraidas.length > 0) {
-          var envio1 = datasExtraidas.indexOf(diaD1) !== -1 ? diaD1 : (datasExtraidas[0] || '-');
+          // Ordenar datas em ordem decrescente: datasExtraidas[0] = último dia registrado
+          datasExtraidas.sort(function(a, b) {
+            var pa = a.split('/'), pb = b.split('/');
+            var da = new Date(parseInt(pa[2]), parseInt(pa[1]) - 1, parseInt(pa[0]));
+            var db = new Date(parseInt(pb[2]), parseInt(pb[1]) - 1, parseInt(pb[0]));
+            return db - da;
+          });
+
+          // Envio 1: sempre o último dia útil REGISTRADO na CVM (data mais recente extraída)
+          var envio1 = datasExtraidas[0] || '-';
           var status1 = envio1 === diaD1 ? 'OK' : 'DESATUALIZADO';
           if (status1 === 'OK') contadorOK_Status1++;
 
+          // Envio 2: aguardar que o registro com a data de hoje esteja disponível na CVM
           var envio2 = datasExtraidas.indexOf(hoje) !== -1 ? hoje : '-';
           var status2 = envio2 === hoje ? 'OK' : 'A ATUALIZAR';
           if (status2 === 'OK') contadorOK_Status2++;
