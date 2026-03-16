@@ -849,9 +849,12 @@ function calcularStatusIndividual(retorno, tipo, enableDebugLog) {
   if (tipo === 'diario') {
     // diaD2 = D-1 (último dia útil), que é a referência correta para Envio 1
     var ultimoDiaUtilNormalizado = normalizaDataParaComparacao(datas.diaD2);
+    // datas.hoje = dia útil atual (hoje se for dia útil, ou próximo dia útil se fim de semana)
+    var hojeNormalizado = normalizaDataParaComparacao(datas.hoje);
     
-    // Se a data é igual ao dia D-1 → OK
-    if (retornoNormalizado === ultimoDiaUtilNormalizado) {
+    // Se a data é igual ao dia D-1 OU ao dia atual → OK
+    // (a CVM pode já ter publicado os dados do dia atual antes do fim do dia)
+    if (retornoNormalizado === ultimoDiaUtilNormalizado || retornoNormalizado === hojeNormalizado) {
       return 'OK';
     }
     
@@ -1822,9 +1825,10 @@ function atualizarDadosCVMRealCompleto() {
               return db - da;
             });
 
-            // Envio 1: sempre o último dia útil REGISTRADO na CVM (data mais recente extraída)
+            // Envio 1: último dia útil REGISTRADO na CVM (data mais recente extraída)
+            // Aceita tanto D-1 (último dia útil) quanto D (hoje, se a CVM já publicou dados do dia atual)
             var envio1 = datasExtraidas[0] || '-';
-            var status1 = envio1 === diaD1 ? 'OK' : 'DESATUALIZADO';
+            var status1 = (envio1 === diaD1 || envio1 === hoje) ? 'OK' : 'DESATUALIZADO';
             if (status1 === 'OK') contadorOK_Status1++;
 
             // Envio 2: aguardar que o registro com a data de hoje esteja disponível na CVM
