@@ -389,8 +389,12 @@ function calcularDiasRestantesProximoCiclo(competenciaDateStr) {
   var decimoDiaUtil = calcularDiaUtil(mesPrazoImediato, 10, ss);
   var diasRestantes = calcularDiasUteisEntre(hoje, decimoDiaUtil, ss);
 
-  // Se esse prazo já passou, avançar um ciclo (próximo envio aguardado)
-  if (diasRestantes < 0) {
+  // Se esse prazo já passou (deadline estritamente antes de hoje), avançar um ciclo
+  // Nota: calcularDiasUteisEntre retorna 0 quando o prazo caiu num fim de semana/feriado
+  // imediatamente antes de hoje, portanto usamos comparação de datas diretamente.
+  var hojeNorm = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()).getTime();
+  var prazoNorm = new Date(decimoDiaUtil.getFullYear(), decimoDiaUtil.getMonth(), decimoDiaUtil.getDate()).getTime();
+  if (prazoNorm < hojeNorm) {
     var mesPrazoSeguinte = new Date(ano, mes + 2, 1);
     decimoDiaUtil = calcularDiaUtil(mesPrazoSeguinte, 10, ss);
     diasRestantes = calcularDiasUteisEntre(hoje, decimoDiaUtil, ss);
@@ -4351,14 +4355,19 @@ function calcularStatusGeralDaAbaComPrazo(dados, tipo, competenciasAtuais) {
     var ss = obterPlanilha();
     var dataPrazo = new Date(ano, mes + 1, 1);
     var decimoDiaUtil = calcularDiaUtil(dataPrazo, 10, ss);
-    var diasRestantes = calcularDiasUteisEntre(new Date(), decimoDiaUtil, ss);
+    var hoje = new Date();
+    var diasRestantes = calcularDiasUteisEntre(hoje, decimoDiaUtil, ss);
 
-    // 🔥 Se o prazo do ciclo atual já passou, calcular o próximo ciclo:
+    // 🔥 Se o prazo do ciclo atual já passou (deadline estritamente antes de hoje), calcular o próximo ciclo:
+    // Nota: calcularDiasUteisEntre pode retornar 0 quando o prazo caiu num fim de semana/feriado
+    // imediatamente antes de hoje, portanto usamos comparação de datas diretamente.
     // - novo prazo = 10º dia útil do mês seguinte ao prazo vencido (mes+2 em relação à competência)
-    if (diasRestantes < 0) {
+    var hojeNorm = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()).getTime();
+    var prazoNorm = new Date(decimoDiaUtil.getFullYear(), decimoDiaUtil.getMonth(), decimoDiaUtil.getDate()).getTime();
+    if (prazoNorm < hojeNorm) {
       var mesSeguinteAoPrazo = new Date(ano, mes + 2, 1);
       decimoDiaUtil = calcularDiaUtil(mesSeguinteAoPrazo, 10, ss);
-      diasRestantes = calcularDiasUteisEntre(new Date(), decimoDiaUtil, ss);
+      diasRestantes = calcularDiasUteisEntre(hoje, decimoDiaUtil, ss);
     }
 
     // ⚡️ Exibir "OK" puro só se dias > 15, senão sempre "OK (X dias restantes)"
