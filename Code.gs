@@ -74,6 +74,7 @@ function getDashboardData() {
     
     var resultado = {
       timestamp: new Date().toISOString(),
+      ultimaAtualizacaoCVM: PropertiesService.getScriptProperties().getProperty('ULTIMA_ATUALIZACAO_CVM') || null,
       datas: datas,
       balancete: balancete,
       composicao: composicao,
@@ -1837,11 +1838,25 @@ function atualizarDadosCVMRealCompleto() {
   Logger.log('\n🧮 [6/6] Calculando competências e status...');
   atualizarTodasCompetencias(); // 🔥 ADICIONAR ESTA LINHA
   
+  // Registrar horário da última atualização automática da CVM
+  var agora = new Date();
+  PropertiesService.getScriptProperties().setProperty('ULTIMA_ATUALIZACAO_CVM', agora.toISOString());
+  
   Logger.log('\n✅ ═══════════════════════════════════════════');
   Logger.log('✅ ATUALIZAÇÃO 100% COMPLETA!');
   Logger.log('✅ ═══════════════════════════════════════════');
   
   return { success: true, message: 'Sistema 100% funcional!' };
+}
+
+/**
+ * Retorna o horário da última atualização automática dos dados da CVM.
+ * Chamado pelo front-end via google.script.run.
+ */
+function getUltimaAtualizacaoCVM() {
+  var iso = PropertiesService.getScriptProperties().getProperty('ULTIMA_ATUALIZACAO_CVM');
+  if (!iso) return null;
+  return iso;
 }
 
 // Função auxiliar para calcular status apenas de abas específicas
