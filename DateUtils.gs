@@ -4,7 +4,15 @@
  * CORREÇÃO FINAL: Ignora aba APOIO se a data for fim de semana
  */
 
+// Execution-level caches (reset on each new script invocation)
+var _datasReferenciaCache = null;
+var _feriadosCache = null;
+
 function getDatasReferencia() {
+  if (_datasReferenciaCache !== null) {
+    return _datasReferenciaCache;
+  }
+
   Logger.log('📅 getDatasReferencia: calculando datas...');
   
   var ss = SpreadsheetApp.openById('1N6LP1ydsxnQO_Woatv9zWEccb0fOGaV_3EKK1GoSWZI');
@@ -60,7 +68,7 @@ function getDatasReferencia() {
   Logger.log('  10º dia útil (prazo): ' + diaMesRef2);
   Logger.log('  🔥 Dias restantes: ' + diasRestantes);
   
-  return {
+  _datasReferenciaCache = {
     hoje: formatarData(diaParaCalculo),
     diaMesRef: diaMesRef,
     diaMesRef2: diaMesRef2,
@@ -69,6 +77,7 @@ function getDatasReferencia() {
     diaD2: diaD2,
     diasRestantes: diasRestantes
   };
+  return _datasReferenciaCache;
 }
 
 
@@ -216,26 +225,24 @@ function calcularDiasUteisEntre(dataInicio, dataFim, ss) {
 
 function ehFeriado(data, ss) {
   try {
-    if (!ss) {
-      ss = SpreadsheetApp.openById('1N6LP1ydsxnQO_Woatv9zWEccb0fOGaV_3EKK1GoSWZI');
-    }
-    
-    var abaFeriados = ss.getSheetByName('FERIADOS');
-    if (!abaFeriados) return false;
-    
-    var feriados = abaFeriados.getRange('A2:A100').getValues();
-    var dataFormatada = formatarData(data);
-    
-    for (var i = 0; i < feriados.length; i++) {
-      if (feriados[i][0]) {
-        var feriadoFormatado = formatarData(new Date(feriados[i][0]));
-        if (feriadoFormatado === dataFormatada) {
-          return true;
+    if (_feriadosCache === null) {
+      if (!ss) {
+        ss = SpreadsheetApp.openById('1N6LP1ydsxnQO_Woatv9zWEccb0fOGaV_3EKK1GoSWZI');
+      }
+      var abaFeriados = ss.getSheetByName('FERIADOS');
+      _feriadosCache = [];
+      if (abaFeriados) {
+        var feriadosData = abaFeriados.getRange('A2:A100').getValues();
+        for (var j = 0; j < feriadosData.length; j++) {
+          if (feriadosData[j][0]) {
+            _feriadosCache.push(formatarData(new Date(feriadosData[j][0])));
+          }
         }
       }
     }
     
-    return false;
+    var dataFormatada = formatarData(data);
+    return _feriadosCache.indexOf(dataFormatada) >= 0;
   } catch (error) {
     return false;
   }
