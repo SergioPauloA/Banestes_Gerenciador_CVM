@@ -137,7 +137,7 @@ function lerAbaBalancete(ss, datas) {
   if (statusGeral && statusGeral.indexOf('DESCONFORMIDADE') !== -1) {
     substatus = 'ok-vermelho';
   } else if (statusGeral === 'OK' || statusGeral.indexOf('OK') !== -1) {
-    var okDisplay = calcularStatusOkDisplay(statusGeralDisplay, datas.diasRestantes);
+    var okDisplay = calcularStatusOkDisplay(statusGeralDisplay, calcularDiasOkParaExibicao(dados, datas));
     substatus = okDisplay.substatus;
     statusGeralDisplay = okDisplay.statusGeralDisplay;
   }
@@ -188,7 +188,7 @@ function lerAbaComposicao(ss, datas) {
   if (statusGeral && statusGeral.indexOf('DESCONFORMIDADE') !== -1) {
     substatus = 'ok-vermelho';
   } else if (statusGeral === 'OK' || statusGeral.indexOf('OK') !== -1) {
-    var okDisplay = calcularStatusOkDisplay(statusGeralDisplay, datas.diasRestantes);
+    var okDisplay = calcularStatusOkDisplay(statusGeralDisplay, calcularDiasOkParaExibicao(dados, datas));
     substatus = okDisplay.substatus;
     statusGeralDisplay = okDisplay.statusGeralDisplay;
   }
@@ -280,7 +280,7 @@ function lerAbaLamina(ss, datas) {
   if (statusGeral && statusGeral.indexOf('DESCONFORMIDADE') !== -1) {
     substatus = 'ok-vermelho';
   } else if (statusGeral === 'OK' || statusGeral.indexOf('OK') !== -1) {
-    var okDisplay = calcularStatusOkDisplay(statusGeralDisplay, datas.diasRestantes);
+    var okDisplay = calcularStatusOkDisplay(statusGeralDisplay, calcularDiasOkParaExibicao(dados, datas));
     substatus = okDisplay.substatus;
     statusGeralDisplay = okDisplay.statusGeralDisplay;
   }
@@ -331,7 +331,7 @@ function lerAbaPerfilMensal(ss, datas) {
   if (statusGeral && statusGeral.indexOf('DESCONFORMIDADE') !== -1) {
     substatus = 'ok-vermelho';
   } else if (statusGeral === 'OK' || statusGeral.indexOf('OK') !== -1) {
-    var okDisplay = calcularStatusOkDisplay(statusGeralDisplay, datas.diasRestantes);
+    var okDisplay = calcularStatusOkDisplay(statusGeralDisplay, calcularDiasOkParaExibicao(dados, datas));
     substatus = okDisplay.substatus;
     statusGeralDisplay = okDisplay.statusGeralDisplay;
   }
@@ -363,6 +363,65 @@ function calcularStatusOkDisplay(statusGeralAtual, diasRestantes) {
     statusGeralDisplay = 'OK (' + formatarDiasRestantes(diasRestantes) + ')';
   }
   return { substatus: substatus, statusGeralDisplay: statusGeralDisplay };
+}
+
+/**
+ * Calcula os dias úteis restantes até o prazo do próximo ciclo,
+ * baseado na data de competência mais recente já registrada.
+ * Regra: o prazo para a competência do mês X é o 10º dia útil do mês X+1.
+ * Se esse prazo já passou, avança para o ciclo seguinte (mês X+2).
+ * @param {string} competenciaDateStr - Data "DD/MM/YYYY" da última competência registrada
+ * @returns {number|null} Dias úteis restantes até o próximo prazo, ou null se inválido
+ */
+function calcularDiasRestantesProximoCiclo(competenciaDateStr) {
+  if (!competenciaDateStr || competenciaDateStr === '-') return null;
+  var partes = competenciaDateStr.split('/');
+  if (partes.length !== 3) return null;
+  var mes = parseInt(partes[1], 10) - 1; // 0-indexed
+  var ano = parseInt(partes[2], 10);
+  if (isNaN(mes) || isNaN(ano)) return null;
+
+  var ss = obterPlanilha();
+  var hoje = new Date();
+
+  // Prazo imediato: 10º dia útil do mês seguinte à competência registrada
+  var mesPrazoImediato = new Date(ano, mes + 1, 1);
+  var decimoDiaUtil = calcularDiaUtil(mesPrazoImediato, 10, ss);
+  var diasRestantes = calcularDiasUteisEntre(hoje, decimoDiaUtil, ss);
+
+  // Se esse prazo já passou, avançar um ciclo (próximo envio aguardado)
+  if (diasRestantes < 0) {
+    var mesPrazoSeguinte = new Date(ano, mes + 2, 1);
+    decimoDiaUtil = calcularDiaUtil(mesPrazoSeguinte, 10, ss);
+    diasRestantes = calcularDiasUteisEntre(hoje, decimoDiaUtil, ss);
+  }
+
+  return diasRestantes;
+}
+
+/**
+ * Determina os dias úteis restantes corretos para exibição do status OK,
+ * usando a data de competência mais recente dos dados da aba.
+ * Quando o registro mais recente é de um mês à frente do esperado (já enviado antes
+ * do prazo), o prazo exibido reflete o ciclo seguinte, não o ciclo atual.
+ * @param {Array} dados - Array de objetos com campo 'retorno' (DD/MM/YYYY)
+ * @param {Object} datas - Datas de referência (usado como fallback)
+ * @returns {number} Dias úteis restantes para o próximo prazo
+ */
+function calcularDiasOkParaExibicao(dados, datas) {
+  var datasRetorno = dados
+    .map(function(d) { return d.retorno; })
+    .filter(function(r) { return r && r !== '-'; });
+
+  if (datasRetorno.length === 0) return datas.diasRestantes;
+
+  // Encontrar a data mais recente entre todos os registros
+  var maisRecente = datasRetorno.reduce(function(max, r) {
+    return compararDatasPTBR(r, max) > 0 ? r : max;
+  }, datasRetorno[0]);
+
+  var diasCalc = calcularDiasRestantesProximoCiclo(maisRecente);
+  return (diasCalc !== null) ? diasCalc : datas.diasRestantes;
 }
 
 // ============================================

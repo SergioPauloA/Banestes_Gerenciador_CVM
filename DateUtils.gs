@@ -40,11 +40,11 @@ function getDatasReferencia() {
   var diasRestantes = calcularDiasUteisEntre(diaParaCalculo, decimoDiaUtil, ss);
   
   // 🔥 Se o prazo do mês atual já passou, avançar para o próximo ciclo:
-  // - mesReferencia = 1º dia do mês atual (nova competência aguardada)
+  // - nova competência aguardada = 1º dia do mês atual
   // - decimoDiaUtil = 10º dia útil do próximo mês (novo prazo)
   if (diasRestantes < 0) {
-    mesReferencia = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth(), 1);
-    diaMesRef = formatarData(mesReferencia);
+    var novoMesReferencia = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth(), 1);
+    diaMesRef = formatarData(novoMesReferencia);
     var proximoMes = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth() + 1, 1);
     decimoDiaUtil = calcularDiaUtil(proximoMes, 10, ss);
     diaMesRef2 = formatarData(decimoDiaUtil);
@@ -106,8 +106,8 @@ function calcularDatasManualmente() {
   // - competência aguardada passa a ser o 1º dia do mês atual
   // - decimoDiaUtil = 10º dia útil do próximo mês (novo prazo)
   if (diasRestantes < 0) {
-    mesAnterior = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth(), 1);
-    diaMesRef = formatarData(mesAnterior);
+    var mesReferenciaAtualizado = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth(), 1);
+    diaMesRef = formatarData(mesReferenciaAtualizado);
     var mesProximoPrazo = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth() + 1, 1);
     decimoDiaUtil = calcularDiaUtil(mesProximoPrazo, 10, ss);
     diaMesRef2 = formatarData(decimoDiaUtil);
