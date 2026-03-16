@@ -39,10 +39,14 @@ function getDatasReferencia() {
   // Calcular dias restantes até o prazo
   var diasRestantes = calcularDiasUteisEntre(diaParaCalculo, decimoDiaUtil, ss);
   
-  // 🔥 Se o prazo do mês atual já passou, avançar para o próximo ciclo:
+  // 🔥 Se o prazo do mês atual já passou (deadline estritamente antes de hoje), avançar para o próximo ciclo:
+  // Nota: calcularDiasUteisEntre pode retornar 0 quando o prazo caiu num fim de semana/feriado
+  // imediatamente antes de hoje, portanto usamos comparação de datas diretamente.
   // - nova competência aguardada = 1º dia do mês atual
   // - decimoDiaUtil = 10º dia útil do próximo mês (novo prazo)
-  if (diasRestantes < 0) {
+  var hojeNorm = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth(), diaParaCalculo.getDate()).getTime();
+  var prazoNorm = new Date(decimoDiaUtil.getFullYear(), decimoDiaUtil.getMonth(), decimoDiaUtil.getDate()).getTime();
+  if (prazoNorm < hojeNorm) {
     var novoMesReferencia = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth(), 1);
     diaMesRef = formatarData(novoMesReferencia);
     var proximoMes = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth() + 1, 1);
@@ -102,10 +106,14 @@ function calcularDatasManualmente() {
   // Calcular dias restantes até o prazo
   var diasRestantes = calcularDiasUteisEntre(diaParaCalculo, decimoDiaUtil, ss);
   
-  // 🔥 Se o prazo do mês atual já passou, avançar para o próximo ciclo:
+  // 🔥 Se o prazo do mês atual já passou (deadline estritamente antes de hoje), avançar para o próximo ciclo:
+  // Nota: calcularDiasUteisEntre pode retornar 0 quando o prazo caiu num fim de semana/feriado
+  // imediatamente antes de hoje, portanto usamos comparação de datas diretamente.
   // - competência aguardada passa a ser o 1º dia do mês atual
   // - decimoDiaUtil = 10º dia útil do próximo mês (novo prazo)
-  if (diasRestantes < 0) {
+  var hojeNorm = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth(), diaParaCalculo.getDate()).getTime();
+  var prazoNorm = new Date(decimoDiaUtil.getFullYear(), decimoDiaUtil.getMonth(), decimoDiaUtil.getDate()).getTime();
+  if (prazoNorm < hojeNorm) {
     var mesReferenciaAtualizado = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth(), 1);
     diaMesRef = formatarData(mesReferenciaAtualizado);
     var mesProximoPrazo = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth() + 1, 1);
