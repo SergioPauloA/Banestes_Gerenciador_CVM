@@ -554,6 +554,21 @@ function atualizarAbaCodFundoComColuna3() {
 // ============================================
 
 /**
+ * Calcula o status geral das Diárias a partir de uma coluna de status já calculados.
+ * Ignora linhas vazias (fundos inativos) e retorna 'OK' somente quando todos os
+ * registros preenchidos são 'OK'.
+ * @param {Array<Array>} dados - Valores da coluna (ex: D4:D29 ou F4:F29)
+ * @param {string} statusErro - Valor a retornar quando não está tudo OK (ex: 'DESCONFORMIDADE' ou 'A ATUALIZAR')
+ * @returns {string}
+ */
+function calcularStatusGeralDiarias(dados, statusErro) {
+  var preenchidos = dados.filter(function(r) { return r[0] !== '' && r[0] !== null; });
+  if (preenchidos.length === 0) return statusErro;
+  var totalOK = preenchidos.filter(function(r) { return r[0] === 'OK'; }).length;
+  return (totalOK === preenchidos.length) ? 'OK' : statusErro;
+}
+
+/**
  * Atualizar status na planilha após ler os dados
  */
 function atualizarStatusNaPlanilha() {
@@ -566,15 +581,12 @@ function atualizarStatusNaPlanilha() {
 
     // Diárias - permanece lógica específica (caso use diferentes critérios para Diárias):
     var abaDiarias = ss.getSheetByName('Diárias');
-    // status 1 (col E1): todos OK em D4:D29?
+    // status 1 (col E1): todos OK em D4:D29? (ignora linhas vazias)
     var dadosDiarias1 = abaDiarias.getRange('D4:D29').getValues();
     var dadosDiarias2 = abaDiarias.getRange('F4:F29').getValues();
 
-    var totalOK1 = dadosDiarias1.filter(function(r) { return r[0] === 'OK'; }).length;
-    var statusDiarias1 = totalOK1 === dadosDiarias1.length ? 'OK' : 'DESCONFORMIDADE';
-
-    var totalOK2 = dadosDiarias2.filter(function(r) { return r[0] === 'OK'; }).length;
-    var statusDiarias2 = totalOK2 === dadosDiarias2.length ? 'OK' : 'A ATUALIZAR';
+    var statusDiarias1 = calcularStatusGeralDiarias(dadosDiarias1, 'DESCONFORMIDADE');
+    var statusDiarias2 = calcularStatusGeralDiarias(dadosDiarias2, 'A ATUALIZAR');
 
     abaDiarias.getRange('E1:F1').setValues([[statusDiarias1, statusDiarias2]]);
 
@@ -694,26 +706,17 @@ function atualizarStatusNaPlanilhaAutomatico() {
     // ============================================
     Logger.log('\n📅 Processando Diárias...');
     var abaDiarias = ss.getSheetByName('Diárias');
-    var dadosDiarias1 = abaDiarias.getRange('C4:C29').getDisplayValues();
-    var dadosDiarias2 = abaDiarias.getRange('E4:E29').getDisplayValues();
-    
-    var statusDiarias1 = calcularStatusGeralDaAba(dadosDiarias1, 'diario');
-    var statusDiarias2 = calcularStatusGeralDaAba(dadosDiarias2, 'diario');
-    
+
+    // Lê as colunas de status já calculadas (D=Status1, F=Status2) e ignora linhas vazias
+    var dadosDiarias1Status = abaDiarias.getRange('D4:D29').getValues();
+    var dadosDiarias2Status = abaDiarias.getRange('F4:F29').getValues();
+
+    var statusDiarias1 = calcularStatusGeralDiarias(dadosDiarias1Status, 'DESCONFORMIDADE');
+    var statusDiarias2 = calcularStatusGeralDiarias(dadosDiarias2Status, 'A ATUALIZAR');
+
     abaDiarias.getRange('E1').setValue(statusDiarias1);
     abaDiarias.getRange('F1').setValue(statusDiarias2);
-    
-    // Status individuais - batch write columns D and F
-    var statusDiariasCol4 = dadosDiarias1.map(function(r) {
-      return [calcularStatusIndividual(r[0], 'diario')];
-    });
-    var statusDiariasCol6 = dadosDiarias2.map(function(r) {
-      return [calcularStatusIndividual(r[0], 'diario')];
-    });
-    if (statusDiariasCol4.length > 0) {
-      abaDiarias.getRange(4, 4, statusDiariasCol4.length, 1).setValues(statusDiariasCol4);
-      abaDiarias.getRange(4, 6, statusDiariasCol6.length, 1).setValues(statusDiariasCol6);
-    }
+
     Logger.log('   ✅ Diárias atualizadas');
     
     // ============================================
