@@ -844,10 +844,11 @@ function calcularStatusIndividual(retorno, tipo, enableDebugLog) {
   }
 
   if (tipo === 'diario') {
-    var diaD1Normalizado = normalizaDataParaComparacao(datas.diaD1);
+    // diaD2 = D-1 (último dia útil), que é a referência correta para Envio 1
+    var ultimoDiaUtilNormalizado = normalizaDataParaComparacao(datas.diaD2);
     
     // Se a data é igual ao dia D-1 → OK
-    if (retornoNormalizado === diaD1Normalizado) {
+    if (retornoNormalizado === ultimoDiaUtilNormalizado) {
       return 'OK';
     }
     
