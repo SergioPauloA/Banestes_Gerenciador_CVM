@@ -1849,8 +1849,10 @@ function atualizarDadosCVMRealCompleto() {
     Logger.log('⚠️ [5/5] Diárias indisponível: ' + sectionError.message);
   }
 
-  var statusGeral1 = contadorOK_Status1 === fundos.length ? 'OK' : 'DESCONFORMIDADE';
-  var statusGeral2 = contadorOK_Status2 === fundos.length ? 'OK' : 'A ATUALIZAR';
+  var dadosStatus1 = abaDiarias.getRange('D4:D' + (3 + totalFundos)).getValues();
+  var dadosStatus2 = abaDiarias.getRange('F4:F' + (3 + totalFundos)).getValues();
+  var statusGeral1 = calcularStatusGeralDiarias(dadosStatus1, 'DESCONFORMIDADE');
+  var statusGeral2 = calcularStatusGeralDiarias(dadosStatus2, 'A ATUALIZAR');
   abaDiarias.getRange('E1').setValue(statusGeral1);
   abaDiarias.getRange('F1').setValue(statusGeral2);
 
