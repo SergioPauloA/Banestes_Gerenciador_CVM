@@ -4289,14 +4289,20 @@ function calcularStatusGeralDaAbaComPrazo(dados, tipo, competenciasAtuais) {
     var mes = parseInt(partes[1], 10) - 1; // base 0
     var ano = parseInt(partes[2], 10);
 
+    var ss = obterPlanilha();
     var dataPrazo = new Date(ano, mes + 1, 1);
-    var decimoDiaUtil = calcularDiaUtil(dataPrazo, 10, obterPlanilha());
-    var diasRestantes = calcularDiasUteisEntre(new Date(), decimoDiaUtil, obterPlanilha());
+    var decimoDiaUtil = calcularDiaUtil(dataPrazo, 10, ss);
+    var diasRestantes = calcularDiasUteisEntre(new Date(), decimoDiaUtil, ss);
 
-    // Normaliza: se prazo já passou, mostrar 0
-    if (diasRestantes < 0) diasRestantes = 0;
+    // 🔥 Se o prazo do ciclo atual já passou, calcular o próximo ciclo:
+    // - novo prazo = 10º dia útil do mês seguinte ao prazo vencido (mes+2 em relação à competência)
+    if (diasRestantes < 0) {
+      var mesSeguinteAoPrazo = new Date(ano, mes + 2, 1);
+      decimoDiaUtil = calcularDiaUtil(mesSeguinteAoPrazo, 10, ss);
+      diasRestantes = calcularDiasUteisEntre(new Date(), decimoDiaUtil, ss);
+    }
 
-    // ⚡️ Alteração: Exibir "OK" puro só se dias > 15, senão sempre "OK (X dias restantes)"
+    // ⚡️ Exibir "OK" puro só se dias > 15, senão sempre "OK (X dias restantes)"
     if (diasRestantes > 15) {
       return "OK";
     } else {
