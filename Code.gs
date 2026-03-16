@@ -1584,19 +1584,37 @@ function testarIMPORTXMLManual() {
 }
 
 function atualizarDadosCVMRealCompleto() {
-  Logger.log('🚀 Buscando dados COMPLETOS da CVM (com Lâmina corrigida)...');
-  Logger.log('⏱️ Tempo estimado: 40-60 segundos');
-  
+  Logger.log('🚀 Buscando dados COMPLETOS da CVM (requisições em paralelo)...');
+  Logger.log('⏱️ Tempo estimado: 10-20 segundos');
+
   var ss = obterPlanilha();
   var fundos = getFundos();
   var totalFundos = fundos.length;
-  
+  var fetchOptions = { muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0' } };
+
   var mesesMap = {
     'Jan': '01', 'Fev': '02', 'Mar': '03', 'Abr': '04',
     'Mai': '05', 'Jun': '06', 'Jul': '07', 'Ago': '08',
     'Set': '09', 'Out': '10', 'Nov': '11', 'Dez': '12'
   };
-  
+
+  // Helper: build a fetchAll request list for a given URL template
+  function buildRequests(urlFn) {
+    return fundos.map(function(fundo) {
+      return Object.assign({ url: urlFn(fundo) }, fetchOptions);
+    });
+  }
+
+  // Helper: extract the first two MM/YYYY competências from an HTML string
+  function extrairCompetenciasOpcao(html) {
+    var regex = /<option[^>]*>(\d{2}\/\d{4})<\/option>/gi;
+    var matches = html.match(regex);
+    if (!matches || matches.length === 0) return null;
+    var c1 = (matches[0].match(/(\d{2}\/\d{4})/) || [])[1] || null;
+    var c2 = matches[1] ? ((matches[1].match(/(\d{2}\/\d{4})/) || [])[1] || null) : null;
+    return { c1: c1, c2: c2 };
+  }
+
   // ============================================
   // 1. BALANCETE
   // ============================================
@@ -1604,42 +1622,31 @@ function atualizarDadosCVMRealCompleto() {
   var abaBalancete = ss.getSheetByName('Balancete');
   var balanceteCol3 = abaBalancete.getRange(4, 3, totalFundos, 1).getValues();
   var balanceteCol5 = abaBalancete.getRange(4, 5, totalFundos, 1).getValues();
-  
-  fundos.forEach(function(fundo, index) {
+
+  var resBalancete = UrlFetchApp.fetchAll(buildRequests(function(f) {
+    return 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/Balancete/CPublicaBalancete.asp?PK_PARTIC=' + f.codigoCVM + '&SemFrame=';
+  }));
+  resBalancete.forEach(function(response, index) {
     try {
-      var url = 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/Balancete/CPublicaBalancete.asp?PK_PARTIC=' + fundo.codigoCVM + '&SemFrame=';
-      var response = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0' }});
-      
       if (response.getResponseCode() === 200) {
-        var html = response.getContentText();
-        var regex = /<option[^>]*>(\d{2}\/\d{4})<\/option>/gi;
-        var matches = html.match(regex);
-        
-        if (matches && matches.length > 0) {
-          var comp1Match = matches[0].match(/(\d{2}\/\d{4})/);
-          var comp2Match = matches[1] ? matches[1].match(/(\d{2}\/\d{4})/) : null;
-          
-          if (comp1Match) {
-            var partes = comp1Match[1].split('/');
-            balanceteCol3[index][0] = '01/' + partes[0] + '/' + partes[1];
-          }
-          
-          if (comp2Match) {
-            var partes2 = comp2Match[1].split('/');
-            balanceteCol5[index][0] = '01/' + partes2[0] + '/' + partes2[1];
-          }
-          
-          Logger.log('  ✅ [' + (index + 1) + '/' + totalFundos + '] Balancete atualizado');
+        var comp = extrairCompetenciasOpcao(response.getContentText());
+        if (comp && comp.c1) {
+          var p1 = comp.c1.split('/');
+          balanceteCol3[index][0] = '01/' + p1[0] + '/' + p1[1];
         }
+        if (comp && comp.c2) {
+          var p2 = comp.c2.split('/');
+          balanceteCol5[index][0] = '01/' + p2[0] + '/' + p2[1];
+        }
+        if (comp && comp.c1) Logger.log('  ✅ [' + (index + 1) + '/' + totalFundos + '] Balancete atualizado');
       }
-      Utilities.sleep(300);
     } catch (error) {
-      Logger.log('  ❌ [' + (index + 1) + '/' + totalFundos + '] Erro');
+      Logger.log('  ❌ [' + (index + 1) + '/' + totalFundos + '] Erro Balancete');
     }
   });
   abaBalancete.getRange(4, 3, totalFundos, 1).setValues(balanceteCol3);
   abaBalancete.getRange(4, 5, totalFundos, 1).setValues(balanceteCol5);
-  
+
   // ============================================
   // 2. COMPOSIÇÃO
   // ============================================
@@ -1647,93 +1654,71 @@ function atualizarDadosCVMRealCompleto() {
   var abaComposicao = ss.getSheetByName('Composição');
   var composicaoCol3 = abaComposicao.getRange(4, 3, totalFundos, 1).getValues();
   var composicaoCol5 = abaComposicao.getRange(4, 5, totalFundos, 1).getValues();
-  
-  fundos.forEach(function(fundo, index) {
+
+  var resComposicao = UrlFetchApp.fetchAll(buildRequests(function(f) {
+    return 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/CDA/CPublicaCDA.aspx?PK_PARTIC=' + f.codigoCVM + '&SemFrame=';
+  }));
+  resComposicao.forEach(function(response, index) {
     try {
-      var url = 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/CDA/CPublicaCDA.aspx?PK_PARTIC=' + fundo.codigoCVM + '&SemFrame=';
-      var response = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0' }});
-      
       if (response.getResponseCode() === 200) {
-        var html = response.getContentText();
-        var regex = /<option[^>]*>(\d{2}\/\d{4})<\/option>/gi;
-        var matches = html.match(regex);
-        
-        if (matches && matches.length > 0) {
-          var comp1Match = matches[0].match(/(\d{2}\/\d{4})/);
-          var comp2Match = matches[1] ? matches[1].match(/(\d{2}\/\d{4})/) : null;
-          
-          if (comp1Match) {
-            var partes = comp1Match[1].split('/');
-            composicaoCol3[index][0] = '01/' + partes[0] + '/' + partes[1];
-          }
-          
-          if (comp2Match) {
-            var partes2 = comp2Match[1].split('/');
-            composicaoCol5[index][0] = '01/' + partes2[0] + '/' + partes2[1];
-          }
-          
-          Logger.log('  ✅ [' + (index + 1) + '/' + totalFundos + '] Composição atualizada');
+        var comp = extrairCompetenciasOpcao(response.getContentText());
+        if (comp && comp.c1) {
+          var p1 = comp.c1.split('/');
+          composicaoCol3[index][0] = '01/' + p1[0] + '/' + p1[1];
         }
+        if (comp && comp.c2) {
+          var p2 = comp.c2.split('/');
+          composicaoCol5[index][0] = '01/' + p2[0] + '/' + p2[1];
+        }
+        if (comp && comp.c1) Logger.log('  ✅ [' + (index + 1) + '/' + totalFundos + '] Composição atualizada');
       }
-      Utilities.sleep(300);
     } catch (error) {
-      Logger.log('  ❌ [' + (index + 1) + '/' + totalFundos + '] Erro');
+      Logger.log('  ❌ [' + (index + 1) + '/' + totalFundos + '] Erro Composição');
     }
   });
   abaComposicao.getRange(4, 3, totalFundos, 1).setValues(composicaoCol3);
   abaComposicao.getRange(4, 5, totalFundos, 1).setValues(composicaoCol5);
-  
+
   // ============================================
   // 3. LÂMINA
   // ============================================
-  Logger.log('\n📄 [3/5] Processando Lâmina (CORRIGIDA)...');
+  Logger.log('\n📄 [3/5] Processando Lâmina...');
   var abaLamina = ss.getSheetByName('Lâmina');
   var laminaCol3 = abaLamina.getRange(4, 3, totalFundos, 1).getValues();
   var laminaCol5 = abaLamina.getRange(4, 5, totalFundos, 1).getValues();
-  
-  fundos.forEach(function(fundo, index) {
+
+  var resLamina = UrlFetchApp.fetchAll(buildRequests(function(f) {
+    return 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/CPublicaLamina.aspx?PK_PARTIC=' + f.codigoCVM + '&PK_SUBCLASSE=-1';
+  }));
+  resLamina.forEach(function(response, index) {
     try {
-      var url = 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/CPublicaLamina.aspx?PK_PARTIC=' + fundo.codigoCVM + '&PK_SUBCLASSE=-1';
-      var response = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0' }});
-      
       if (response.getResponseCode() === 200) {
         var html = response.getContentText();
         var regex = /<option[^>]*value="([A-Za-z]{3}\/\d{4})"[^>]*>/gi;
         var matches = html.match(regex);
-        
         if (matches && matches.length > 0) {
           var comp1Match = matches[0].match(/value="([A-Za-z]{3}\/\d{4})"/);
           var comp2Match = matches[1] ? matches[1].match(/value="([A-Za-z]{3}\/\d{4})"/) : null;
-          
           if (comp1Match) {
-            var competencia = comp1Match[1];
-            var partes = competencia.split('/');
+            var partes = comp1Match[1].split('/');
             var mesNumero = mesesMap[partes[0]];
-            if (mesNumero) {
-              laminaCol3[index][0] = '01/' + mesNumero + '/' + partes[1];
-            }
+            if (mesNumero) laminaCol3[index][0] = '01/' + mesNumero + '/' + partes[1];
           }
-          
           if (comp2Match) {
-            var competencia2 = comp2Match[1];
-            var partes2 = competencia2.split('/');
+            var partes2 = comp2Match[1].split('/');
             var mesNumero2 = mesesMap[partes2[0]];
-            if (mesNumero2) {
-              laminaCol5[index][0] = '01/' + mesNumero2 + '/' + partes2[1];
-            }
+            if (mesNumero2) laminaCol5[index][0] = '01/' + mesNumero2 + '/' + partes2[1];
           }
-          
           Logger.log('  ✅ [' + (index + 1) + '/' + totalFundos + '] Lâmina atualizada');
         }
       }
-      Utilities.sleep(300);
     } catch (error) {
-      Logger.log('  ❌ [' + (index + 1) + '/' + totalFundos + '] Erro');
+      Logger.log('  ❌ [' + (index + 1) + '/' + totalFundos + '] Erro Lâmina');
     }
   });
   abaLamina.getRange(4, 3, totalFundos, 1).setValues(laminaCol3);
   abaLamina.getRange(4, 5, totalFundos, 1).setValues(laminaCol5);
-  
+
   // ============================================
   // 4. PERFIL MENSAL
   // ============================================
@@ -1741,48 +1726,37 @@ function atualizarDadosCVMRealCompleto() {
   var abaPerfilMensal = ss.getSheetByName('Perfil Mensal');
   var perfilCol3 = abaPerfilMensal.getRange(4, 3, totalFundos, 1).getValues();
   var perfilCol5 = abaPerfilMensal.getRange(4, 5, totalFundos, 1).getValues();
-  
-  fundos.forEach(function(fundo, index) {
+
+  var resPerfil = UrlFetchApp.fetchAll(buildRequests(function(f) {
+    return 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/Regul/CPublicaRegulPerfilMensal.aspx?PK_PARTIC=' + f.codigoCVM;
+  }));
+  resPerfil.forEach(function(response, index) {
     try {
-      var url = 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/Regul/CPublicaRegulPerfilMensal.aspx?PK_PARTIC=' + fundo.codigoCVM;
-      var response = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0' }});
-      
       if (response.getResponseCode() === 200) {
-        var html = response.getContentText();
-        var regex = /<option[^>]*>(\d{2}\/\d{4})<\/option>/gi;
-        var matches = html.match(regex);
-        
-        if (matches && matches.length > 0) {
-          var comp1Match = matches[0].match(/(\d{2}\/\d{4})/);
-          var comp2Match = matches[1] ? matches[1].match(/(\d{2}\/\d{4})/) : null;
-          
-          if (comp1Match) {
-            var partes = comp1Match[1].split('/');
-            perfilCol3[index][0] = '01/' + partes[0] + '/' + partes[1];
-          }
-          
-          if (comp2Match) {
-            var partes2 = comp2Match[1].split('/');
-            perfilCol5[index][0] = '01/' + partes2[0] + '/' + partes2[1];
-          }
-          
-          Logger.log('  ✅ [' + (index + 1) + '/' + totalFundos + '] Perfil Mensal atualizado');
+        var comp = extrairCompetenciasOpcao(response.getContentText());
+        if (comp && comp.c1) {
+          var p1 = comp.c1.split('/');
+          perfilCol3[index][0] = '01/' + p1[0] + '/' + p1[1];
         }
+        if (comp && comp.c2) {
+          var p2 = comp.c2.split('/');
+          perfilCol5[index][0] = '01/' + p2[0] + '/' + p2[1];
+        }
+        if (comp && comp.c1) Logger.log('  ✅ [' + (index + 1) + '/' + totalFundos + '] Perfil Mensal atualizado');
       }
-      Utilities.sleep(300);
     } catch (error) {
-      Logger.log('  ❌ [' + (index + 1) + '/' + totalFundos + '] Erro');
+      Logger.log('  ❌ [' + (index + 1) + '/' + totalFundos + '] Erro Perfil Mensal');
     }
   });
   abaPerfilMensal.getRange(4, 3, totalFundos, 1).setValues(perfilCol3);
   abaPerfilMensal.getRange(4, 5, totalFundos, 1).setValues(perfilCol5);
-  
+
   // ============================================
-  // 5. DIÁRIAS (mantém como está)
+  // 5. DIÁRIAS
   // ============================================
   Logger.log('\n📅 [5/5] Processando Diárias...');
   var abaDiarias = ss.getSheetByName('Diárias');
-  
+
   var contadorOK_Status1 = 0;
   var contadorOK_Status2 = 0;
   var hojeObj = new Date();
@@ -1790,35 +1764,48 @@ function atualizarDadosCVMRealCompleto() {
   var feriados = getFeriadosArray();
   var diaD1 = calculaUltimoDiaUtil(hojeObj, feriados);
   var diariasData = fundos.map(function() { return ['-', 'DESATUALIZADO', '-', 'A ATUALIZAR']; });
-  
-  fundos.forEach(function(fundo, index) {
-    try {
-      var url = 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/InfDiario/CPublicaInfdiario.aspx?PK_PARTIC=' + fundo.codigoCVM + '&PK_SUBCLASSE=-1';
-      var response = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0' }});
 
+  var resDiarias = UrlFetchApp.fetchAll(buildRequests(function(f) {
+    return 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/InfDiario/CPublicaInfdiario.aspx?PK_PARTIC=' + f.codigoCVM + '&PK_SUBCLASSE=-1';
+  }));
+  resDiarias.forEach(function(response, index) {
+    try {
       if (response.getResponseCode() === 200) {
         var html = response.getContentText();
-        var regex = /(\d{2}\/\d{2}\/\d{4})/g;
-        var matches = html.match(regex);
 
-        if (matches && matches.length > 0) {
-          var datasExtraidas = matches.map(normalizaData);
+        // Extrair datas apenas de células <td> para evitar datas falsas do cabeçalho/navegação
+        var datasExtraidas = [];
+        var regexTd = /<td[^>]*>\s*(\d{2}\/\d{2}\/\d{4})\s*<\/td>/gi;
+        var tdMatch;
+        var datasVistas = {};
+        while ((tdMatch = regexTd.exec(html)) !== null) {
+          var d = normalizaData(tdMatch[1]);
+          if (d && !datasVistas[d]) { datasVistas[d] = true; datasExtraidas.push(d); }
+        }
 
-          var envio1 = datasExtraidas.includes(diaD1) ? diaD1 : (datasExtraidas[0] || "-");
-          var status1 = envio1 === diaD1 ? "OK" : "DESATUALIZADO";
-          if (status1 === "OK") contadorOK_Status1++;
+        // Fallback: se a página não tiver <td> com datas, usar o padrão global
+        if (datasExtraidas.length === 0) {
+          var allDates = html.match(/(\d{2}\/\d{2}\/\d{4})/g);
+          if (allDates) {
+            datasExtraidas = allDates.map(normalizaData).filter(function(d, i, arr) {
+              return d && arr.indexOf(d) === i;
+            });
+          }
+        }
 
-          var envio2 = datasExtraidas.includes(hoje) ? hoje : "-";
-          var status2 = envio2 === hoje ? "OK" : "A ATUALIZAR";
-          if (status2 === "OK") contadorOK_Status2++;
+        if (datasExtraidas.length > 0) {
+          var envio1 = datasExtraidas.indexOf(diaD1) !== -1 ? diaD1 : (datasExtraidas[0] || '-');
+          var status1 = envio1 === diaD1 ? 'OK' : 'DESATUALIZADO';
+          if (status1 === 'OK') contadorOK_Status1++;
+
+          var envio2 = datasExtraidas.indexOf(hoje) !== -1 ? hoje : '-';
+          var status2 = envio2 === hoje ? 'OK' : 'A ATUALIZAR';
+          if (status2 === 'OK') contadorOK_Status2++;
 
           diariasData[index] = [envio1, status1, envio2, status2];
           Logger.log('  ✅ [' + (index + 1) + '/' + fundos.length + '] Envio1:' + envio1 + ' (' + status1 + ') / Envio2:' + envio2 + ' (' + status2 + ')');
         }
       }
-
-      Utilities.sleep(300);
-
     } catch (error) {
       diariasData[index] = ['ERRO', 'DESATUALIZADO', '#N/A', 'A ATUALIZAR'];
     }
@@ -1829,24 +1816,24 @@ function atualizarDadosCVMRealCompleto() {
   var statusGeral2 = contadorOK_Status2 === fundos.length ? 'OK' : 'A ATUALIZAR';
   abaDiarias.getRange('E1').setValue(statusGeral1);
   abaDiarias.getRange('F1').setValue(statusGeral2);
-  
+
   Logger.log('  STATUS 1 GERAL: ' + statusGeral1);
   Logger.log('  STATUS 2 GERAL: ' + statusGeral2);
-  
+
   // ============================================
-  // 🆕 6. CALCULAR COMPETÊNCIAS E STATUS
+  // 6. CALCULAR COMPETÊNCIAS E STATUS
   // ============================================
   Logger.log('\n🧮 [6/6] Calculando competências e status...');
-  atualizarTodasCompetencias(); // 🔥 ADICIONAR ESTA LINHA
-  
+  atualizarTodasCompetencias();
+
   // Registrar horário da última atualização automática da CVM
   var agora = new Date();
   PropertiesService.getScriptProperties().setProperty('ULTIMA_ATUALIZACAO_CVM', agora.toISOString());
-  
+
   Logger.log('\n✅ ═══════════════════════════════════════════');
   Logger.log('✅ ATUALIZAÇÃO 100% COMPLETA!');
   Logger.log('✅ ═══════════════════════════════════════════');
-  
+
   return { success: true, message: 'Sistema 100% funcional!' };
 }
 
