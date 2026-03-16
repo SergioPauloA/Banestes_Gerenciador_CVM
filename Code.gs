@@ -1623,29 +1623,33 @@ function atualizarDadosCVMRealCompleto() {
   var balanceteCol3 = abaBalancete.getRange(4, 3, totalFundos, 1).getValues();
   var balanceteCol5 = abaBalancete.getRange(4, 5, totalFundos, 1).getValues();
 
-  var resBalancete = UrlFetchApp.fetchAll(buildRequests(function(f) {
-    return 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/Balancete/CPublicaBalancete.asp?PK_PARTIC=' + f.codigoCVM + '&SemFrame=';
-  }));
-  resBalancete.forEach(function(response, index) {
-    try {
-      if (response.getResponseCode() === 200) {
-        var comp = extrairCompetenciasOpcao(response.getContentText());
-        if (comp && comp.c1) {
-          var p1 = comp.c1.split('/');
-          balanceteCol3[index][0] = '01/' + p1[0] + '/' + p1[1];
+  try {
+    var resBalancete = UrlFetchApp.fetchAll(buildRequests(function(f) {
+      return 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/Balancete/CPublicaBalancete.asp?PK_PARTIC=' + f.codigoCVM + '&SemFrame=';
+    }));
+    resBalancete.forEach(function(response, index) {
+      try {
+        if (response.getResponseCode() === 200) {
+          var comp = extrairCompetenciasOpcao(response.getContentText());
+          if (comp && comp.c1) {
+            var p1 = comp.c1.split('/');
+            balanceteCol3[index][0] = '01/' + p1[0] + '/' + p1[1];
+          }
+          if (comp && comp.c2) {
+            var p2 = comp.c2.split('/');
+            balanceteCol5[index][0] = '01/' + p2[0] + '/' + p2[1];
+          }
+          if (comp && comp.c1) Logger.log('  ✅ [' + (index + 1) + '/' + totalFundos + '] Balancete atualizado');
         }
-        if (comp && comp.c2) {
-          var p2 = comp.c2.split('/');
-          balanceteCol5[index][0] = '01/' + p2[0] + '/' + p2[1];
-        }
-        if (comp && comp.c1) Logger.log('  ✅ [' + (index + 1) + '/' + totalFundos + '] Balancete atualizado');
+      } catch (error) {
+        Logger.log('  ❌ [' + (index + 1) + '/' + totalFundos + '] Erro Balancete');
       }
-    } catch (error) {
-      Logger.log('  ❌ [' + (index + 1) + '/' + totalFundos + '] Erro Balancete');
-    }
-  });
-  abaBalancete.getRange(4, 3, totalFundos, 1).setValues(balanceteCol3);
-  abaBalancete.getRange(4, 5, totalFundos, 1).setValues(balanceteCol5);
+    });
+    abaBalancete.getRange(4, 3, totalFundos, 1).setValues(balanceteCol3);
+    abaBalancete.getRange(4, 5, totalFundos, 1).setValues(balanceteCol5);
+  } catch (sectionError) {
+    Logger.log('⚠️ [1/5] Balancete indisponível, continuando: ' + sectionError.message);
+  }
 
   // ============================================
   // 2. COMPOSIÇÃO
@@ -1655,29 +1659,33 @@ function atualizarDadosCVMRealCompleto() {
   var composicaoCol3 = abaComposicao.getRange(4, 3, totalFundos, 1).getValues();
   var composicaoCol5 = abaComposicao.getRange(4, 5, totalFundos, 1).getValues();
 
-  var resComposicao = UrlFetchApp.fetchAll(buildRequests(function(f) {
-    return 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/CDA/CPublicaCDA.aspx?PK_PARTIC=' + f.codigoCVM + '&SemFrame=';
-  }));
-  resComposicao.forEach(function(response, index) {
-    try {
-      if (response.getResponseCode() === 200) {
-        var comp = extrairCompetenciasOpcao(response.getContentText());
-        if (comp && comp.c1) {
-          var p1 = comp.c1.split('/');
-          composicaoCol3[index][0] = '01/' + p1[0] + '/' + p1[1];
+  try {
+    var resComposicao = UrlFetchApp.fetchAll(buildRequests(function(f) {
+      return 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/CDA/CPublicaCDA.aspx?PK_PARTIC=' + f.codigoCVM + '&SemFrame=';
+    }));
+    resComposicao.forEach(function(response, index) {
+      try {
+        if (response.getResponseCode() === 200) {
+          var comp = extrairCompetenciasOpcao(response.getContentText());
+          if (comp && comp.c1) {
+            var p1 = comp.c1.split('/');
+            composicaoCol3[index][0] = '01/' + p1[0] + '/' + p1[1];
+          }
+          if (comp && comp.c2) {
+            var p2 = comp.c2.split('/');
+            composicaoCol5[index][0] = '01/' + p2[0] + '/' + p2[1];
+          }
+          if (comp && comp.c1) Logger.log('  ✅ [' + (index + 1) + '/' + totalFundos + '] Composição atualizada');
         }
-        if (comp && comp.c2) {
-          var p2 = comp.c2.split('/');
-          composicaoCol5[index][0] = '01/' + p2[0] + '/' + p2[1];
-        }
-        if (comp && comp.c1) Logger.log('  ✅ [' + (index + 1) + '/' + totalFundos + '] Composição atualizada');
+      } catch (error) {
+        Logger.log('  ❌ [' + (index + 1) + '/' + totalFundos + '] Erro Composição');
       }
-    } catch (error) {
-      Logger.log('  ❌ [' + (index + 1) + '/' + totalFundos + '] Erro Composição');
-    }
-  });
-  abaComposicao.getRange(4, 3, totalFundos, 1).setValues(composicaoCol3);
-  abaComposicao.getRange(4, 5, totalFundos, 1).setValues(composicaoCol5);
+    });
+    abaComposicao.getRange(4, 3, totalFundos, 1).setValues(composicaoCol3);
+    abaComposicao.getRange(4, 5, totalFundos, 1).setValues(composicaoCol5);
+  } catch (sectionError) {
+    Logger.log('⚠️ [2/5] Composição indisponível, continuando: ' + sectionError.message);
+  }
 
   // ============================================
   // 3. LÂMINA
@@ -1687,37 +1695,41 @@ function atualizarDadosCVMRealCompleto() {
   var laminaCol3 = abaLamina.getRange(4, 3, totalFundos, 1).getValues();
   var laminaCol5 = abaLamina.getRange(4, 5, totalFundos, 1).getValues();
 
-  var resLamina = UrlFetchApp.fetchAll(buildRequests(function(f) {
-    return 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/CPublicaLamina.aspx?PK_PARTIC=' + f.codigoCVM + '&PK_SUBCLASSE=-1';
-  }));
-  resLamina.forEach(function(response, index) {
-    try {
-      if (response.getResponseCode() === 200) {
-        var html = response.getContentText();
-        var regex = /<option[^>]*value="([A-Za-z]{3}\/\d{4})"[^>]*>/gi;
-        var matches = html.match(regex);
-        if (matches && matches.length > 0) {
-          var comp1Match = matches[0].match(/value="([A-Za-z]{3}\/\d{4})"/);
-          var comp2Match = matches[1] ? matches[1].match(/value="([A-Za-z]{3}\/\d{4})"/) : null;
-          if (comp1Match) {
-            var partes = comp1Match[1].split('/');
-            var mesNumero = mesesMap[partes[0]];
-            if (mesNumero) laminaCol3[index][0] = '01/' + mesNumero + '/' + partes[1];
+  try {
+    var resLamina = UrlFetchApp.fetchAll(buildRequests(function(f) {
+      return 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/CPublicaLamina.aspx?PK_PARTIC=' + f.codigoCVM + '&PK_SUBCLASSE=-1';
+    }));
+    resLamina.forEach(function(response, index) {
+      try {
+        if (response.getResponseCode() === 200) {
+          var html = response.getContentText();
+          var regex = /<option[^>]*value="([A-Za-z]{3}\/\d{4})"[^>]*>/gi;
+          var matches = html.match(regex);
+          if (matches && matches.length > 0) {
+            var comp1Match = matches[0].match(/value="([A-Za-z]{3}\/\d{4})"/);
+            var comp2Match = matches[1] ? matches[1].match(/value="([A-Za-z]{3}\/\d{4})"/) : null;
+            if (comp1Match) {
+              var partes = comp1Match[1].split('/');
+              var mesNumero = mesesMap[partes[0]];
+              if (mesNumero) laminaCol3[index][0] = '01/' + mesNumero + '/' + partes[1];
+            }
+            if (comp2Match) {
+              var partes2 = comp2Match[1].split('/');
+              var mesNumero2 = mesesMap[partes2[0]];
+              if (mesNumero2) laminaCol5[index][0] = '01/' + mesNumero2 + '/' + partes2[1];
+            }
+            Logger.log('  ✅ [' + (index + 1) + '/' + totalFundos + '] Lâmina atualizada');
           }
-          if (comp2Match) {
-            var partes2 = comp2Match[1].split('/');
-            var mesNumero2 = mesesMap[partes2[0]];
-            if (mesNumero2) laminaCol5[index][0] = '01/' + mesNumero2 + '/' + partes2[1];
-          }
-          Logger.log('  ✅ [' + (index + 1) + '/' + totalFundos + '] Lâmina atualizada');
         }
+      } catch (error) {
+        Logger.log('  ❌ [' + (index + 1) + '/' + totalFundos + '] Erro Lâmina');
       }
-    } catch (error) {
-      Logger.log('  ❌ [' + (index + 1) + '/' + totalFundos + '] Erro Lâmina');
-    }
-  });
-  abaLamina.getRange(4, 3, totalFundos, 1).setValues(laminaCol3);
-  abaLamina.getRange(4, 5, totalFundos, 1).setValues(laminaCol5);
+    });
+    abaLamina.getRange(4, 3, totalFundos, 1).setValues(laminaCol3);
+    abaLamina.getRange(4, 5, totalFundos, 1).setValues(laminaCol5);
+  } catch (sectionError) {
+    Logger.log('⚠️ [3/5] Lâmina indisponível, continuando: ' + sectionError.message);
+  }
 
   // ============================================
   // 4. PERFIL MENSAL
@@ -1727,29 +1739,33 @@ function atualizarDadosCVMRealCompleto() {
   var perfilCol3 = abaPerfilMensal.getRange(4, 3, totalFundos, 1).getValues();
   var perfilCol5 = abaPerfilMensal.getRange(4, 5, totalFundos, 1).getValues();
 
-  var resPerfil = UrlFetchApp.fetchAll(buildRequests(function(f) {
-    return 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/Regul/CPublicaRegulPerfilMensal.aspx?PK_PARTIC=' + f.codigoCVM;
-  }));
-  resPerfil.forEach(function(response, index) {
-    try {
-      if (response.getResponseCode() === 200) {
-        var comp = extrairCompetenciasOpcao(response.getContentText());
-        if (comp && comp.c1) {
-          var p1 = comp.c1.split('/');
-          perfilCol3[index][0] = '01/' + p1[0] + '/' + p1[1];
+  try {
+    var resPerfil = UrlFetchApp.fetchAll(buildRequests(function(f) {
+      return 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/Regul/CPublicaRegulPerfilMensal.aspx?PK_PARTIC=' + f.codigoCVM;
+    }));
+    resPerfil.forEach(function(response, index) {
+      try {
+        if (response.getResponseCode() === 200) {
+          var comp = extrairCompetenciasOpcao(response.getContentText());
+          if (comp && comp.c1) {
+            var p1 = comp.c1.split('/');
+            perfilCol3[index][0] = '01/' + p1[0] + '/' + p1[1];
+          }
+          if (comp && comp.c2) {
+            var p2 = comp.c2.split('/');
+            perfilCol5[index][0] = '01/' + p2[0] + '/' + p2[1];
+          }
+          if (comp && comp.c1) Logger.log('  ✅ [' + (index + 1) + '/' + totalFundos + '] Perfil Mensal atualizado');
         }
-        if (comp && comp.c2) {
-          var p2 = comp.c2.split('/');
-          perfilCol5[index][0] = '01/' + p2[0] + '/' + p2[1];
-        }
-        if (comp && comp.c1) Logger.log('  ✅ [' + (index + 1) + '/' + totalFundos + '] Perfil Mensal atualizado');
+      } catch (error) {
+        Logger.log('  ❌ [' + (index + 1) + '/' + totalFundos + '] Erro Perfil Mensal');
       }
-    } catch (error) {
-      Logger.log('  ❌ [' + (index + 1) + '/' + totalFundos + '] Erro Perfil Mensal');
-    }
-  });
-  abaPerfilMensal.getRange(4, 3, totalFundos, 1).setValues(perfilCol3);
-  abaPerfilMensal.getRange(4, 5, totalFundos, 1).setValues(perfilCol5);
+    });
+    abaPerfilMensal.getRange(4, 3, totalFundos, 1).setValues(perfilCol3);
+    abaPerfilMensal.getRange(4, 5, totalFundos, 1).setValues(perfilCol5);
+  } catch (sectionError) {
+    Logger.log('⚠️ [4/5] Perfil Mensal indisponível, continuando: ' + sectionError.message);
+  }
 
   // ============================================
   // 5. DIÁRIAS
@@ -1765,62 +1781,66 @@ function atualizarDadosCVMRealCompleto() {
   var diaD1 = calculaUltimoDiaUtil(hojeObj, feriados);
   var diariasData = fundos.map(function() { return ['-', 'DESATUALIZADO', '-', 'A ATUALIZAR']; });
 
-  var resDiarias = UrlFetchApp.fetchAll(buildRequests(function(f) {
-    return 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/InfDiario/CPublicaInfdiario.aspx?PK_PARTIC=' + f.codigoCVM + '&PK_SUBCLASSE=-1';
-  }));
-  resDiarias.forEach(function(response, index) {
-    try {
-      if (response.getResponseCode() === 200) {
-        var html = response.getContentText();
+  try {
+    var resDiarias = UrlFetchApp.fetchAll(buildRequests(function(f) {
+      return 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/InfDiario/CPublicaInfdiario.aspx?PK_PARTIC=' + f.codigoCVM + '&PK_SUBCLASSE=-1';
+    }));
+    resDiarias.forEach(function(response, index) {
+      try {
+        if (response.getResponseCode() === 200) {
+          var html = response.getContentText();
 
-        // Extrair datas apenas de células <td> para evitar datas falsas do cabeçalho/navegação
-        var datasExtraidas = [];
-        var regexTd = /<td[^>]*>\s*(\d{2}\/\d{2}\/\d{4})\s*<\/td>/gi;
-        var tdMatch;
-        var datasVistas = {};
-        while ((tdMatch = regexTd.exec(html)) !== null) {
-          var d = normalizaData(tdMatch[1]);
-          if (d && !datasVistas[d]) { datasVistas[d] = true; datasExtraidas.push(d); }
-        }
+          // Extrair datas apenas de células <td> para evitar datas falsas do cabeçalho/navegação
+          var datasExtraidas = [];
+          var regexTd = /<td[^>]*>\s*(\d{2}\/\d{2}\/\d{4})\s*<\/td>/gi;
+          var tdMatch;
+          var datasVistas = {};
+          while ((tdMatch = regexTd.exec(html)) !== null) {
+            var d = normalizaData(tdMatch[1]);
+            if (d && !datasVistas[d]) { datasVistas[d] = true; datasExtraidas.push(d); }
+          }
 
-        // Fallback: se a página não tiver <td> com datas, usar o padrão global
-        if (datasExtraidas.length === 0) {
-          var allDates = html.match(/(\d{2}\/\d{2}\/\d{4})/g);
-          if (allDates) {
-            datasExtraidas = allDates.map(normalizaData).filter(function(d, i, arr) {
-              return d && arr.indexOf(d) === i;
+          // Fallback: se a página não tiver <td> com datas, usar o padrão global
+          if (datasExtraidas.length === 0) {
+            var allDates = html.match(/(\d{2}\/\d{2}\/\d{4})/g);
+            if (allDates) {
+              datasExtraidas = allDates.map(normalizaData).filter(function(d, i, arr) {
+                return d && arr.indexOf(d) === i;
+              });
+            }
+          }
+
+          if (datasExtraidas.length > 0) {
+            // Ordenar datas em ordem decrescente: datasExtraidas[0] = último dia registrado
+            datasExtraidas.sort(function(a, b) {
+              var pa = a.split('/'), pb = b.split('/');
+              var da = new Date(parseInt(pa[2]), parseInt(pa[1]) - 1, parseInt(pa[0]));
+              var db = new Date(parseInt(pb[2]), parseInt(pb[1]) - 1, parseInt(pb[0]));
+              return db - da;
             });
+
+            // Envio 1: sempre o último dia útil REGISTRADO na CVM (data mais recente extraída)
+            var envio1 = datasExtraidas[0] || '-';
+            var status1 = envio1 === diaD1 ? 'OK' : 'DESATUALIZADO';
+            if (status1 === 'OK') contadorOK_Status1++;
+
+            // Envio 2: aguardar que o registro com a data de hoje esteja disponível na CVM
+            var envio2 = datasExtraidas.indexOf(hoje) !== -1 ? hoje : '-';
+            var status2 = envio2 === hoje ? 'OK' : 'A ATUALIZAR';
+            if (status2 === 'OK') contadorOK_Status2++;
+
+            diariasData[index] = [envio1, status1, envio2, status2];
+            Logger.log('  ✅ [' + (index + 1) + '/' + fundos.length + '] Envio1:' + envio1 + ' (' + status1 + ') / Envio2:' + envio2 + ' (' + status2 + ')');
           }
         }
-
-        if (datasExtraidas.length > 0) {
-          // Ordenar datas em ordem decrescente: datasExtraidas[0] = último dia registrado
-          datasExtraidas.sort(function(a, b) {
-            var pa = a.split('/'), pb = b.split('/');
-            var da = new Date(parseInt(pa[2]), parseInt(pa[1]) - 1, parseInt(pa[0]));
-            var db = new Date(parseInt(pb[2]), parseInt(pb[1]) - 1, parseInt(pb[0]));
-            return db - da;
-          });
-
-          // Envio 1: sempre o último dia útil REGISTRADO na CVM (data mais recente extraída)
-          var envio1 = datasExtraidas[0] || '-';
-          var status1 = envio1 === diaD1 ? 'OK' : 'DESATUALIZADO';
-          if (status1 === 'OK') contadorOK_Status1++;
-
-          // Envio 2: aguardar que o registro com a data de hoje esteja disponível na CVM
-          var envio2 = datasExtraidas.indexOf(hoje) !== -1 ? hoje : '-';
-          var status2 = envio2 === hoje ? 'OK' : 'A ATUALIZAR';
-          if (status2 === 'OK') contadorOK_Status2++;
-
-          diariasData[index] = [envio1, status1, envio2, status2];
-          Logger.log('  ✅ [' + (index + 1) + '/' + fundos.length + '] Envio1:' + envio1 + ' (' + status1 + ') / Envio2:' + envio2 + ' (' + status2 + ')');
-        }
+      } catch (error) {
+        diariasData[index] = ['ERRO', 'DESATUALIZADO', '#N/A', 'A ATUALIZAR'];
       }
-    } catch (error) {
-      diariasData[index] = ['ERRO', 'DESATUALIZADO', '#N/A', 'A ATUALIZAR'];
-    }
-  });
-  abaDiarias.getRange(4, 3, totalFundos, 4).setValues(diariasData);
+    });
+    abaDiarias.getRange(4, 3, totalFundos, 4).setValues(diariasData);
+  } catch (sectionError) {
+    Logger.log('⚠️ [5/5] Diárias indisponível: ' + sectionError.message);
+  }
 
   var statusGeral1 = contadorOK_Status1 === fundos.length ? 'OK' : 'DESCONFORMIDADE';
   var statusGeral2 = contadorOK_Status2 === fundos.length ? 'OK' : 'A ATUALIZAR';
