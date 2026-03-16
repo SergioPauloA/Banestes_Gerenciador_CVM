@@ -6,7 +6,10 @@
 var SPREADSHEET_ID = '1N6LP1ydsxnQO_Woatv9zWEccb0fOGaV_3EKK1GoSWZI';
 
 // Debug flag - set to false in production to reduce logging
-var DEBUG_MODE = true;
+var DEBUG_MODE = false;
+
+// Execution-level cache for COD FUNDO lookups
+var _codFundoCache = null;
 
 // ============================================
 // WEB APP
@@ -71,6 +74,7 @@ function getDashboardData() {
     
     var resultado = {
       timestamp: new Date().toISOString(),
+      ultimaAtualizacaoCVM: PropertiesService.getScriptProperties().getProperty('ULTIMA_ATUALIZACAO_CVM') || null,
       datas: datas,
       balancete: balancete,
       composicao: composicao,
@@ -429,46 +433,6 @@ function calcularDiasOkParaExibicao(dados, datas) {
 }
 
 // ============================================
-// NOVA FUNÇÃO: BUSCAR CÓDIGO BANESTES
-// ============================================
-
-function buscarCodigoBanestes(ss, nomeFundo) {
-  try {
-    var abaCodFundo = ss.getSheetByName('COD FUNDO');
-    if (!abaCodFundo) {
-      Logger.log('⚠️ Aba COD FUNDO não encontrada');
-      return '-';
-    }
-    
-    var ultimaLinha = abaCodFundo.getLastRow();
-    if (ultimaLinha < 2) return '-';
-    
-    // Normalizar o nome do fundo para comparação
-    var nomeFundoNormalizado = nomeFundo.trim().replace(/\s+/g, ' ').toUpperCase();
-    
-    // Buscar nas 3 colunas: A=Nome, B=CVM, C=BANESTES
-    var dados = abaCodFundo.getRange(2, 1, ultimaLinha - 1, 3).getValues();
-    
-    for (var i = 0; i < dados.length; i++) {
-      var nomeNaAba = String(dados[i][0]).trim().replace(/\s+/g, ' ').toUpperCase();
-      
-      if (nomeNaAba === nomeFundoNormalizado) {
-        var codigo = dados[i][2];
-        Logger.log('✅ Código encontrado para ' + nomeFundo.substring(0, 30) + '... = ' + codigo);
-        return String(codigo);
-      }
-    }
-    
-    Logger.log('⚠️ Código não encontrado para: ' + nomeFundo.substring(0, 40));
-    Logger.log('   Buscando por: ' + nomeFundoNormalizado.substring(0, 40));
-    return '-';
-  } catch (error) {
-    Logger.log('❌ Erro ao buscar código BANESTES: ' + error.toString());
-    return '-';
-  }
-}
-
-// ============================================
 // API: VERIFICAR INSTALAÇÃO
 // ============================================
 
@@ -537,27 +501,23 @@ function forcarReinstalacao() {
 
 function buscarCodigoBanestes(ss, nomeFundo) {
   try {
-    var abaCodFundo = ss.getSheetByName('COD FUNDO');
-    if (!abaCodFundo) return '-';
-    
-    var ultimaLinha = abaCodFundo.getLastRow();
-    if (ultimaLinha < 2) return '-';
-    
-    // Normalizar o nome do fundo para comparação
-    var nomeFundoNormalizado = nomeFundo.trim().replace(/\s+/g, ' ').toUpperCase();
-    
-    // Buscar nas 3 colunas: A=Nome, B=CVM, C=BANESTES
-    var dados = abaCodFundo.getRange(2, 1, ultimaLinha - 1, 3).getValues();
-    
-    for (var i = 0; i < dados.length; i++) {
-      var nomeNaAba = String(dados[i][0]).trim().replace(/\s+/g, ' ').toUpperCase();
-      
-      if (nomeNaAba === nomeFundoNormalizado) {
-        return String(dados[i][2]); // Coluna C = Código BANESTES
+    if (_codFundoCache === null) {
+      _codFundoCache = {};
+      var abaCodFundo = ss.getSheetByName('COD FUNDO');
+      if (abaCodFundo) {
+        var ultimaLinha = abaCodFundo.getLastRow();
+        if (ultimaLinha >= 2) {
+          var dados = abaCodFundo.getRange(2, 1, ultimaLinha - 1, 3).getValues();
+          for (var i = 0; i < dados.length; i++) {
+            var nomeNaAba = String(dados[i][0]).trim().replace(/\s+/g, ' ').toUpperCase();
+            _codFundoCache[nomeNaAba] = String(dados[i][2]);
+          }
+        }
       }
     }
     
-    return '-';
+    var nomeFundoNormalizado = nomeFundo.trim().replace(/\s+/g, ' ').toUpperCase();
+    return _codFundoCache.hasOwnProperty(nomeFundoNormalizado) ? _codFundoCache[nomeFundoNormalizado] : '-';
   } catch (error) {
     return '-';
   }
@@ -616,8 +576,7 @@ function atualizarStatusNaPlanilha() {
     var totalOK2 = dadosDiarias2.filter(function(r) { return r[0] === 'OK'; }).length;
     var statusDiarias2 = totalOK2 === dadosDiarias2.length ? 'OK' : 'A ATUALIZAR';
 
-    abaDiarias.getRange('E1').setValue(statusDiarias1);
-    abaDiarias.getRange('F1').setValue(statusDiarias2);
+    abaDiarias.getRange('E1:F1').setValues([[statusDiarias1, statusDiarias2]]);
 
     // Balancete, Composição, Lâmina, Perfil Mensal: status geral já foi atualizado em E1 de cada aba pela nova função
 
@@ -634,14 +593,9 @@ function atualizarStatusNaPlanilha() {
     var abaPerfilMensal = ss.getSheetByName('Perfil Mensal');
     var statusPerfilMensal = abaPerfilMensal.getRange('E1').getValue();
 
-    // Atualiza dashboard
+    // Atualiza dashboard em uma única chamada
     var abaGeral = ss.getSheetByName('GERAL');
-    abaGeral.getRange('A4').setValue(statusBalancete);
-    abaGeral.getRange('B4').setValue(statusComposicao);
-    abaGeral.getRange('C4').setValue(statusDiarias1);
-    abaGeral.getRange('D4').setValue(statusDiarias2);
-    abaGeral.getRange('E4').setValue(statusLamina);
-    abaGeral.getRange('F4').setValue(statusPerfilMensal);
+    abaGeral.getRange('A4:F4').setValues([[statusBalancete, statusComposicao, statusDiarias1, statusDiarias2, statusLamina, statusPerfilMensal]]);
 
     Logger.log('✅ Status atualizados na planilha');
   } catch (error) {
@@ -693,9 +647,11 @@ function atualizarStatusNaPlanilhaAutomatico() {
       var retorno = dadosBalancete[i][0];
       // Only enable debug logging for first 3 rows
       var enableDebugLog = (i < 3);
-      var status = calcularStatusIndividual(retorno, 'mensal', enableDebugLog);
-      abaBalancete.getRange(i + 4, 4).setValue(status);
-      statusIndividuaisCalculados.push(status);
+      statusIndividuaisCalculados.push(calcularStatusIndividual(retorno, 'mensal', enableDebugLog));
+    }
+    if (statusIndividuaisCalculados.length > 0) {
+      abaBalancete.getRange(4, 4, statusIndividuaisCalculados.length, 1)
+        .setValues(statusIndividuaisCalculados.map(function(s){ return [s]; }));
     }
     
     Logger.log('   Status individuais calculados:');
@@ -725,10 +681,11 @@ function atualizarStatusNaPlanilhaAutomatico() {
     Logger.log('   Status Geral: "' + statusComposicao + '"');
     abaComposicao.getRange('E1').setValue(statusComposicao);
     
-    for (var i = 0; i < dadosComposicao.length; i++) {
-      var retorno = dadosComposicao[i][0];
-      var status = calcularStatusIndividual(retorno, 'mensal');
-      abaComposicao.getRange(i + 4, 4).setValue(status);
+    var statusComposicaoArr = dadosComposicao.map(function(r) {
+      return [calcularStatusIndividual(r[0], 'mensal')];
+    });
+    if (statusComposicaoArr.length > 0) {
+      abaComposicao.getRange(4, 4, statusComposicaoArr.length, 1).setValues(statusComposicaoArr);
     }
     Logger.log('   ✅ Status individuais atualizados');
     
@@ -746,12 +703,16 @@ function atualizarStatusNaPlanilhaAutomatico() {
     abaDiarias.getRange('E1').setValue(statusDiarias1);
     abaDiarias.getRange('F1').setValue(statusDiarias2);
     
-    // Status individuais
-    for (var i = 0; i < dadosDiarias1.length; i++) {
-      var status1 = calcularStatusIndividual(dadosDiarias1[i][0], 'diario');
-      var status2 = calcularStatusIndividual(dadosDiarias2[i][0], 'diario');
-      abaDiarias.getRange(i + 4, 4).setValue(status1);
-      abaDiarias.getRange(i + 4, 6).setValue(status2);
+    // Status individuais - batch write columns D and F
+    var statusDiariasCol4 = dadosDiarias1.map(function(r) {
+      return [calcularStatusIndividual(r[0], 'diario')];
+    });
+    var statusDiariasCol6 = dadosDiarias2.map(function(r) {
+      return [calcularStatusIndividual(r[0], 'diario')];
+    });
+    if (statusDiariasCol4.length > 0) {
+      abaDiarias.getRange(4, 4, statusDiariasCol4.length, 1).setValues(statusDiariasCol4);
+      abaDiarias.getRange(4, 6, statusDiariasCol6.length, 1).setValues(statusDiariasCol6);
     }
     Logger.log('   ✅ Diárias atualizadas');
     
@@ -765,10 +726,11 @@ function atualizarStatusNaPlanilhaAutomatico() {
     Logger.log('   Status Geral: "' + statusLamina + '"');
     abaLamina.getRange('E1').setValue(statusLamina);
     
-    for (var i = 0; i < dadosLamina.length; i++) {
-      var retorno = dadosLamina[i][0];
-      var status = calcularStatusIndividual(retorno, 'mensal');
-      abaLamina.getRange(i + 4, 4).setValue(status);
+    var statusLaminaArr = dadosLamina.map(function(r) {
+      return [calcularStatusIndividual(r[0], 'mensal')];
+    });
+    if (statusLaminaArr.length > 0) {
+      abaLamina.getRange(4, 4, statusLaminaArr.length, 1).setValues(statusLaminaArr);
     }
     Logger.log('   ✅ Status individuais atualizados');
     
@@ -782,10 +744,11 @@ function atualizarStatusNaPlanilhaAutomatico() {
     Logger.log('   Status Geral: "' + statusPerfilMensal + '"');
     abaPerfilMensal.getRange('E1').setValue(statusPerfilMensal);
     
-    for (var i = 0; i < dadosPerfilMensal.length; i++) {
-      var retorno = dadosPerfilMensal[i][0];
-      var status = calcularStatusIndividual(retorno, 'mensal');
-      abaPerfilMensal.getRange(i + 4, 4).setValue(status);
+    var statusPerfilArr = dadosPerfilMensal.map(function(r) {
+      return [calcularStatusIndividual(r[0], 'mensal')];
+    });
+    if (statusPerfilArr.length > 0) {
+      abaPerfilMensal.getRange(4, 4, statusPerfilArr.length, 1).setValues(statusPerfilArr);
     }
     Logger.log('   ✅ Status individuais atualizados');
     
@@ -794,12 +757,7 @@ function atualizarStatusNaPlanilhaAutomatico() {
     // ============================================
     Logger.log('\n📋 Atualizando Dashboard Geral...');
     var abaGeral = ss.getSheetByName('GERAL');
-    abaGeral.getRange('A4').setValue(statusBalancete);
-    abaGeral.getRange('B4').setValue(statusComposicao);
-    abaGeral.getRange('C4').setValue(statusDiarias1);
-    abaGeral.getRange('D4').setValue(statusDiarias2);
-    abaGeral.getRange('E4').setValue(statusLamina);
-    abaGeral.getRange('F4').setValue(statusPerfilMensal);
+    abaGeral.getRange('A4:F4').setValues([[statusBalancete, statusComposicao, statusDiarias1, statusDiarias2, statusLamina, statusPerfilMensal]]);
     
     Logger.log('\n✅ [TRIGGER] Atualização automática concluída!');
     Logger.log('📊 Próxima execução em 1 hora');
@@ -1643,10 +1601,11 @@ function atualizarDadosCVMRealCompleto() {
   // ============================================
   Logger.log('\n📊 [1/5] Processando Balancete...');
   var abaBalancete = ss.getSheetByName('Balancete');
+  var balanceteCol3 = abaBalancete.getRange(4, 3, totalFundos, 1).getValues();
+  var balanceteCol5 = abaBalancete.getRange(4, 5, totalFundos, 1).getValues();
   
   fundos.forEach(function(fundo, index) {
     try {
-      var linha = index + 4;
       var url = 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/Balancete/CPublicaBalancete.asp?PK_PARTIC=' + fundo.codigoCVM + '&SemFrame=';
       var response = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0' }});
       
@@ -1656,18 +1615,17 @@ function atualizarDadosCVMRealCompleto() {
         var matches = html.match(regex);
         
         if (matches && matches.length > 0) {
-          // Pegar os 2 últimos (mais recentes)
           var comp1Match = matches[0].match(/(\d{2}\/\d{4})/);
           var comp2Match = matches[1] ? matches[1].match(/(\d{2}\/\d{4})/) : null;
           
           if (comp1Match) {
             var partes = comp1Match[1].split('/');
-            abaBalancete.getRange(linha, 3).setValue('01/' + partes[0] + '/' + partes[1]);
+            balanceteCol3[index][0] = '01/' + partes[0] + '/' + partes[1];
           }
           
           if (comp2Match) {
             var partes2 = comp2Match[1].split('/');
-            abaBalancete.getRange(linha, 5).setValue('01/' + partes2[0] + '/' + partes2[1]);
+            balanceteCol5[index][0] = '01/' + partes2[0] + '/' + partes2[1];
           }
           
           Logger.log('  ✅ [' + (index + 1) + '/' + totalFundos + '] Balancete atualizado');
@@ -1678,16 +1636,19 @@ function atualizarDadosCVMRealCompleto() {
       Logger.log('  ❌ [' + (index + 1) + '/' + totalFundos + '] Erro');
     }
   });
+  abaBalancete.getRange(4, 3, totalFundos, 1).setValues(balanceteCol3);
+  abaBalancete.getRange(4, 5, totalFundos, 1).setValues(balanceteCol5);
   
   // ============================================
   // 2. COMPOSIÇÃO
   // ============================================
   Logger.log('\n📈 [2/5] Processando Composição...');
   var abaComposicao = ss.getSheetByName('Composição');
+  var composicaoCol3 = abaComposicao.getRange(4, 3, totalFundos, 1).getValues();
+  var composicaoCol5 = abaComposicao.getRange(4, 5, totalFundos, 1).getValues();
   
   fundos.forEach(function(fundo, index) {
     try {
-      var linha = index + 4;
       var url = 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/CDA/CPublicaCDA.aspx?PK_PARTIC=' + fundo.codigoCVM + '&SemFrame=';
       var response = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0' }});
       
@@ -1702,12 +1663,12 @@ function atualizarDadosCVMRealCompleto() {
           
           if (comp1Match) {
             var partes = comp1Match[1].split('/');
-            abaComposicao.getRange(linha, 3).setValue('01/' + partes[0] + '/' + partes[1]);
+            composicaoCol3[index][0] = '01/' + partes[0] + '/' + partes[1];
           }
           
           if (comp2Match) {
             var partes2 = comp2Match[1].split('/');
-            abaComposicao.getRange(linha, 5).setValue('01/' + partes2[0] + '/' + partes2[1]);
+            composicaoCol5[index][0] = '01/' + partes2[0] + '/' + partes2[1];
           }
           
           Logger.log('  ✅ [' + (index + 1) + '/' + totalFundos + '] Composição atualizada');
@@ -1718,16 +1679,19 @@ function atualizarDadosCVMRealCompleto() {
       Logger.log('  ❌ [' + (index + 1) + '/' + totalFundos + '] Erro');
     }
   });
+  abaComposicao.getRange(4, 3, totalFundos, 1).setValues(composicaoCol3);
+  abaComposicao.getRange(4, 5, totalFundos, 1).setValues(composicaoCol5);
   
   // ============================================
   // 3. LÂMINA
   // ============================================
   Logger.log('\n📄 [3/5] Processando Lâmina (CORRIGIDA)...');
   var abaLamina = ss.getSheetByName('Lâmina');
+  var laminaCol3 = abaLamina.getRange(4, 3, totalFundos, 1).getValues();
+  var laminaCol5 = abaLamina.getRange(4, 5, totalFundos, 1).getValues();
   
   fundos.forEach(function(fundo, index) {
     try {
-      var linha = index + 4;
       var url = 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/CPublicaLamina.aspx?PK_PARTIC=' + fundo.codigoCVM + '&PK_SUBCLASSE=-1';
       var response = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0' }});
       
@@ -1745,7 +1709,7 @@ function atualizarDadosCVMRealCompleto() {
             var partes = competencia.split('/');
             var mesNumero = mesesMap[partes[0]];
             if (mesNumero) {
-              abaLamina.getRange(linha, 3).setValue('01/' + mesNumero + '/' + partes[1]);
+              laminaCol3[index][0] = '01/' + mesNumero + '/' + partes[1];
             }
           }
           
@@ -1754,7 +1718,7 @@ function atualizarDadosCVMRealCompleto() {
             var partes2 = competencia2.split('/');
             var mesNumero2 = mesesMap[partes2[0]];
             if (mesNumero2) {
-              abaLamina.getRange(linha, 5).setValue('01/' + mesNumero2 + '/' + partes2[1]);
+              laminaCol5[index][0] = '01/' + mesNumero2 + '/' + partes2[1];
             }
           }
           
@@ -1766,16 +1730,19 @@ function atualizarDadosCVMRealCompleto() {
       Logger.log('  ❌ [' + (index + 1) + '/' + totalFundos + '] Erro');
     }
   });
+  abaLamina.getRange(4, 3, totalFundos, 1).setValues(laminaCol3);
+  abaLamina.getRange(4, 5, totalFundos, 1).setValues(laminaCol5);
   
   // ============================================
   // 4. PERFIL MENSAL
   // ============================================
   Logger.log('\n📊 [4/5] Processando Perfil Mensal...');
   var abaPerfilMensal = ss.getSheetByName('Perfil Mensal');
+  var perfilCol3 = abaPerfilMensal.getRange(4, 3, totalFundos, 1).getValues();
+  var perfilCol5 = abaPerfilMensal.getRange(4, 5, totalFundos, 1).getValues();
   
   fundos.forEach(function(fundo, index) {
     try {
-      var linha = index + 4;
       var url = 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/Regul/CPublicaRegulPerfilMensal.aspx?PK_PARTIC=' + fundo.codigoCVM;
       var response = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0' }});
       
@@ -1790,12 +1757,12 @@ function atualizarDadosCVMRealCompleto() {
           
           if (comp1Match) {
             var partes = comp1Match[1].split('/');
-            abaPerfilMensal.getRange(linha, 3).setValue('01/' + partes[0] + '/' + partes[1]);
+            perfilCol3[index][0] = '01/' + partes[0] + '/' + partes[1];
           }
           
           if (comp2Match) {
             var partes2 = comp2Match[1].split('/');
-            abaPerfilMensal.getRange(linha, 5).setValue('01/' + partes2[0] + '/' + partes2[1]);
+            perfilCol5[index][0] = '01/' + partes2[0] + '/' + partes2[1];
           }
           
           Logger.log('  ✅ [' + (index + 1) + '/' + totalFundos + '] Perfil Mensal atualizado');
@@ -1806,6 +1773,8 @@ function atualizarDadosCVMRealCompleto() {
       Logger.log('  ❌ [' + (index + 1) + '/' + totalFundos + '] Erro');
     }
   });
+  abaPerfilMensal.getRange(4, 3, totalFundos, 1).setValues(perfilCol3);
+  abaPerfilMensal.getRange(4, 5, totalFundos, 1).setValues(perfilCol5);
   
   // ============================================
   // 5. DIÁRIAS (mantém como está)
@@ -1819,10 +1788,10 @@ function atualizarDadosCVMRealCompleto() {
   var hoje = normalizaDataDate(hojeObj);
   var feriados = getFeriadosArray();
   var diaD1 = calculaUltimoDiaUtil(hojeObj, feriados);
+  var diariasData = fundos.map(function() { return ['-', 'DESATUALIZADO', '-', 'A ATUALIZAR']; });
   
   fundos.forEach(function(fundo, index) {
     try {
-      var linha = index + 4;
       var url = 'https://cvmweb.cvm.gov.br/SWB/Sistemas/SCW/CPublica/InfDiario/CPublicaInfdiario.aspx?PK_PARTIC=' + fundo.codigoCVM + '&PK_SUBCLASSE=-1';
       var response = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0' }});
 
@@ -1842,29 +1811,18 @@ function atualizarDadosCVMRealCompleto() {
           var status2 = envio2 === hoje ? "OK" : "A ATUALIZAR";
           if (status2 === "OK") contadorOK_Status2++;
 
-          abaDiarias.getRange(linha, 3).setValue(envio1);
-          abaDiarias.getRange(linha, 4).setValue(status1);
-          abaDiarias.getRange(linha, 5).setValue(envio2);
-          abaDiarias.getRange(linha, 6).setValue(status2);
-
+          diariasData[index] = [envio1, status1, envio2, status2];
           Logger.log('  ✅ [' + (index + 1) + '/' + fundos.length + '] Envio1:' + envio1 + ' (' + status1 + ') / Envio2:' + envio2 + ' (' + status2 + ')');
-        } else {
-          abaDiarias.getRange(linha, 3).setValue('-');
-          abaDiarias.getRange(linha, 4).setValue('DESATUALIZADO');
-          abaDiarias.getRange(linha, 5).setValue('-');
-          abaDiarias.getRange(linha, 6).setValue('A ATUALIZAR');
         }
       }
 
       Utilities.sleep(300);
 
     } catch (error) {
-      abaDiarias.getRange(linha, 3).setValue('ERRO');
-      abaDiarias.getRange(linha, 4).setValue('DESATUALIZADO');
-      abaDiarias.getRange(linha, 5).setValue('#N/A');
-      abaDiarias.getRange(linha, 6).setValue('A ATUALIZAR');
+      diariasData[index] = ['ERRO', 'DESATUALIZADO', '#N/A', 'A ATUALIZAR'];
     }
   });
+  abaDiarias.getRange(4, 3, totalFundos, 4).setValues(diariasData);
 
   var statusGeral1 = contadorOK_Status1 === fundos.length ? 'OK' : 'DESCONFORMIDADE';
   var statusGeral2 = contadorOK_Status2 === fundos.length ? 'OK' : 'A ATUALIZAR';
@@ -1880,6 +1838,10 @@ function atualizarDadosCVMRealCompleto() {
   Logger.log('\n🧮 [6/6] Calculando competências e status...');
   atualizarTodasCompetencias(); // 🔥 ADICIONAR ESTA LINHA
   
+  // Registrar horário da última atualização automática da CVM
+  var agora = new Date();
+  PropertiesService.getScriptProperties().setProperty('ULTIMA_ATUALIZACAO_CVM', agora.toISOString());
+  
   Logger.log('\n✅ ═══════════════════════════════════════════');
   Logger.log('✅ ATUALIZAÇÃO 100% COMPLETA!');
   Logger.log('✅ ═══════════════════════════════════════════');
@@ -1887,122 +1849,14 @@ function atualizarDadosCVMRealCompleto() {
   return { success: true, message: 'Sistema 100% funcional!' };
 }
 
-// Função auxiliar (PROTEGIDA contra Diárias)
-function atualizarStatusParaAbasEspecificas(nomesAbas) {
-  var ss = obterPlanilha();
-  var datas = getDatasReferencia();
-  
-  nomesAbas.forEach(function(nomeAba) {
-    if (nomeAba === 'Diárias') return;
-    
-    var aba = ss.getSheetByName(nomeAba);
-    if (!aba) return;
-    
-    var ultimaLinha = aba.getLastRow();
-    if (ultimaLinha < 4) return;
-    
-    var valores = aba.getRange(4, 3, ultimaLinha - 3, 1).getDisplayValues();
-    
-    var totalOK = 0;
-    var totalDesconformidade = 0;
-    
-    valores.forEach(function(linha, index) {
-      var valor = linha[0];
-      var status;
-      
-      if (!valor || valor === '' || valor === '-' || valor === 'ERRO') {
-        status = 'DESCONFORMIDADE';
-        totalDesconformidade++;
-      } else if (valor === datas.diaMesRef) {
-        status = 'OK';
-        totalOK++;
-      } else {
-        status = '-';
-      }
-      
-      aba.getRange(index + 4, 4).setValue(status);
-    });
-    
-    // STATUS GERAL (D1)
-    var statusGeral;
-    if (totalDesconformidade > 0) {
-      statusGeral = 'DESCONFORMIDADE';
-    } else if (totalOK === valores.length) {
-      statusGeral = 'OK';
-    } else {
-      statusGeral = '-';
-    }
-    aba.getRange('D1').setValue(statusGeral);
-    
-    Logger.log('  ✅ ' + nomeAba + ': ' + statusGeral + ' (' + totalOK + '/' + valores.length + ' OK)');
-  });
-}
-
-// Função auxiliar (PROTEGIDA contra Diárias)
-function atualizarStatusParaAbasEspecificas(nomesAbas) {
-  var ss = obterPlanilha();
-  var datas = getDatasReferencia();
-  
-  nomesAbas.forEach(function(nomeAba) {
-    if (nomeAba === 'Diárias') return;
-    
-    var aba = ss.getSheetByName(nomeAba);
-    if (!aba) return;
-    
-    var ultimaLinha = aba.getLastRow();
-    if (ultimaLinha < 4) return;
-    
-    var valores = aba.getRange(4, 3, ultimaLinha - 3, 1).getDisplayValues();
-    
-    valores.forEach(function(linha, index) {
-      var valor = linha[0];
-      var status;
-      
-      if (!valor || valor === '' || valor === '-' || valor === 'ERRO') {
-        status = 'DESCONFORMIDADE';
-      } else if (valor === datas.diaMesRef) {
-        status = 'OK';
-      } else {
-        status = '-';
-      }
-      
-      aba.getRange(index + 4, 4).setValue(status);
-    });
-  });
-}
-
-// Função auxiliar (PROTEGIDA contra Diárias)
-function atualizarStatusParaAbasEspecificas(nomesAbas) {
-  var ss = obterPlanilha();
-  var datas = getDatasReferencia();
-  
-  nomesAbas.forEach(function(nomeAba) {
-    // PROTEÇÃO: NÃO processar Diárias
-    if (nomeAba === 'Diárias') return;
-    
-    var aba = ss.getSheetByName(nomeAba);
-    if (!aba) return;
-    
-    var ultimaLinha = aba.getLastRow();
-    if (ultimaLinha < 4) return;
-    
-    var valores = aba.getRange(4, 3, ultimaLinha - 3, 1).getDisplayValues();
-    
-    valores.forEach(function(linha, index) {
-      var valor = linha[0];
-      var status;
-      
-      if (!valor || valor === '' || valor === '-' || valor === 'ERRO') {
-        status = 'DESCONFORMIDADE';
-      } else if (valor === datas.diaMesRef) {
-        status = 'OK';
-      } else {
-        status = '-';
-      }
-      
-      aba.getRange(index + 4, 4).setValue(status);
-    });
-  });
+/**
+ * Retorna o horário da última atualização automática dos dados da CVM.
+ * Chamado pelo front-end via google.script.run.
+ */
+function getUltimaAtualizacaoCVM() {
+  var iso = PropertiesService.getScriptProperties().getProperty('ULTIMA_ATUALIZACAO_CVM');
+  if (!iso) return null;
+  return iso;
 }
 
 // Função auxiliar para calcular status apenas de abas específicas
@@ -2022,8 +1876,7 @@ function atualizarStatusParaAbasEspecificas(nomesAbas) {
     
     var totalOK = 0;
     var totalDesconformidade = 0;
-    
-    valores.forEach(function(linha, index) {
+    var statusArr = valores.map(function(linha) {
       var valor = linha[0];
       var status;
       
@@ -2036,9 +1889,10 @@ function atualizarStatusParaAbasEspecificas(nomesAbas) {
       } else {
         status = '-';
       }
-      
-      aba.getRange(index + 4, 4).setValue(status);
+      return [status];
     });
+    
+    aba.getRange(4, 4, statusArr.length, 1).setValues(statusArr);
     
     // Atualizar status geral no cabeçalho
     if (totalDesconformidade > 0) {
@@ -2577,9 +2431,12 @@ function atualizarCompetenciasAba(nomeAba) {
       todasEComNova = false;
       todasFok = false;
     }
-    // Escreve em E e F
-    aba.getRange(i + 4, 5).setValue(dataNova);      // Coluna E: Nova Data
-    aba.getRange(i + 4, 6).setValue(statusNova);    // Coluna F: Status Nova
+  }
+
+  // Batch write columns E and F
+  if (novaDataArray.length > 0) {
+    var efValues = novaDataArray.map(function(d, idx) { return [d, novaStatusArray[idx]]; });
+    aba.getRange(4, 5, efValues.length, 2).setValues(efValues);
   }
 
   // Passo 3: Se TODAS as linhas têm E igual à nova data e F="OK", faz a rotação:
@@ -2593,12 +2450,10 @@ function atualizarCompetenciasAba(nomeAba) {
     novaDataArray.length === linhasDados.length
   ) {
     Logger.log('🔁 Rotação automática: Nova data será aplicada como competência atual.');
-    for (var i = 0; i < linhasDados.length; i++) {
-      aba.getRange(i + 4, 3).setValue(novaDataMaisRecente);     // C: Data competência atual = nova
-      aba.getRange(i + 4, 4).setValue("OK");                    // D: Status competência atual = OK
-      aba.getRange(i + 4, 5).setValue('-');                     // E: Nova Data = "-"
-      aba.getRange(i + 4, 6).setValue("AGUARDANDO");            // F: Status Nova = "AGUARDANDO"
-    }
+    var rotacaoValues = linhasDados.map(function() {
+      return [novaDataMaisRecente, "OK", '-', "AGUARDANDO"];
+    });
+    aba.getRange(4, 3, rotacaoValues.length, 4).setValues(rotacaoValues);
     // Atualize dashboard, status geral e etc depois deste ponto (fora desta função).
     Logger.log('✅ Rotação aplicada com sucesso.');
   }
