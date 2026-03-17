@@ -139,29 +139,6 @@
       gap: 8px;
     }
 
-    .cvm-update-info {
-      color: var(--text-secondary);
-      font-size: 0.82rem;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      opacity: 0.85;
-    }
-
-    .cvm-update-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #10b981;
-      display: inline-block;
-      animation: pulse-dot 2s infinite;
-    }
-
-    @keyframes pulse-dot {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.8); }
-    }
-
     /* LOADING */
     .loading-overlay {
       display: none;
@@ -867,10 +844,6 @@
         <span>🕐</span>
         <span id="timestampText">Aguarde...</span>
       </div>
-      <div class="cvm-update-info" id="cvmUpdateInfo" style="display:none;">
-        <span class="cvm-update-dot"></span>
-        <span id="cvmUpdateText">Atualização automática CVM ativa</span>
-      </div>
     </div>
 
     <!-- DASHBOARD -->
@@ -1125,7 +1098,6 @@
       renderizarDados(dados);
       
       atualizarTimestamp();
-      atualizarIndicadorCVM(dados.ultimaAtualizacaoCVM);
       mostrarLoading(false);
       desabilitarBotao(false);
       atualizando = false;
@@ -1265,7 +1237,7 @@
       
       if (statusNormalizado === 'DESATUALIZADO') return 'status-desconformidade';
       if (statusNormalizado === 'A ATUALIZAR') return 'status-atualizar';
-      if (statusNormalizado === 'AGUARDANDO DADOS') return 'status-erro';
+      if (statusNormalizado === 'AGUARDANDO DADOS' || statusNormalizado === 'AGUARDANDO') return 'status-atualizar';
       
       return 'status-erro';
     }
@@ -1371,43 +1343,6 @@
         second: '2-digit'
       });
       elemento.textContent = 'Última atualização: ' + formatado;
-    }
-
-    function atualizarIndicadorCVM(isoString) {
-      var container = document.getElementById('cvmUpdateInfo');
-      var texto = document.getElementById('cvmUpdateText');
-      if (!container || !texto) return;
-
-      if (!isoString) {
-        // Ainda não houve nenhuma execução automática registrada
-        container.style.display = 'flex';
-        texto.textContent = 'Atualização automática CVM: aguardando 1ª execução';
-        return;
-      }
-
-      var dataUltima = new Date(isoString);
-      var agora = new Date();
-      var diffMs = agora - dataUltima;
-      var diffMin = Math.floor(diffMs / 60000);
-      var diffHoras = Math.floor(diffMin / 60);
-      var minRestantes = diffMin % 60;
-
-      var formatado = dataUltima.toLocaleString('pt-BR', {
-        day: '2-digit', month: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit'
-      });
-
-      var decorrido;
-      if (diffHoras > 0) {
-        decorrido = 'há ' + diffHoras + 'h' + (minRestantes > 0 ? ' ' + minRestantes + 'min' : '');
-      } else if (diffMin > 0) {
-        decorrido = 'há ' + diffMin + ' min';
-      } else {
-        decorrido = 'agora mesmo';
-      }
-
-      texto.textContent = '🔗 CVM verificada automaticamente: ' + formatado + ' (' + decorrido + ') — próxima em ~1h';
-      container.style.display = 'flex';
     }
 
     function mostrarAba(nomeAba) {
