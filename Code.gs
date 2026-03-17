@@ -1825,16 +1825,17 @@ function atualizarDadosCVMRealCompleto() {
               return db - da;
             });
 
-            // Envio 1: último dia útil REGISTRADO na CVM (data mais recente extraída)
-            // Aceita tanto D-1 (último dia útil) quanto D (hoje, se a CVM já publicou dados do dia atual)
-            var envio1 = datasExtraidas[0] || '-';
-            var status1 = (envio1 === diaD1 || envio1 === hoje) ? 'OK' : 'DESATUALIZADO';
-            if (status1 === 'OK') contadorOK_Status1++;
-
-            // Envio 2: aguardar que o registro com a data de hoje esteja disponível na CVM
+            // Envio 2: data de hoje se o registro já foi publicado na CVM
             var envio2 = datasExtraidas.indexOf(hoje) !== -1 ? hoje : '-';
             var status2 = envio2 === hoje ? 'OK' : 'A ATUALIZAR';
             if (status2 === 'OK') contadorOK_Status2++;
+
+            // Envio 1: data do dia útil anterior (D-1), sempre excluindo hoje
+            // Quando hoje já foi publicado, Envio 1 deve exibir o dia útil anterior (ex: sexta se hoje é segunda)
+            var datasExcluindoHoje = datasExtraidas.filter(function(d) { return d !== hoje; });
+            var envio1 = datasExcluindoHoje.length > 0 ? datasExcluindoHoje[0] : '-';
+            var status1 = envio1 === diaD1 ? 'OK' : 'DESATUALIZADO';
+            if (status1 === 'OK') contadorOK_Status1++;
 
             diariasData[index] = [envio1, status1, envio2, status2];
             Logger.log('  ✅ [' + (index + 1) + '/' + fundos.length + '] Envio1:' + envio1 + ' (' + status1 + ') / Envio2:' + envio2 + ' (' + status2 + ')');
