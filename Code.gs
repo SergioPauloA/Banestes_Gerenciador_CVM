@@ -565,7 +565,23 @@ function calcularStatusGeralDiarias(dados, statusErro) {
   var preenchidos = dados.filter(function(r) { return r[0] !== '' && r[0] !== null; });
   if (preenchidos.length === 0) return statusErro;
   var totalOK = preenchidos.filter(function(r) { return r[0] === 'OK'; }).length;
-  return (totalOK === preenchidos.length) ? 'OK' : statusErro;
+  if (totalOK === preenchidos.length) return 'OK';
+  // Deriva o status geral a partir do conteúdo das células individuais
+  var hasDesconformidade = preenchidos.some(function(r) { return r[0] === 'DESCONFORMIDADE'; });
+  if (hasDesconformidade) return 'DESCONFORMIDADE';
+  var hasAguardando = preenchidos.some(function(r) { return r[0] === 'AGUARDANDO'; });
+  if (hasAguardando) return 'AGUARDANDO';
+  return statusErro;
+}
+
+/**
+ * Retorna o status correto para Envio 2 das Diárias quando não há registro para hoje.
+ * - Antes das 18h (BRT): 'AGUARDANDO' — ainda há tempo para o envio ser publicado
+ * - A partir das 18h (BRT): 'DESCONFORMIDADE' — prazo expirado
+ */
+function getStatusDiariasNaoEnviado() {
+  var hora = parseInt(Utilities.formatDate(new Date(), 'GMT-3', 'HH'), 10);
+  return hora < 18 ? 'AGUARDANDO' : 'DESCONFORMIDADE';
 }
 
 /**
@@ -1785,7 +1801,7 @@ function atualizarDadosCVMRealCompleto() {
   var hoje = normalizaDataDate(hojeObj);
   var feriados = getFeriadosArray();
   var diaD1 = calculaUltimoDiaUtil(hojeObj, feriados);
-  var diariasData = fundos.map(function() { return ['-', 'DESATUALIZADO', '-', 'A ATUALIZAR']; });
+  var diariasData = fundos.map(function() { return ['-', 'DESATUALIZADO', '-', getStatusDiariasNaoEnviado()]; });
 
   try {
     var resDiarias = UrlFetchApp.fetchAll(buildRequests(function(f) {
@@ -1827,7 +1843,7 @@ function atualizarDadosCVMRealCompleto() {
 
             // Envio 2: data de hoje se o registro já foi publicado na CVM
             var envio2 = datasExtraidas.indexOf(hoje) !== -1 ? hoje : '-';
-            var status2 = envio2 === hoje ? 'OK' : 'A ATUALIZAR';
+            var status2 = envio2 === hoje ? 'OK' : getStatusDiariasNaoEnviado();
             if (status2 === 'OK') contadorOK_Status2++;
 
             // Envio 1: data do dia útil anterior (D-1), sempre excluindo hoje
@@ -1842,7 +1858,7 @@ function atualizarDadosCVMRealCompleto() {
           }
         }
       } catch (error) {
-        diariasData[index] = ['ERRO', 'DESATUALIZADO', '#N/A', 'A ATUALIZAR'];
+        diariasData[index] = ['ERRO', 'DESATUALIZADO', '#N/A', getStatusDiariasNaoEnviado()];
       }
     });
     abaDiarias.getRange(4, 3, totalFundos, 4).setValues(diariasData);
