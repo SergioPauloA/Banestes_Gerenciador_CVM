@@ -349,9 +349,9 @@ function lerAbaPerfilMensal(ss, datas) {
 }
 
 function calcularCorStatusOk(diasRestantes) {
-  if (diasRestantes > 15) return 'ok-verde';      // Mais de 15 dias = Verde
-  if (diasRestantes >= 5) return 'ok-amarelo';    // 5 a 15 dias = Amarelo
-  return 'ok-vermelho';                            // Menos de 5 dias = Vermelho
+  if (diasRestantes > 10) return 'ok-verde';      // Mais de 10 dias = Verde
+  if (diasRestantes >= 6) return 'ok-amarelo';    // 6 a 10 dias = Amarelo
+  return 'ok-vermelho';                            // 5 dias ou menos = Vermelho
 }
 
 /**
@@ -363,7 +363,7 @@ function calcularCorStatusOk(diasRestantes) {
 function calcularStatusOkDisplay(statusGeralAtual, diasRestantes) {
   var substatus = calcularCorStatusOk(diasRestantes);
   var statusGeralDisplay = statusGeralAtual;
-  if (diasRestantes > 0 && diasRestantes <= 15) {
+  if (diasRestantes > 0 && diasRestantes <= 10) {
     statusGeralDisplay = 'OK (' + formatarDiasRestantes(diasRestantes) + ')';
   }
   return { substatus: substatus, statusGeralDisplay: statusGeralDisplay };
@@ -4269,8 +4269,8 @@ function calcularStatusGeralDaAbaComPrazo(dados, tipo, competenciasAtuais) {
       diasRestantes = calcularDiasUteisEntre(hoje, decimoDiaUtil, ss);
     }
 
-    // ⚡️ Exibir "OK" puro só se dias > 15, senão sempre "OK (X dias restantes)"
-    if (diasRestantes > 15) {
+    // ⚡️ Exibir "OK" puro só se dias > 10, senão sempre "OK (X dias restantes)"
+    if (diasRestantes > 10) {
       return "OK";
     } else {
       return "OK (" + diasRestantes + " dias restantes)";
@@ -4294,9 +4294,9 @@ function testeSLAExemploUnico() {
   var diasFaltantes = calcularDiasUteisEntre(hoje, decimoDiaUtil, ss);
 
   var cor, dashboardStatus;
-  if (diasFaltantes > 15) {
+  if (diasFaltantes > 10) {
     cor = 'VERDE';
-    dashboardStatus = 'OK (' + diasFaltantes + ' dias restantes)';
+    dashboardStatus = 'OK';
   } else if (diasFaltantes >= 6) {
     cor = 'AMARELA';
     dashboardStatus = 'OK (' + diasFaltantes + ' dias restantes)';
