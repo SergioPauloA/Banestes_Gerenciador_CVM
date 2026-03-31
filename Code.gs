@@ -2986,11 +2986,26 @@ function forcarEnvioEmailBalancete() {
 
 
 /**
- * 📧 Enviar email individual para CADA FUNDO com TODAS as suas datas
+ * 📧 Enviar email individual para CADA FUNDO com TODAS as suas datas do mês de referência
+ * @param {Object} [mesReferencia] - Opcional. Objeto { mes: <0-indexed>, ano: <YYYY> } indicando o mês a filtrar.
+ *   Se omitido, usa o mês anterior ao dia de hoje (comportamento padrão para envio no primeiro dia útil do mês).
  */
-function enviarEmailDiariasIndividualPorFundo() {
+function enviarEmailDiariasIndividualPorFundo(mesReferencia) {
   Logger.log('📧 ===== ENVIO INDIVIDUAL POR FUNDO =====\n');
-  
+
+  // Determinar o mês de referência (mês anterior por padrão)
+  if (!mesReferencia) {
+    var hoje = new Date();
+    var refDate = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+    mesReferencia = { mes: refDate.getMonth(), ano: refDate.getFullYear() };
+  }
+
+  var nomesMeses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                    'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  var nomeMesRef = nomesMeses[mesReferencia.mes] + '/' + mesReferencia.ano;
+
+  Logger.log('📅 Mês de referência do relatório: ' + nomeMesRef);
+
   var destinatarios = [
     //'spandrade@banestes.com.br',
     'fabiooliveira@banestes.com.br',
@@ -3033,6 +3048,15 @@ function enviarEmailDiariasIndividualPorFundo() {
             linhasComDatas.push({ dia: matchDia[1], data: matchData[1] });
           }
         }
+
+        // Filtrar apenas datas do mês de referência (DD/MM/YYYY)
+        var mesReferenciaStr = String(mesReferencia.mes + 1).padStart(2, '0');
+        var anoReferenciaStr = String(mesReferencia.ano);
+        linhasComDatas = linhasComDatas.filter(function(item) {
+          // item.data formato: DD/MM/YYYY
+          var partes = item.data.split('/');
+          return partes.length === 3 && partes[1] === mesReferenciaStr && partes[2] === anoReferenciaStr;
+        });
         
         if (linhasComDatas.length > 0) {
           // Remover duplicatas
@@ -3055,9 +3079,9 @@ function enviarEmailDiariasIndividualPorFundo() {
             return dateB - dateA;
           });
           
-          Logger.log('   Total de datas encontradas: ' + datasUnicas.length);
+          Logger.log('   Total de datas encontradas para ' + nomeMesRef + ': ' + datasUnicas.length);
           
-          // Gerar linhas da tabela com TODAS as datas
+          // Gerar linhas da tabela com TODAS as datas do mês de referência
           var linhasTabela = datasUnicas.map(function(item) {
             return '<tr>' +
               '<td style="padding:10px;border:1px solid #dddddd;background:#ffffff;text-align:center;">' + item.dia + '</td>' +
@@ -3088,19 +3112,19 @@ function enviarEmailDiariasIndividualPorFundo() {
             '<td align="center" style="background-color:#2E7D32;padding:30px 20px;">' +
             '<div style="font-size:40px;color:#ffffff;line-height:1;margin-bottom:10px;">✓</div>' +
             '<h1 style="color:#ffffff;font-size:22px;margin:0;">Relatório de Conformidade CVM</h1>' +
-            '<p style="color:#a5d6a7;margin:5px 0 0 0;font-size:14px;">Informações Diárias</p>' +
+            '<p style="color:#a5d6a7;margin:5px 0 0 0;font-size:14px;">Informações Diárias — ' + nomeMesRef + '</p>' +
             '</td>' +
             '</tr>' +
             '<tr>' +
             '<td style="padding:30px 25px;color:#333333;font-size:15px;line-height:1.6;">' +
             '<p>Prezados,</p>' +
-            '<p>Informamos que os envios de <strong>Informações Diárias</strong> junto à CVM para o fundo abaixo encontram-se em conformidade.</p>' +
+            '<p>Informamos que os envios de <strong>Informações Diárias</strong> junto à CVM para o fundo abaixo, referentes ao mês de <strong>' + nomeMesRef + '</strong>, encontram-se em conformidade.</p>' +
             '<div style="background-color:#f0f9ff;border-left:4px solid #667eea;padding:15px;margin:20px 0;">' +
             '<p style="margin:0;font-weight:bold;color:#1e3a8a;font-size:16px;">Fundo:</p>' +
             '<p style="margin:5px 0 0 0;font-size:14px;color:#333;">' + fundo.nome + '</p>' +
             '<p style="margin:10px 0 0 0;font-size:13px;color:#666;">Código CVM: ' + fundo.codigoCVM + '</p>' +
             '</div>' +
-            '<p>Abaixo listamos <strong>todos os ' + datasUnicas.length + ' envios</strong> registrados no sistema da CVM:</p>' +
+            '<p>Abaixo listamos <strong>todos os ' + datasUnicas.length + ' envios</strong> do mês de <strong>' + nomeMesRef + '</strong> registrados no sistema da CVM:</p>' +
             '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:20px 0;font-family:Arial,sans-serif;">' +
             '<thead>' +
             '<tr>' +
@@ -3114,7 +3138,7 @@ function enviarEmailDiariasIndividualPorFundo() {
             '</table>' +
             '<div class="monitor-box">' +
             '<p style="margin:0;font-weight:bold;color:#0d47a1;font-size:14px;">✓ Status: Regularizado</p>' +
-            '<p style="margin:5px 0 0 0;font-size:13px;color:#444;">Todos os ' + datasUnicas.length + ' envios foram identificados corretamente no portal da CVM.</p>' +
+            '<p style="margin:5px 0 0 0;font-size:13px;color:#444;">Todos os ' + datasUnicas.length + ' envios de ' + nomeMesRef + ' foram identificados corretamente no portal da CVM.</p>' +
             '</div>' +
             '</td>' +
             '</tr>' +
@@ -3129,7 +3153,7 @@ function enviarEmailDiariasIndividualPorFundo() {
             '</html>';
           
           // Enviar email
-          var assunto = '✅ Conformidade CVM - Diárias - ' + fundo.nome.substring(0, 60);
+          var assunto = '✅ Conformidade CVM - Diárias ' + nomeMesRef + ' - ' + fundo.nome.substring(0, 50);
           
           MailApp.sendEmail({
             to: destinatarios.join(','),
@@ -3138,10 +3162,10 @@ function enviarEmailDiariasIndividualPorFundo() {
           });
           
           emailsEnviados++;
-          Logger.log('   ✅ Email enviado (' + datasUnicas.length + ' datas)');
+          Logger.log('   ✅ Email enviado (' + datasUnicas.length + ' datas de ' + nomeMesRef + ')');
           
         } else {
-          Logger.log('   ⚠️ Sem dados - email não enviado');
+          Logger.log('   ⚠️ Sem dados para ' + nomeMesRef + ' - email não enviado');
         }
       } else {
         Logger.log('   ❌ Erro HTTP: ' + response.getResponseCode());
@@ -3161,6 +3185,7 @@ function enviarEmailDiariasIndividualPorFundo() {
   
   Logger.log('\n========================================');
   Logger.log('✅ RESUMO FINAL:');
+  Logger.log('   Mês de referência: ' + nomeMesRef);
   Logger.log('   Total de fundos: ' + fundos.length);
   Logger.log('   Emails enviados: ' + emailsEnviados);
   Logger.log('   Erros: ' + emailsComErro);
@@ -3168,6 +3193,7 @@ function enviarEmailDiariasIndividualPorFundo() {
   
   return {
     success: true,
+    mesReferencia: nomeMesRef,
     totalFundos: fundos.length,
     emailsEnviados: emailsEnviados,
     emailsComErro: emailsComErro
@@ -3545,8 +3571,9 @@ function enviarEmailDiariasSeForUltimoDiaUtil() {
   if (ehPrimeiroDiaUtilDoMes) {
     Logger.log('🎯 HOJE É O PRIMEIRO DIA ÚTIL DO MÊS! O último dia útil do mês anterior foi ' + diaUtilAnteriorNormalizado + '. Enviando emails de Diárias...');
     
-    // ✅ ENVIAR EMAILS DE DIÁRIAS
-    return enviarEmailDiariasIndividualPorFundo();
+    // ✅ ENVIAR EMAILS DE DIÁRIAS referentes ao mês do dia útil anterior (mês anterior)
+    var mesRef = { mes: diaUtilAnterior.getMonth(), ano: diaUtilAnterior.getFullYear() };
+    return enviarEmailDiariasIndividualPorFundo(mesRef);
   } else {
     Logger.log('⏭️ Hoje NÃO é o primeiro dia útil do mês. Email NÃO será enviado.');
     return { skipped: true, reason: 'Não é o primeiro dia útil do mês' };
@@ -3800,6 +3827,16 @@ function enviarRelatorioDiariasConsolidadoPDF() {
           if (matchDia && matchData) {
             linhasComDatas.push({ dia: matchDia[1], data: matchData[1] });
           }
+        }
+
+        if (linhasComDatas.length > 0) {
+          // Filtrar apenas datas do mês anterior (referência)
+          var mesAnteriorStr = String(dataMesAnterior.getMonth() + 1).padStart(2, '0');
+          var anoAnteriorStr = String(dataMesAnterior.getFullYear());
+          linhasComDatas = linhasComDatas.filter(function(item) {
+            var partes = item.data.split('/');
+            return partes.length === 3 && partes[1] === mesAnteriorStr && partes[2] === anoAnteriorStr;
+          });
         }
 
         if (linhasComDatas.length > 0) {
