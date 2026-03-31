@@ -3341,36 +3341,40 @@ function criarTriggerEmailDiariasUltimoDiaUtil() {
 }
 
 /**
- * Verifica se hoje é o último dia útil do mês e envia emails
+ * Verifica se hoje é o primeiro dia útil do mês (logo após o último dia útil do mês anterior) e envia emails
  */
 function verificarEEnviarEmailDiariasSeUltimoDiaUtil() {
-  Logger.log('🔍 Verificando se hoje é último dia útil do mês...');
+  Logger.log('🔍 Verificando se hoje é o primeiro dia útil do mês...');
   
   var hoje = new Date();
-  var ss = obterPlanilha();
   var feriados = getFeriadosArray();
   
-  // Calcular último dia útil do mês
-  var ultimoDiaMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0); // Último dia do mês
+  // Calcular o dia útil anterior
+  var diaUtilAnterior = new Date(hoje.getTime());
+  do {
+    diaUtilAnterior.setDate(diaUtilAnterior.getDate() - 1);
+  } while (
+    diaUtilAnterior.getDay() === 0 ||
+    diaUtilAnterior.getDay() === 6 ||
+    feriados.indexOf(normalizaDataDate(diaUtilAnterior)) >= 0
+  );
   
-  // Retroceder até encontrar um dia útil
-  while (ultimoDiaMes.getDay() === 0 || ultimoDiaMes.getDay() === 6 || 
-         feriados.indexOf(normalizaDataDate(ultimoDiaMes)) >= 0) {
-    ultimoDiaMes.setDate(ultimoDiaMes.getDate() - 1);
-  }
-  
-  var ultimoDiaUtilFormatado = normalizaDataDate(ultimoDiaMes);
+  var diaUtilAnteriorFormatado = normalizaDataDate(diaUtilAnterior);
   var hojeFormatado = normalizaDataDate(hoje);
   
   Logger.log('📅 Hoje: ' + hojeFormatado);
-  Logger.log('📅 Último dia útil do mês: ' + ultimoDiaUtilFormatado);
+  Logger.log('📅 Dia útil anterior: ' + diaUtilAnteriorFormatado);
   
-  // Verificar se hoje é o último dia útil
-  if (hojeFormatado === ultimoDiaUtilFormatado) {
-    Logger.log('✅ HOJE É O ÚLTIMO DIA ÚTIL! Enviando emails...');
+  // Verificar se hoje é o primeiro dia útil do mês
+  // (o dia útil anterior pertence a um mês diferente)
+  var ehPrimeiroDiaUtilDoMes = diaUtilAnterior.getMonth() !== hoje.getMonth() ||
+                                diaUtilAnterior.getFullYear() !== hoje.getFullYear();
+  
+  if (ehPrimeiroDiaUtilDoMes) {
+    Logger.log('✅ HOJE É O PRIMEIRO DIA ÚTIL DO MÊS! O último dia útil do mês anterior foi ' + diaUtilAnteriorFormatado + '. Enviando emails...');
     enviarRelatorioDiariasConsolidadoPDF();
   } else {
-    Logger.log('⏭️ Hoje NÃO é o último dia útil. Email não será enviado.');
+    Logger.log('⏭️ Hoje NÃO é o primeiro dia útil do mês. Email não será enviado.');
   }
 }
 
@@ -3395,44 +3399,40 @@ function testarEnvioDiariasUltimoDiaUtil() {
 }
 
 /**
- * 🧪 TESTE: Verifica qual é o último dia útil do mês atual
+ * 🧪 TESTE: Verifica se hoje é o primeiro dia útil do mês
  * Execute no Apps Script Editor para ver o resultado no log
  */
 function testarCalculoUltimoDiaUtil() {
-  Logger.log('🧪 ===== TESTE: Cálculo do Último Dia Útil =====\n');
+  Logger.log('🧪 ===== TESTE: Primeiro Dia Útil do Mês =====\n');
   
   var hoje = new Date();
-  var ss = obterPlanilha();
   var feriados = getFeriadosArray();
   
   Logger.log('📅 Hoje: ' + normalizaDataDate(hoje));
   Logger.log('📅 Dia da semana: ' + hoje.toLocaleDateString('pt-BR', { weekday: 'long' }));
   
-  // Calcular último dia útil do mês
-  var ultimoDiaMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
-  Logger.log('📅 Último dia do mês (calendário): ' + normalizaDataDate(ultimoDiaMes));
+  // Calcular o dia útil anterior
+  var diaUtilAnterior = new Date(hoje.getTime());
+  do {
+    diaUtilAnterior.setDate(diaUtilAnterior.getDate() - 1);
+  } while (
+    diaUtilAnterior.getDay() === 0 ||
+    diaUtilAnterior.getDay() === 6 ||
+    feriados.indexOf(normalizaDataDate(diaUtilAnterior)) >= 0
+  );
   
-  // Retroceder até encontrar um dia útil
-  while (ultimoDiaMes.getDay() === 0 || ultimoDiaMes.getDay() === 6 || 
-         feriados.indexOf(normalizaDataDate(ultimoDiaMes)) >= 0) {
-    ultimoDiaMes.setDate(ultimoDiaMes.getDate() - 1);
-  }
+  Logger.log('📅 Dia útil anterior: ' + normalizaDataDate(diaUtilAnterior));
+  Logger.log('📅 Dia da semana do dia útil anterior: ' + diaUtilAnterior.toLocaleDateString('pt-BR', { weekday: 'long' }));
   
-  Logger.log('📅 Último dia ÚTIL do mês: ' + normalizaDataDate(ultimoDiaMes));
-  Logger.log('📅 Dia da semana: ' + ultimoDiaMes.toLocaleDateString('pt-BR', { weekday: 'long' }));
+  var ehPrimeiroDiaUtilDoMes = diaUtilAnterior.getMonth() !== hoje.getMonth() ||
+                                diaUtilAnterior.getFullYear() !== hoje.getFullYear();
   
-  // Verificar
-  var ultimoDiaUtilFormatado = normalizaDataDate(ultimoDiaMes);
-  var hojeFormatado = normalizaDataDate(hoje);
-  
-  if (hojeFormatado === ultimoDiaUtilFormatado) {
-    Logger.log('\n✅ HOJE É O ÚLTIMO DIA ÚTIL DO MÊS!');
-    Logger.log('📧 Emails de Diárias SERÃO enviados às 17:00');
+  if (ehPrimeiroDiaUtilDoMes) {
+    Logger.log('\n✅ HOJE É O PRIMEIRO DIA ÚTIL DO MÊS!');
+    Logger.log('📧 Emails de Diárias SERÃO enviados às 18:30 (referentes ao último dia útil do mês anterior: ' + normalizaDataDate(diaUtilAnterior) + ')');
   } else {
-    var diasRestantes = Math.floor((ultimoDiaMes - hoje) / (1000 * 60 * 60 * 24));
-    Logger.log('\n⏭️ Hoje NÃO é o último dia útil');
-    Logger.log('📆 Faltam ' + diasRestantes + ' dias úteis para o último dia útil');
-    Logger.log('📅 Próximo envio: ' + ultimoDiaUtilFormatado + ' às 17:00');
+    Logger.log('\n⏭️ Hoje NÃO é o primeiro dia útil do mês');
+    Logger.log('📧 Emails de Diárias NÃO serão enviados hoje');
   }
   
   Logger.log('\n✅ Teste concluído!');
@@ -3477,15 +3477,17 @@ function calcularDiasUteisEntreDatas(dataInicio, dataFim, feriados) {
  * - Ela só envia email no último dia útil do mês
  */
 /**
- * 📧 ENVIA EMAIL DE DIÁRIAS APENAS NO ÚLTIMO DIA ÚTIL DO MÊS
- * Esta função verifica se hoje é o último dia útil do mês E envia os emails
+ * 📧 ENVIA EMAIL DE DIÁRIAS APENAS NO PRIMEIRO DIA ÚTIL DO MÊS
+ * Esta função verifica se hoje é o primeiro dia útil do mês (ou seja, o dia útil
+ * anterior pertence ao mês anterior), o que significa que todos os registros do
+ * último dia útil do mês anterior já foram enviados.
  * 
  * ✅ COMO USAR:
  * - Configure um trigger diário às 18:30 para executar esta função
- * - Ela só envia email no último dia útil do mês
+ * - Ela só envia email no primeiro dia útil de cada mês
  */
 function enviarEmailDiariasSeForUltimoDiaUtil() {
-  Logger.log('🔍 Verificando se hoje é o último dia útil do mês...');
+  Logger.log('🔍 Verificando se hoje é o primeiro dia útil do mês...');
   
   // Verificar se é dia útil
   var hoje = new Date();
@@ -3518,22 +3520,36 @@ function enviarEmailDiariasSeForUltimoDiaUtil() {
     Logger.log('⚠️ Erro ao verificar feriados: ' + error.toString());
   }
   
-  // ✅ É DIA ÚTIL - Verificar se é o ÚLTIMO dia útil do mês
-  var ultimoDiaUtil = calcularUltimoDiaUtilDoMes(hoje, ss);
+  // ✅ É DIA ÚTIL - Verificar se hoje é o PRIMEIRO dia útil do mês
+  // (ou seja, o dia útil anterior pertence ao mês anterior)
+  var feriadosArray = getFeriadosArray();
+  var diaUtilAnterior = new Date(hoje.getTime());
+  do {
+    diaUtilAnterior.setDate(diaUtilAnterior.getDate() - 1);
+  } while (
+    diaUtilAnterior.getDay() === 0 ||
+    diaUtilAnterior.getDay() === 6 ||
+    feriadosArray.indexOf(normalizaDataDate(diaUtilAnterior)) >= 0
+  );
+  
   var hojeNormalizado = formatarData(hoje);
-  var ultimoDiaUtilNormalizado = formatarData(ultimoDiaUtil);
+  var diaUtilAnteriorNormalizado = normalizaDataDate(diaUtilAnterior);
   
   Logger.log('📅 Hoje: ' + hojeNormalizado);
-  Logger.log('📅 Último dia útil do mês: ' + ultimoDiaUtilNormalizado);
+  Logger.log('📅 Dia útil anterior: ' + diaUtilAnteriorNormalizado);
   
-  if (hojeNormalizado === ultimoDiaUtilNormalizado) {
-    Logger.log('🎯 HOJE É O ÚLTIMO DIA ÚTIL DO MÊS! Enviando emails de Diárias...');
+  // Se o dia útil anterior está num mês diferente, hoje é o primeiro dia útil do mês
+  var ehPrimeiroDiaUtilDoMes = diaUtilAnterior.getMonth() !== hoje.getMonth() ||
+                                diaUtilAnterior.getFullYear() !== hoje.getFullYear();
+  
+  if (ehPrimeiroDiaUtilDoMes) {
+    Logger.log('🎯 HOJE É O PRIMEIRO DIA ÚTIL DO MÊS! O último dia útil do mês anterior foi ' + diaUtilAnteriorNormalizado + '. Enviando emails de Diárias...');
     
     // ✅ ENVIAR EMAILS DE DIÁRIAS
     return enviarEmailDiariasIndividualPorFundo();
   } else {
-    Logger.log('⏭️ Hoje NÃO é o último dia útil do mês. Email NÃO será enviado.');
-    return { skipped: true, reason: 'Não é o último dia útil do mês' };
+    Logger.log('⏭️ Hoje NÃO é o primeiro dia útil do mês. Email NÃO será enviado.');
+    return { skipped: true, reason: 'Não é o primeiro dia útil do mês' };
   }
 }
 
@@ -3572,34 +3588,39 @@ function calcularUltimoDiaUtilDoMes(dataReferencia, ss) {
 }
 
 /**
- * 🧪 TESTE: Verificar se hoje é o último dia útil do mês
+ * 🧪 TESTE: Verificar se hoje é o primeiro dia útil do mês
  * Execute esta função manualmente no Apps Script Editor para testar
  */
 function testarSeEhUltimoDiaUtil() {
-  Logger.log('🧪 ===== TESTE: ÚLTIMO DIA ÚTIL DO MÊS =====\n');
+  Logger.log('🧪 ===== TESTE: PRIMEIRO DIA ÚTIL DO MÊS =====\n');
   
-  var ss = obterPlanilha();
   var hoje = new Date();
+  var feriadosArray = getFeriadosArray();
   
   Logger.log('📅 Data de hoje: ' + formatarData(hoje));
   Logger.log('📅 Dia da semana: ' + ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][hoje.getDay()]);
   
-  var ultimoDiaUtil = calcularUltimoDiaUtilDoMes(hoje, ss);
-  Logger.log('📅 Último dia útil do mês: ' + formatarData(ultimoDiaUtil));
+  // Calcular o dia útil anterior
+  var diaUtilAnterior = new Date(hoje.getTime());
+  do {
+    diaUtilAnterior.setDate(diaUtilAnterior.getDate() - 1);
+  } while (
+    diaUtilAnterior.getDay() === 0 ||
+    diaUtilAnterior.getDay() === 6 ||
+    feriadosArray.indexOf(normalizaDataDate(diaUtilAnterior)) >= 0
+  );
   
-  var hojeNormalizado = formatarData(hoje);
-  var ultimoDiaUtilNormalizado = formatarData(ultimoDiaUtil);
+  Logger.log('📅 Último dia útil anterior: ' + normalizaDataDate(diaUtilAnterior));
   
-  if (hojeNormalizado === ultimoDiaUtilNormalizado) {
-    Logger.log('\n🎯 ✅ HOJE É O ÚLTIMO DIA ÚTIL DO MÊS!');
-    Logger.log('📧 Emails de Diárias SERÃO enviados.');
+  var ehPrimeiroDiaUtilDoMes = diaUtilAnterior.getMonth() !== hoje.getMonth() ||
+                                diaUtilAnterior.getFullYear() !== hoje.getFullYear();
+  
+  if (ehPrimeiroDiaUtilDoMes) {
+    Logger.log('\n🎯 ✅ HOJE É O PRIMEIRO DIA ÚTIL DO MÊS!');
+    Logger.log('📧 Emails de Diárias SERÃO enviados (referentes ao último dia útil do mês anterior: ' + normalizaDataDate(diaUtilAnterior) + ').');
   } else {
-    Logger.log('\n⏭️ ❌ Hoje NÃO é o último dia útil do mês.');
+    Logger.log('\n⏭️ ❌ Hoje NÃO é o primeiro dia útil do mês.');
     Logger.log('📧 Emails de Diárias NÃO serão enviados.');
-    
-    // Calcular quantos dias faltam
-    var diasRestantes = Math.ceil((ultimoDiaUtil - hoje) / (1000 * 60 * 60 * 24));
-    Logger.log('⏰ Faltam ' + diasRestantes + ' dia(s) para o último dia útil.');
   }
   
   Logger.log('\n✅ Teste concluído!');
