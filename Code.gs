@@ -2986,11 +2986,28 @@ function forcarEnvioEmailBalancete() {
 
 
 /**
- * 📧 Enviar email individual para CADA FUNDO com TODAS as suas datas
+ * 📧 Enviar email individual para CADA FUNDO com TODAS as suas datas do mês de referência
+ * @param {Object} [mesReferencia] - Opcional. Objeto { mes: <0-indexed>, ano: <YYYY> } indicando o mês a filtrar.
+ *   Se omitido, usa o mês anterior ao dia de hoje (comportamento padrão para envio no primeiro dia útil do mês).
  */
-function enviarEmailDiariasIndividualPorFundo() {
+function enviarEmailDiariasIndividualPorFundo(mesReferencia) {
   Logger.log('📧 ===== ENVIO INDIVIDUAL POR FUNDO =====\n');
-  
+
+  // Determinar o mês de referência (mês anterior por padrão)
+  // Nota: new Date(ano, -1, 1) em JavaScript retorna 1/Dezembro do ano anterior,
+  // portanto a travessia de dezembro→janeiro é tratada corretamente.
+  if (!mesReferencia) {
+    var hoje = new Date();
+    var refDate = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+    mesReferencia = { mes: refDate.getMonth(), ano: refDate.getFullYear() };
+  }
+
+  var nomesMeses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                    'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  var nomeMesRef = nomesMeses[mesReferencia.mes] + '/' + mesReferencia.ano;
+
+  Logger.log('📅 Mês de referência do relatório: ' + nomeMesRef);
+
   var destinatarios = [
     //'spandrade@banestes.com.br',
     'fabiooliveira@banestes.com.br',
@@ -3055,9 +3072,9 @@ function enviarEmailDiariasIndividualPorFundo() {
             return dateB - dateA;
           });
           
-          Logger.log('   Total de datas encontradas: ' + datasUnicas.length);
+          Logger.log('   Total de datas encontradas para ' + nomeMesRef + ': ' + datasUnicas.length);
           
-          // Gerar linhas da tabela com TODAS as datas
+          // Gerar linhas da tabela com TODAS as datas do mês de referência
           var linhasTabela = datasUnicas.map(function(item) {
             return '<tr>' +
               '<td style="padding:10px;border:1px solid #dddddd;background:#ffffff;text-align:center;">' + item.dia + '</td>' +
@@ -3088,19 +3105,19 @@ function enviarEmailDiariasIndividualPorFundo() {
             '<td align="center" style="background-color:#2E7D32;padding:30px 20px;">' +
             '<div style="font-size:40px;color:#ffffff;line-height:1;margin-bottom:10px;">✓</div>' +
             '<h1 style="color:#ffffff;font-size:22px;margin:0;">Relatório de Conformidade CVM</h1>' +
-            '<p style="color:#a5d6a7;margin:5px 0 0 0;font-size:14px;">Informações Diárias</p>' +
+            '<p style="color:#a5d6a7;margin:5px 0 0 0;font-size:14px;">Informações Diárias — ' + nomeMesRef + '</p>' +
             '</td>' +
             '</tr>' +
             '<tr>' +
             '<td style="padding:30px 25px;color:#333333;font-size:15px;line-height:1.6;">' +
             '<p>Prezados,</p>' +
-            '<p>Informamos que os envios de <strong>Informações Diárias</strong> junto à CVM para o fundo abaixo encontram-se em conformidade.</p>' +
+            '<p>Informamos que os envios de <strong>Informações Diárias</strong> junto à CVM para o fundo abaixo, referentes ao mês de <strong>' + nomeMesRef + '</strong>, encontram-se em conformidade.</p>' +
             '<div style="background-color:#f0f9ff;border-left:4px solid #667eea;padding:15px;margin:20px 0;">' +
             '<p style="margin:0;font-weight:bold;color:#1e3a8a;font-size:16px;">Fundo:</p>' +
             '<p style="margin:5px 0 0 0;font-size:14px;color:#333;">' + fundo.nome + '</p>' +
             '<p style="margin:10px 0 0 0;font-size:13px;color:#666;">Código CVM: ' + fundo.codigoCVM + '</p>' +
             '</div>' +
-            '<p>Abaixo listamos <strong>todos os ' + datasUnicas.length + ' envios</strong> registrados no sistema da CVM:</p>' +
+            '<p>Abaixo listamos <strong>todos os ' + datasUnicas.length + ' envios</strong> do mês de <strong>' + nomeMesRef + '</strong> registrados no sistema da CVM:</p>' +
             '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:20px 0;font-family:Arial,sans-serif;">' +
             '<thead>' +
             '<tr>' +
@@ -3114,7 +3131,7 @@ function enviarEmailDiariasIndividualPorFundo() {
             '</table>' +
             '<div class="monitor-box">' +
             '<p style="margin:0;font-weight:bold;color:#0d47a1;font-size:14px;">✓ Status: Regularizado</p>' +
-            '<p style="margin:5px 0 0 0;font-size:13px;color:#444;">Todos os ' + datasUnicas.length + ' envios foram identificados corretamente no portal da CVM.</p>' +
+            '<p style="margin:5px 0 0 0;font-size:13px;color:#444;">Todos os ' + datasUnicas.length + ' envios de ' + nomeMesRef + ' foram identificados corretamente no portal da CVM.</p>' +
             '</div>' +
             '</td>' +
             '</tr>' +
@@ -3129,7 +3146,7 @@ function enviarEmailDiariasIndividualPorFundo() {
             '</html>';
           
           // Enviar email
-          var assunto = '✅ Conformidade CVM - Diárias - ' + fundo.nome.substring(0, 60);
+          var assunto = '✅ Conformidade CVM - Diárias ' + nomeMesRef + ' - ' + fundo.nome.substring(0, 45);
           
           MailApp.sendEmail({
             to: destinatarios.join(','),
@@ -3138,10 +3155,10 @@ function enviarEmailDiariasIndividualPorFundo() {
           });
           
           emailsEnviados++;
-          Logger.log('   ✅ Email enviado (' + datasUnicas.length + ' datas)');
+          Logger.log('   ✅ Email enviado (' + datasUnicas.length + ' datas de ' + nomeMesRef + ')');
           
         } else {
-          Logger.log('   ⚠️ Sem dados - email não enviado');
+          Logger.log('   ⚠️ Sem dados para ' + nomeMesRef + ' - email não enviado');
         }
       } else {
         Logger.log('   ❌ Erro HTTP: ' + response.getResponseCode());
@@ -3161,6 +3178,7 @@ function enviarEmailDiariasIndividualPorFundo() {
   
   Logger.log('\n========================================');
   Logger.log('✅ RESUMO FINAL:');
+  Logger.log('   Mês de referência: ' + nomeMesRef);
   Logger.log('   Total de fundos: ' + fundos.length);
   Logger.log('   Emails enviados: ' + emailsEnviados);
   Logger.log('   Erros: ' + emailsComErro);
@@ -3168,6 +3186,7 @@ function enviarEmailDiariasIndividualPorFundo() {
   
   return {
     success: true,
+    mesReferencia: nomeMesRef,
     totalFundos: fundos.length,
     emailsEnviados: emailsEnviados,
     emailsComErro: emailsComErro
@@ -3318,10 +3337,12 @@ function criarTriggerEmailDiariasUltimoDiaUtil() {
     }
   });
   
-  // Criar novo trigger DIÁRIO às 17:00 (verifica se é último dia útil)
+  // Criar novo trigger DIÁRIO às 18:30 (verifica se é primeiro dia útil do mês)
+  // Horário 18:30 garante que os envios do dia à CVM já foram processados antes do email
   ScriptApp.newTrigger('verificarEEnviarEmailDiariasSeUltimoDiaUtil')
     .timeBased()
-    .atHour(17)
+    .atHour(18)
+    .nearMinute(30)
     .everyDays(1)
     .create();
   
@@ -3330,47 +3351,51 @@ function criarTriggerEmailDiariasUltimoDiaUtil() {
   Logger.log('✅ ═══════════════════════════════════════════');
   Logger.log('');
   Logger.log('📧 Função: verificarEEnviarEmailDiariasSeUltimoDiaUtil()');
-  Logger.log('⏰ Horário: 17:00 (diariamente)');
-  Logger.log('🎯 Envia: Apenas no último dia útil do mês');
-  Logger.log('📊 Conteúdo: Todos os envios de diárias por fundo');
+  Logger.log('⏰ Horário: 18:30 (diariamente)');
+  Logger.log('🎯 Envia: Apenas no primeiro dia útil do mês (relatório do mês anterior)');
+  Logger.log('📊 Conteúdo: Todos os envios de diárias do mês anterior por fundo');
   
   return {
     success: true,
-    message: 'Trigger criado! Emails de diárias serão enviados no último dia útil do mês.'
+    message: 'Trigger criado! Emails de diárias serão enviados no primeiro dia útil do mês às 18:30.'
   };
 }
 
 /**
- * Verifica se hoje é o último dia útil do mês e envia emails
+ * Verifica se hoje é o primeiro dia útil do mês (logo após o último dia útil do mês anterior) e envia emails
  */
 function verificarEEnviarEmailDiariasSeUltimoDiaUtil() {
-  Logger.log('🔍 Verificando se hoje é último dia útil do mês...');
+  Logger.log('🔍 Verificando se hoje é o primeiro dia útil do mês...');
   
   var hoje = new Date();
-  var ss = obterPlanilha();
   var feriados = getFeriadosArray();
   
-  // Calcular último dia útil do mês
-  var ultimoDiaMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0); // Último dia do mês
+  // Calcular o dia útil anterior
+  var diaUtilAnterior = new Date(hoje.getTime());
+  do {
+    diaUtilAnterior.setDate(diaUtilAnterior.getDate() - 1);
+  } while (
+    diaUtilAnterior.getDay() === 0 ||
+    diaUtilAnterior.getDay() === 6 ||
+    feriados.indexOf(normalizaDataDate(diaUtilAnterior)) >= 0
+  );
   
-  // Retroceder até encontrar um dia útil
-  while (ultimoDiaMes.getDay() === 0 || ultimoDiaMes.getDay() === 6 || 
-         feriados.indexOf(normalizaDataDate(ultimoDiaMes)) >= 0) {
-    ultimoDiaMes.setDate(ultimoDiaMes.getDate() - 1);
-  }
-  
-  var ultimoDiaUtilFormatado = normalizaDataDate(ultimoDiaMes);
+  var diaUtilAnteriorFormatado = normalizaDataDate(diaUtilAnterior);
   var hojeFormatado = normalizaDataDate(hoje);
   
   Logger.log('📅 Hoje: ' + hojeFormatado);
-  Logger.log('📅 Último dia útil do mês: ' + ultimoDiaUtilFormatado);
+  Logger.log('📅 Dia útil anterior: ' + diaUtilAnteriorFormatado);
   
-  // Verificar se hoje é o último dia útil
-  if (hojeFormatado === ultimoDiaUtilFormatado) {
-    Logger.log('✅ HOJE É O ÚLTIMO DIA ÚTIL! Enviando emails...');
+  // Verificar se hoje é o primeiro dia útil do mês
+  // (o dia útil anterior pertence a um mês diferente)
+  var ehPrimeiroDiaUtilDoMes = diaUtilAnterior.getMonth() !== hoje.getMonth() ||
+                                diaUtilAnterior.getFullYear() !== hoje.getFullYear();
+  
+  if (ehPrimeiroDiaUtilDoMes) {
+    Logger.log('✅ HOJE É O PRIMEIRO DIA ÚTIL DO MÊS! O último dia útil do mês anterior foi ' + diaUtilAnteriorFormatado + '. Enviando emails...');
     enviarRelatorioDiariasConsolidadoPDF();
   } else {
-    Logger.log('⏭️ Hoje NÃO é o último dia útil. Email não será enviado.');
+    Logger.log('⏭️ Hoje NÃO é o primeiro dia útil do mês. Email não será enviado.');
   }
 }
 
@@ -3395,44 +3420,40 @@ function testarEnvioDiariasUltimoDiaUtil() {
 }
 
 /**
- * 🧪 TESTE: Verifica qual é o último dia útil do mês atual
+ * 🧪 TESTE: Verifica se hoje é o primeiro dia útil do mês
  * Execute no Apps Script Editor para ver o resultado no log
  */
 function testarCalculoUltimoDiaUtil() {
-  Logger.log('🧪 ===== TESTE: Cálculo do Último Dia Útil =====\n');
+  Logger.log('🧪 ===== TESTE: Primeiro Dia Útil do Mês =====\n');
   
   var hoje = new Date();
-  var ss = obterPlanilha();
   var feriados = getFeriadosArray();
   
   Logger.log('📅 Hoje: ' + normalizaDataDate(hoje));
   Logger.log('📅 Dia da semana: ' + hoje.toLocaleDateString('pt-BR', { weekday: 'long' }));
   
-  // Calcular último dia útil do mês
-  var ultimoDiaMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
-  Logger.log('📅 Último dia do mês (calendário): ' + normalizaDataDate(ultimoDiaMes));
+  // Calcular o dia útil anterior
+  var diaUtilAnterior = new Date(hoje.getTime());
+  do {
+    diaUtilAnterior.setDate(diaUtilAnterior.getDate() - 1);
+  } while (
+    diaUtilAnterior.getDay() === 0 ||
+    diaUtilAnterior.getDay() === 6 ||
+    feriados.indexOf(normalizaDataDate(diaUtilAnterior)) >= 0
+  );
   
-  // Retroceder até encontrar um dia útil
-  while (ultimoDiaMes.getDay() === 0 || ultimoDiaMes.getDay() === 6 || 
-         feriados.indexOf(normalizaDataDate(ultimoDiaMes)) >= 0) {
-    ultimoDiaMes.setDate(ultimoDiaMes.getDate() - 1);
-  }
+  Logger.log('📅 Dia útil anterior: ' + normalizaDataDate(diaUtilAnterior));
+  Logger.log('📅 Dia da semana do dia útil anterior: ' + diaUtilAnterior.toLocaleDateString('pt-BR', { weekday: 'long' }));
   
-  Logger.log('📅 Último dia ÚTIL do mês: ' + normalizaDataDate(ultimoDiaMes));
-  Logger.log('📅 Dia da semana: ' + ultimoDiaMes.toLocaleDateString('pt-BR', { weekday: 'long' }));
+  var ehPrimeiroDiaUtilDoMes = diaUtilAnterior.getMonth() !== hoje.getMonth() ||
+                                diaUtilAnterior.getFullYear() !== hoje.getFullYear();
   
-  // Verificar
-  var ultimoDiaUtilFormatado = normalizaDataDate(ultimoDiaMes);
-  var hojeFormatado = normalizaDataDate(hoje);
-  
-  if (hojeFormatado === ultimoDiaUtilFormatado) {
-    Logger.log('\n✅ HOJE É O ÚLTIMO DIA ÚTIL DO MÊS!');
-    Logger.log('📧 Emails de Diárias SERÃO enviados às 17:00');
+  if (ehPrimeiroDiaUtilDoMes) {
+    Logger.log('\n✅ HOJE É O PRIMEIRO DIA ÚTIL DO MÊS!');
+    Logger.log('📧 Emails de Diárias SERÃO enviados às 18:30 (referentes ao último dia útil do mês anterior: ' + normalizaDataDate(diaUtilAnterior) + ')');
   } else {
-    var diasRestantes = Math.floor((ultimoDiaMes - hoje) / (1000 * 60 * 60 * 24));
-    Logger.log('\n⏭️ Hoje NÃO é o último dia útil');
-    Logger.log('📆 Faltam ' + diasRestantes + ' dias úteis para o último dia útil');
-    Logger.log('📅 Próximo envio: ' + ultimoDiaUtilFormatado + ' às 17:00');
+    Logger.log('\n⏭️ Hoje NÃO é o primeiro dia útil do mês');
+    Logger.log('📧 Emails de Diárias NÃO serão enviados hoje');
   }
   
   Logger.log('\n✅ Teste concluído!');
@@ -3477,15 +3498,17 @@ function calcularDiasUteisEntreDatas(dataInicio, dataFim, feriados) {
  * - Ela só envia email no último dia útil do mês
  */
 /**
- * 📧 ENVIA EMAIL DE DIÁRIAS APENAS NO ÚLTIMO DIA ÚTIL DO MÊS
- * Esta função verifica se hoje é o último dia útil do mês E envia os emails
+ * 📧 ENVIA EMAIL DE DIÁRIAS APENAS NO PRIMEIRO DIA ÚTIL DO MÊS
+ * Esta função verifica se hoje é o primeiro dia útil do mês (ou seja, o dia útil
+ * anterior pertence ao mês anterior), o que significa que todos os registros do
+ * último dia útil do mês anterior já foram enviados.
  * 
  * ✅ COMO USAR:
  * - Configure um trigger diário às 18:30 para executar esta função
- * - Ela só envia email no último dia útil do mês
+ * - Ela só envia email no primeiro dia útil de cada mês
  */
 function enviarEmailDiariasSeForUltimoDiaUtil() {
-  Logger.log('🔍 Verificando se hoje é o último dia útil do mês...');
+  Logger.log('🔍 Verificando se hoje é o primeiro dia útil do mês...');
   
   // Verificar se é dia útil
   var hoje = new Date();
@@ -3518,22 +3541,37 @@ function enviarEmailDiariasSeForUltimoDiaUtil() {
     Logger.log('⚠️ Erro ao verificar feriados: ' + error.toString());
   }
   
-  // ✅ É DIA ÚTIL - Verificar se é o ÚLTIMO dia útil do mês
-  var ultimoDiaUtil = calcularUltimoDiaUtilDoMes(hoje, ss);
+  // ✅ É DIA ÚTIL - Verificar se hoje é o PRIMEIRO dia útil do mês
+  // (ou seja, o dia útil anterior pertence ao mês anterior)
+  var feriadosArray = getFeriadosArray();
+  var diaUtilAnterior = new Date(hoje.getTime());
+  do {
+    diaUtilAnterior.setDate(diaUtilAnterior.getDate() - 1);
+  } while (
+    diaUtilAnterior.getDay() === 0 ||
+    diaUtilAnterior.getDay() === 6 ||
+    feriadosArray.indexOf(normalizaDataDate(diaUtilAnterior)) >= 0
+  );
+  
   var hojeNormalizado = formatarData(hoje);
-  var ultimoDiaUtilNormalizado = formatarData(ultimoDiaUtil);
+  var diaUtilAnteriorNormalizado = normalizaDataDate(diaUtilAnterior);
   
   Logger.log('📅 Hoje: ' + hojeNormalizado);
-  Logger.log('📅 Último dia útil do mês: ' + ultimoDiaUtilNormalizado);
+  Logger.log('📅 Dia útil anterior: ' + diaUtilAnteriorNormalizado);
   
-  if (hojeNormalizado === ultimoDiaUtilNormalizado) {
-    Logger.log('🎯 HOJE É O ÚLTIMO DIA ÚTIL DO MÊS! Enviando emails de Diárias...');
+  // Se o dia útil anterior está num mês diferente, hoje é o primeiro dia útil do mês
+  var ehPrimeiroDiaUtilDoMes = diaUtilAnterior.getMonth() !== hoje.getMonth() ||
+                                diaUtilAnterior.getFullYear() !== hoje.getFullYear();
+  
+  if (ehPrimeiroDiaUtilDoMes) {
+    Logger.log('🎯 HOJE É O PRIMEIRO DIA ÚTIL DO MÊS! O último dia útil do mês anterior foi ' + diaUtilAnteriorNormalizado + '. Enviando emails de Diárias...');
     
-    // ✅ ENVIAR EMAILS DE DIÁRIAS
-    return enviarEmailDiariasIndividualPorFundo();
+    // ✅ ENVIAR EMAILS DE DIÁRIAS referentes ao mês do dia útil anterior (mês anterior)
+    var mesRef = { mes: diaUtilAnterior.getMonth(), ano: diaUtilAnterior.getFullYear() };
+    return enviarEmailDiariasIndividualPorFundo(mesRef);
   } else {
-    Logger.log('⏭️ Hoje NÃO é o último dia útil do mês. Email NÃO será enviado.');
-    return { skipped: true, reason: 'Não é o último dia útil do mês' };
+    Logger.log('⏭️ Hoje NÃO é o primeiro dia útil do mês. Email NÃO será enviado.');
+    return { skipped: true, reason: 'Não é o primeiro dia útil do mês' };
   }
 }
 
@@ -3572,34 +3610,39 @@ function calcularUltimoDiaUtilDoMes(dataReferencia, ss) {
 }
 
 /**
- * 🧪 TESTE: Verificar se hoje é o último dia útil do mês
+ * 🧪 TESTE: Verificar se hoje é o primeiro dia útil do mês
  * Execute esta função manualmente no Apps Script Editor para testar
  */
 function testarSeEhUltimoDiaUtil() {
-  Logger.log('🧪 ===== TESTE: ÚLTIMO DIA ÚTIL DO MÊS =====\n');
+  Logger.log('🧪 ===== TESTE: PRIMEIRO DIA ÚTIL DO MÊS =====\n');
   
-  var ss = obterPlanilha();
   var hoje = new Date();
+  var feriadosArray = getFeriadosArray();
   
   Logger.log('📅 Data de hoje: ' + formatarData(hoje));
   Logger.log('📅 Dia da semana: ' + ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][hoje.getDay()]);
   
-  var ultimoDiaUtil = calcularUltimoDiaUtilDoMes(hoje, ss);
-  Logger.log('📅 Último dia útil do mês: ' + formatarData(ultimoDiaUtil));
+  // Calcular o dia útil anterior
+  var diaUtilAnterior = new Date(hoje.getTime());
+  do {
+    diaUtilAnterior.setDate(diaUtilAnterior.getDate() - 1);
+  } while (
+    diaUtilAnterior.getDay() === 0 ||
+    diaUtilAnterior.getDay() === 6 ||
+    feriadosArray.indexOf(normalizaDataDate(diaUtilAnterior)) >= 0
+  );
   
-  var hojeNormalizado = formatarData(hoje);
-  var ultimoDiaUtilNormalizado = formatarData(ultimoDiaUtil);
+  Logger.log('📅 Último dia útil anterior: ' + normalizaDataDate(diaUtilAnterior));
   
-  if (hojeNormalizado === ultimoDiaUtilNormalizado) {
-    Logger.log('\n🎯 ✅ HOJE É O ÚLTIMO DIA ÚTIL DO MÊS!');
-    Logger.log('📧 Emails de Diárias SERÃO enviados.');
+  var ehPrimeiroDiaUtilDoMes = diaUtilAnterior.getMonth() !== hoje.getMonth() ||
+                                diaUtilAnterior.getFullYear() !== hoje.getFullYear();
+  
+  if (ehPrimeiroDiaUtilDoMes) {
+    Logger.log('\n🎯 ✅ HOJE É O PRIMEIRO DIA ÚTIL DO MÊS!');
+    Logger.log('📧 Emails de Diárias SERÃO enviados (referentes ao último dia útil do mês anterior: ' + normalizaDataDate(diaUtilAnterior) + ').');
   } else {
-    Logger.log('\n⏭️ ❌ Hoje NÃO é o último dia útil do mês.');
+    Logger.log('\n⏭️ ❌ Hoje NÃO é o primeiro dia útil do mês.');
     Logger.log('📧 Emails de Diárias NÃO serão enviados.');
-    
-    // Calcular quantos dias faltam
-    var diasRestantes = Math.ceil((ultimoDiaUtil - hoje) / (1000 * 60 * 60 * 24));
-    Logger.log('⏰ Faltam ' + diasRestantes + ' dia(s) para o último dia útil.');
   }
   
   Logger.log('\n✅ Teste concluído!');
@@ -3640,14 +3683,16 @@ function ativarSistemaCompleto() {
   Logger.log('✅ TRIGGER 2: Emails diários às 18:30 (Balancete, Composição, Lâmina, Perfil Mensal)');
   
   // ============================================
-  // TRIGGER 3: Emails mensais de Diárias (último dia útil do mês)
+  // TRIGGER 3: Emails mensais de Diárias (primeiro dia útil do mês)
+  // Horário 18:30 garante que os envios do dia à CVM já foram processados antes do email
   // ============================================
   ScriptApp.newTrigger('verificarEEnviarEmailDiariasSeUltimoDiaUtil')
     .timeBased()
-    .atHour(17)
+    .atHour(18)
+    .nearMinute(30)
     .everyDays(1)
     .create();
-  Logger.log('✅ TRIGGER 3: Emails mensais de Diárias às 17:00 (só no último dia útil)');
+  Logger.log('✅ TRIGGER 3: Emails mensais de Diárias às 18:30 (só no primeiro dia útil do mês)');
   
   // ============================================
   // RESUMO
@@ -3666,8 +3711,8 @@ function ativarSistemaCompleto() {
   Logger.log('   ⚠️ NÃO envia Diárias (seção comentada)');
   Logger.log('');
   Logger.log('📅 TRIGGER 3: verificarEEnviarEmailDiariasSeUltimoDiaUtil()');
-  Logger.log('   ⏰ Executa: Diariamente às 17:00');
-  Logger.log('   🎯 Envia emails de Diárias APENAS no último dia útil do mês');
+  Logger.log('   ⏰ Executa: Diariamente às 18:30');
+  Logger.log('   🎯 Envia emails de Diárias APENAS no primeiro dia útil do mês (relatório do mês anterior)');
   Logger.log('');
   Logger.log('🌐 Web App: ' + ScriptApp.getService().getUrl());
   Logger.log('📊 Planilha: ' + obterURLPlanilha());
