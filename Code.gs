@@ -3050,15 +3050,6 @@ function enviarEmailDiariasIndividualPorFundo(mesReferencia) {
             linhasComDatas.push({ dia: matchDia[1], data: matchData[1] });
           }
         }
-
-        // Filtrar apenas datas do mês de referência (DD/MM/YYYY)
-        var mesReferenciaStr = String(mesReferencia.mes + 1).padStart(2, '0');
-        var anoReferenciaStr = String(mesReferencia.ano);
-        linhasComDatas = linhasComDatas.filter(function(item) {
-          // item.data formato: DD/MM/YYYY
-          var partes = item.data.split('/');
-          return partes.length === 3 && partes[1] === mesReferenciaStr && partes[2] === anoReferenciaStr;
-        });
         
         if (linhasComDatas.length > 0) {
           // Remover duplicatas
@@ -3833,16 +3824,6 @@ function enviarRelatorioDiariasConsolidadoPDF() {
           if (matchDia && matchData) {
             linhasComDatas.push({ dia: matchDia[1], data: matchData[1] });
           }
-        }
-
-        if (linhasComDatas.length > 0) {
-          // Filtrar apenas datas do mês anterior (referência)
-          var mesAnteriorStr = String(dataMesAnterior.getMonth() + 1).padStart(2, '0');
-          var anoAnteriorStr = String(dataMesAnterior.getFullYear());
-          linhasComDatas = linhasComDatas.filter(function(item) {
-            var partes = item.data.split('/');
-            return partes.length === 3 && partes[1] === mesAnteriorStr && partes[2] === anoAnteriorStr;
-          });
         }
 
         if (linhasComDatas.length > 0) {
