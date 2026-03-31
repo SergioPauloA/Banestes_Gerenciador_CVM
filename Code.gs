@@ -2994,6 +2994,8 @@ function enviarEmailDiariasIndividualPorFundo(mesReferencia) {
   Logger.log('📧 ===== ENVIO INDIVIDUAL POR FUNDO =====\n');
 
   // Determinar o mês de referência (mês anterior por padrão)
+  // Nota: new Date(ano, -1, 1) em JavaScript retorna 1/Dezembro do ano anterior,
+  // portanto a travessia de dezembro→janeiro é tratada corretamente.
   if (!mesReferencia) {
     var hoje = new Date();
     var refDate = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
@@ -3153,7 +3155,7 @@ function enviarEmailDiariasIndividualPorFundo(mesReferencia) {
             '</html>';
           
           // Enviar email
-          var assunto = '✅ Conformidade CVM - Diárias ' + nomeMesRef + ' - ' + fundo.nome.substring(0, 50);
+          var assunto = '✅ Conformidade CVM - Diárias ' + nomeMesRef + ' - ' + fundo.nome.substring(0, 45);
           
           MailApp.sendEmail({
             to: destinatarios.join(','),
@@ -3344,10 +3346,12 @@ function criarTriggerEmailDiariasUltimoDiaUtil() {
     }
   });
   
-  // Criar novo trigger DIÁRIO às 17:00 (verifica se é último dia útil)
+  // Criar novo trigger DIÁRIO às 18:30 (verifica se é primeiro dia útil do mês)
+  // Horário 18:30 garante que os envios do dia à CVM já foram processados antes do email
   ScriptApp.newTrigger('verificarEEnviarEmailDiariasSeUltimoDiaUtil')
     .timeBased()
-    .atHour(17)
+    .atHour(18)
+    .nearMinute(30)
     .everyDays(1)
     .create();
   
@@ -3356,13 +3360,13 @@ function criarTriggerEmailDiariasUltimoDiaUtil() {
   Logger.log('✅ ═══════════════════════════════════════════');
   Logger.log('');
   Logger.log('📧 Função: verificarEEnviarEmailDiariasSeUltimoDiaUtil()');
-  Logger.log('⏰ Horário: 17:00 (diariamente)');
-  Logger.log('🎯 Envia: Apenas no último dia útil do mês');
-  Logger.log('📊 Conteúdo: Todos os envios de diárias por fundo');
+  Logger.log('⏰ Horário: 18:30 (diariamente)');
+  Logger.log('🎯 Envia: Apenas no primeiro dia útil do mês (relatório do mês anterior)');
+  Logger.log('📊 Conteúdo: Todos os envios de diárias do mês anterior por fundo');
   
   return {
     success: true,
-    message: 'Trigger criado! Emails de diárias serão enviados no último dia útil do mês.'
+    message: 'Trigger criado! Emails de diárias serão enviados no primeiro dia útil do mês às 18:30.'
   };
 }
 
@@ -3688,14 +3692,16 @@ function ativarSistemaCompleto() {
   Logger.log('✅ TRIGGER 2: Emails diários às 18:30 (Balancete, Composição, Lâmina, Perfil Mensal)');
   
   // ============================================
-  // TRIGGER 3: Emails mensais de Diárias (último dia útil do mês)
+  // TRIGGER 3: Emails mensais de Diárias (primeiro dia útil do mês)
+  // Horário 18:30 garante que os envios do dia à CVM já foram processados antes do email
   // ============================================
   ScriptApp.newTrigger('verificarEEnviarEmailDiariasSeUltimoDiaUtil')
     .timeBased()
-    .atHour(17)
+    .atHour(18)
+    .nearMinute(30)
     .everyDays(1)
     .create();
-  Logger.log('✅ TRIGGER 3: Emails mensais de Diárias às 17:00 (só no último dia útil)');
+  Logger.log('✅ TRIGGER 3: Emails mensais de Diárias às 18:30 (só no primeiro dia útil do mês)');
   
   // ============================================
   // RESUMO
@@ -3714,8 +3720,8 @@ function ativarSistemaCompleto() {
   Logger.log('   ⚠️ NÃO envia Diárias (seção comentada)');
   Logger.log('');
   Logger.log('📅 TRIGGER 3: verificarEEnviarEmailDiariasSeUltimoDiaUtil()');
-  Logger.log('   ⏰ Executa: Diariamente às 17:00');
-  Logger.log('   🎯 Envia emails de Diárias APENAS no último dia útil do mês');
+  Logger.log('   ⏰ Executa: Diariamente às 18:30');
+  Logger.log('   🎯 Envia emails de Diárias APENAS no primeiro dia útil do mês (relatório do mês anterior)');
   Logger.log('');
   Logger.log('🌐 Web App: ' + ScriptApp.getService().getUrl());
   Logger.log('📊 Planilha: ' + obterURLPlanilha());
