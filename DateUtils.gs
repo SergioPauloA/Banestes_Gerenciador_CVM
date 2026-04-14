@@ -156,8 +156,8 @@ function calcularDiaUtil(dataInicial, diasUteis, ss) {
   // quando ele for útil para evitar erro de +1 dia no prazo.
   if (diasUteis > 0) {
     while (diasAdicionados < diasUteis) {
-      var diaSemanaPositivo = resultado.getDay();
-      if (diaSemanaPositivo !== 0 && diaSemanaPositivo !== 6 && !ehFeriado(resultado, ss)) {
+      var diaSemana = resultado.getDay();
+      if (diaSemana !== 0 && diaSemana !== 6 && !ehFeriado(resultado, ss)) {
         diasAdicionados++;
       }
       if (diasAdicionados < diasUteis) {
@@ -171,8 +171,8 @@ function calcularDiaUtil(dataInicial, diasUteis, ss) {
   var diasRestantes = Math.abs(diasUteis);
   while (diasAdicionados < diasRestantes) {
     resultado.setDate(resultado.getDate() - 1);
-    var diaSemanaNegativo = resultado.getDay();
-    if (diaSemanaNegativo !== 0 && diaSemanaNegativo !== 6 && !ehFeriado(resultado, ss)) {
+    var diaSemana = resultado.getDay();
+    if (diaSemana !== 0 && diaSemana !== 6 && !ehFeriado(resultado, ss)) {
       diasAdicionados++;
     }
   }
