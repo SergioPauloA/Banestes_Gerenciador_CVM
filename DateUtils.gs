@@ -155,13 +155,17 @@ function calcularDiaUtil(dataInicial, diasUteis, ss) {
   // Para datas futuras (ex.: 10º dia útil do mês), iniciar a contagem no próprio
   // dia inicial e somar apenas quando ele for dia útil.
   if (diasUteis > 0) {
-    while (true) {
+    var diaSemanaInicial = resultado.getDay();
+    if (diaSemanaInicial !== 0 && diaSemanaInicial !== 6 && !ehFeriado(resultado, ss)) {
+      diasAdicionados = 1;
+    }
+
+    while (diasAdicionados < diasUteis) {
+      resultado.setDate(resultado.getDate() + 1);
       var diaSemana = resultado.getDay();
       if (diaSemana !== 0 && diaSemana !== 6 && !ehFeriado(resultado, ss)) {
         diasAdicionados++;
       }
-      if (diasAdicionados >= diasUteis) break;
-      resultado.setDate(resultado.getDate() + 1);
     }
     return resultado;
   }
