@@ -393,12 +393,12 @@ function calcularDiasRestantesProximoCiclo(competenciaDateStr) {
   var decimoDiaUtil = calcularDiaUtil(mesPrazoImediato, 10, ss);
   var diasRestantes = calcularDiasUteisEntre(hoje, decimoDiaUtil, ss);
 
-  // Se esse prazo já passou (deadline estritamente antes de hoje), avançar um ciclo
-  // Nota: calcularDiasUteisEntre retorna 0 quando o prazo caiu num fim de semana/feriado
-  // imediatamente antes de hoje, portanto usamos comparação de datas diretamente.
+  // Se esse prazo já foi cumprido (deadline até hoje inclusive), avançar um ciclo.
+  // Quando prazo == hoje, a competência do mês anterior já foi enviada dentro do prazo,
+  // então o próximo ciclo relevante é o do mês seguinte.
   var hojeNorm = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()).getTime();
   var prazoNorm = new Date(decimoDiaUtil.getFullYear(), decimoDiaUtil.getMonth(), decimoDiaUtil.getDate()).getTime();
-  if (prazoNorm < hojeNorm) {
+  if (prazoNorm <= hojeNorm) {
     var mesPrazoSeguinte = new Date(ano, mes + 2, 1);
     decimoDiaUtil = calcularDiaUtil(mesPrazoSeguinte, 10, ss);
     diasRestantes = calcularDiasUteisEntre(hoje, decimoDiaUtil, ss);
@@ -4302,13 +4302,13 @@ function calcularStatusGeralDaAbaComPrazo(dados, tipo, competenciasAtuais) {
     var hoje = new Date();
     var diasRestantes = calcularDiasUteisEntre(hoje, decimoDiaUtil, ss);
 
-    // 🔥 Se o prazo do ciclo atual já passou (deadline estritamente antes de hoje), calcular o próximo ciclo:
-    // Nota: calcularDiasUteisEntre pode retornar 0 quando o prazo caiu num fim de semana/feriado
-    // imediatamente antes de hoje, portanto usamos comparação de datas diretamente.
-    // - novo prazo = 10º dia útil do mês seguinte ao prazo vencido (mes+2 em relação à competência)
+    // Se esse prazo já foi cumprido (deadline até hoje inclusive), calcular o próximo ciclo.
+    // Quando prazo == hoje, a competência do mês anterior já foi enviada dentro do prazo,
+    // então o próximo ciclo relevante é o do mês seguinte.
+    // - novo prazo = 10º dia útil do mês seguinte ao prazo cumprido (mes+2 em relação à competência)
     var hojeNorm = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()).getTime();
     var prazoNorm = new Date(decimoDiaUtil.getFullYear(), decimoDiaUtil.getMonth(), decimoDiaUtil.getDate()).getTime();
-    if (prazoNorm < hojeNorm) {
+    if (prazoNorm <= hojeNorm) {
       var mesSeguinteAoPrazo = new Date(ano, mes + 2, 1);
       decimoDiaUtil = calcularDiaUtil(mesSeguinteAoPrazo, 10, ss);
       diasRestantes = calcularDiasUteisEntre(hoje, decimoDiaUtil, ss);
