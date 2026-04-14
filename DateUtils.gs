@@ -148,21 +148,35 @@ function calcularDatasManualmente() {
 
 function calcularDiaUtil(dataInicial, diasUteis, ss) {
   var resultado = new Date(dataInicial);
+  if (diasUteis === 0) return resultado;
+
   var diasAdicionados = 0;
-  var direcao = diasUteis > 0 ? 1 : -1;
-  var diasRestantes = Math.abs(diasUteis);
-  
-  while (diasAdicionados < diasRestantes) {
-    resultado.setDate(resultado.getDate() + direcao);
-    
-    var diaSemana = resultado.getDay();
-    if (diaSemana !== 0 && diaSemana !== 6) {
-      if (!ehFeriado(resultado, ss)) {
+
+  // Para datas futuras (ex.: 10º dia útil do mês), contar o próprio dia inicial
+  // quando ele for útil para evitar erro de +1 dia no prazo.
+  if (diasUteis > 0) {
+    while (diasAdicionados < diasUteis) {
+      var diaSemanaPositivo = resultado.getDay();
+      if (diaSemanaPositivo !== 0 && diaSemanaPositivo !== 6 && !ehFeriado(resultado, ss)) {
         diasAdicionados++;
       }
+      if (diasAdicionados < diasUteis) {
+        resultado.setDate(resultado.getDate() + 1);
+      }
+    }
+    return resultado;
+  }
+
+  // Para datas passadas (D-1, D-2), manter regra original: não contar o dia inicial.
+  var diasRestantes = Math.abs(diasUteis);
+  while (diasAdicionados < diasRestantes) {
+    resultado.setDate(resultado.getDate() - 1);
+    var diaSemanaNegativo = resultado.getDay();
+    if (diaSemanaNegativo !== 0 && diaSemanaNegativo !== 6 && !ehFeriado(resultado, ss)) {
+      diasAdicionados++;
     }
   }
-  
+
   return resultado;
 }
 
