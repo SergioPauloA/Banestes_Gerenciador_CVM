@@ -148,21 +148,39 @@ function calcularDatasManualmente() {
 
 function calcularDiaUtil(dataInicial, diasUteis, ss) {
   var resultado = new Date(dataInicial);
+  if (diasUteis === 0) return resultado;
+
   var diasAdicionados = 0;
-  var direcao = diasUteis > 0 ? 1 : -1;
-  var diasRestantes = Math.abs(diasUteis);
-  
-  while (diasAdicionados < diasRestantes) {
-    resultado.setDate(resultado.getDate() + direcao);
-    
-    var diaSemana = resultado.getDay();
-    if (diaSemana !== 0 && diaSemana !== 6) {
-      if (!ehFeriado(resultado, ss)) {
+
+  // Para cálculo com diasUteis positivos (ex.: 10º dia útil do mês), iniciar a
+  // contagem no próprio dia inicial e somar apenas quando ele for dia útil.
+  if (diasUteis > 0) {
+    var diaSemanaInicial = resultado.getDay();
+    if (diaSemanaInicial !== 0 && diaSemanaInicial !== 6 && !ehFeriado(resultado, ss)) {
+      diasAdicionados = 1;
+    }
+
+    while (diasAdicionados < diasUteis) {
+      resultado.setDate(resultado.getDate() + 1);
+      var diaSemana = resultado.getDay();
+      if (diaSemana !== 0 && diaSemana !== 6 && !ehFeriado(resultado, ss)) {
         diasAdicionados++;
       }
     }
+    return resultado;
   }
-  
+
+  // Para cálculo com diasUteis negativos (D-1, D-2), manter regra original:
+  // não contar o dia inicial.
+  var diasRestantes = Math.abs(diasUteis);
+  while (diasAdicionados < diasRestantes) {
+    resultado.setDate(resultado.getDate() - 1);
+    var diaSemana = resultado.getDay();
+    if (diaSemana !== 0 && diaSemana !== 6 && !ehFeriado(resultado, ss)) {
+      diasAdicionados++;
+    }
+  }
+
   return resultado;
 }
 
