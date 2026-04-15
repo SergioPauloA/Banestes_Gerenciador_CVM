@@ -372,8 +372,8 @@ function calcularStatusOkDisplay(statusGeralAtual, diasRestantes) {
 /**
  * Calcula os dias úteis restantes até o prazo do próximo ciclo,
  * baseado na data de competência mais recente já registrada.
- * Regra: o prazo para a competência do mês X é o 10º dia útil do mês X+1.
- * Se esse prazo já passou, avança para o ciclo seguinte (mês X+2).
+ * Regra para status OK: usar sempre o próximo ciclo da competência registrada.
+ * Se a competência registrada é do mês X, o prazo mostrado é o 10º dia útil do mês X+2.
  * @param {string} competenciaDateStr - Data "DD/MM/YYYY" da última competência registrada
  * @returns {number|null} Dias úteis restantes até o próximo prazo, ou null se inválido
  */
@@ -388,21 +388,12 @@ function calcularDiasRestantesProximoCiclo(competenciaDateStr) {
   var ss = obterPlanilha();
   var hoje = new Date();
 
-  // Prazo imediato: 10º dia útil do mês seguinte à competência registrada
-  var mesPrazoImediato = new Date(ano, mes + 1, 1);
-  var decimoDiaUtil = calcularDiaUtil(mesPrazoImediato, 10, ss);
+  // Como esta função é usada para status "OK" (competência já enviada),
+  // o prazo a exibir deve ser SEMPRE o do próximo ciclo:
+  // competência X+1 => 10º dia útil de X+2.
+  var mesPrazoSeguinte = new Date(ano, mes + 2, 1);
+  var decimoDiaUtil = calcularDiaUtil(mesPrazoSeguinte, 10, ss);
   var diasRestantes = calcularDiasUteisEntre(hoje, decimoDiaUtil, ss);
-
-  // Se esse prazo já foi cumprido (deadline até hoje inclusive), avançar um ciclo.
-  // Quando prazo == hoje, a competência do mês anterior já foi enviada dentro do prazo,
-  // então o próximo ciclo relevante é o do mês seguinte.
-  var hojeNorm = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()).getTime();
-  var prazoNorm = new Date(decimoDiaUtil.getFullYear(), decimoDiaUtil.getMonth(), decimoDiaUtil.getDate()).getTime();
-  if (prazoNorm <= hojeNorm) {
-    var mesPrazoSeguinte = new Date(ano, mes + 2, 1);
-    decimoDiaUtil = calcularDiaUtil(mesPrazoSeguinte, 10, ss);
-    diasRestantes = calcularDiasUteisEntre(hoje, decimoDiaUtil, ss);
-  }
 
   return diasRestantes;
 }
