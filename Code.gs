@@ -408,6 +408,35 @@ function calcularDiasRestantesProximoCiclo(competenciaDateStr) {
 }
 
 /**
+ * Valida se a data está no formato de competência brasileiro (DD/MM/YYYY).
+ * @param {string} dataStr
+ * @returns {boolean}
+ */
+function ehDataCompetenciaValidaPTBR(dataStr) {
+  return /^\d{2}\/\d{2}\/\d{4}$/.test((dataStr || '').toString().trim());
+}
+
+/**
+ * Retorna a competência mais recente válida de uma lista de datas PT-BR.
+ * Ignora valores vazios e formatos inválidos.
+ * @param {Array<string>} datasCompetencia
+ * @returns {string|null}
+ */
+function obterCompetenciaMaisRecente(datasCompetencia) {
+  if (!datasCompetencia || datasCompetencia.length === 0) return null;
+
+  var datasValidas = datasCompetencia
+    .map(function(d) { return (d || '').toString().trim(); })
+    .filter(function(d) { return ehDataCompetenciaValidaPTBR(d); });
+
+  if (datasValidas.length === 0) return null;
+
+  return datasValidas.reduce(function(max, atual) {
+    return compararDatasPTBR(atual, max) > 0 ? atual : max;
+  }, datasValidas[0]);
+}
+
+/**
  * Determina os dias úteis restantes corretos para exibição do status OK,
  * usando a data de competência mais recente dos dados da aba.
  * Quando o registro mais recente é de um mês à frente do esperado (já enviado antes
@@ -419,14 +448,13 @@ function calcularDiasRestantesProximoCiclo(competenciaDateStr) {
 function calcularDiasOkParaExibicao(dados, datas) {
   var datasRetorno = dados
     .map(function(d) { return d.retorno; })
-    .filter(function(r) { return r && r !== '-'; });
+    .filter(function(r) { return ehDataCompetenciaValidaPTBR(r); });
 
   if (datasRetorno.length === 0) return datas.diasRestantes;
 
-  // Encontrar a data mais recente entre todos os registros
-  var maisRecente = datasRetorno.reduce(function(max, r) {
-    return compararDatasPTBR(r, max) > 0 ? r : max;
-  }, datasRetorno[0]);
+  // Encontrar a data mais recente entre todos os registros válidos
+  var maisRecente = obterCompetenciaMaisRecente(datasRetorno);
+  if (!maisRecente) return datas.diasRestantes;
 
   var diasCalc = calcularDiasRestantesProximoCiclo(maisRecente);
   return (diasCalc !== null) ? diasCalc : datas.diasRestantes;
@@ -2563,6 +2591,48 @@ function atualizarTodasCompetencias() {
   Logger.log('✅ Competências e dashboard atualizados.');
 }
 
+/**
+ * Recalcula e realinha apenas o status mensal (E1 e Dashboard GERAL),
+ * sem executar nova rotação de competências.
+ */
+function alinharStatusMensaisPosRotacao() {
+  Logger.log('🧭 Alinhando status mensais pós-rotação (sem rotacionar competências)...');
+  var abas = ['Balancete', 'Composição', 'Lâmina', 'Perfil Mensal'];
+  var ss = obterPlanilha();
+  var dashboardStatus = [];
+
+  abas.forEach(function(nomeAba, idx) {
+    var aba = ss.getSheetByName(nomeAba);
+    if (!aba) {
+      dashboardStatus[idx] = 'SEM DADOS';
+      return;
+    }
+
+    var ultimaLinha = aba.getLastRow();
+    if (ultimaLinha < 4) {
+      aba.getRange('E1').setValue('AGUARDANDO DADOS');
+      dashboardStatus[idx] = 'AGUARDANDO DADOS';
+      return;
+    }
+
+    var linhas = aba.getRange(4, 1, ultimaLinha - 3, 6).getValues();
+    var competenciasAtuais = linhas.map(function(l) { return (l[2] || '').toString().trim(); });
+    var statusGeral = calcularStatusGeralDaAbaComPrazo(linhas, "mensal", competenciasAtuais);
+    aba.getRange('E1').setValue(statusGeral);
+    dashboardStatus[idx] = statusGeral;
+  });
+
+  var abaGeral = ss.getSheetByName('GERAL');
+  if (abaGeral) {
+    abaGeral.getRange('A4').setValue(dashboardStatus[0] || 'SEM DADOS');
+    abaGeral.getRange('B4').setValue(dashboardStatus[1] || 'SEM DADOS');
+    abaGeral.getRange('E4').setValue(dashboardStatus[2] || 'SEM DADOS');
+    abaGeral.getRange('F4').setValue(dashboardStatus[3] || 'SEM DADOS');
+  }
+
+  Logger.log('✅ Status mensais realinhados com sucesso.');
+}
+
 // ============================================
 // FUNÇÕES AUXILIARES PARA DIÁRIAS
 // ============================================
@@ -4285,8 +4355,8 @@ function calcularStatusGeralDaAbaComPrazo(dados, tipo, competenciasAtuais) {
   }
 
   if (okFundos === totalFundos) {
-    // Pegar a data da competência atual (da primeira linha, pois todas devem estar iguais)
-    var competenciaBase = (competenciasAtuais[0] || '').toString().trim();
+    // Usa a competência mais recente válida para evitar falso vermelho após rotação
+    var competenciaBase = obterCompetenciaMaisRecente(competenciasAtuais);
     if (!competenciaBase || competenciaBase === "-" || competenciaBase === "") return "OK";
 
     // Calcula 10º dia útil do mês X+1
