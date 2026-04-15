@@ -407,10 +407,21 @@ function calcularDiasRestantesProximoCiclo(competenciaDateStr) {
   return diasRestantes;
 }
 
+/**
+ * Valida se a data está no formato de competência brasileiro (DD/MM/YYYY).
+ * @param {string} dataStr
+ * @returns {boolean}
+ */
 function ehDataCompetenciaValidaPTBR(dataStr) {
   return /^\d{2}\/\d{2}\/\d{4}$/.test((dataStr || '').toString().trim());
 }
 
+/**
+ * Retorna a competência mais recente válida de uma lista de datas PT-BR.
+ * Ignora valores vazios e formatos inválidos.
+ * @param {Array<string>} datasCompetencia
+ * @returns {string|null}
+ */
 function obterCompetenciaMaisRecente(datasCompetencia) {
   if (!datasCompetencia || datasCompetencia.length === 0) return null;
 
