@@ -47,21 +47,22 @@ function getDatasReferencia() {
   // Calcular dias restantes até o prazo
   var diasRestantes = calcularDiasUteisEntre(diaParaCalculo, decimoDiaUtil, ss);
   
-  // 🔥 Se o prazo do mês atual já passou (deadline estritamente antes de hoje), avançar para o próximo ciclo:
+  // 🔥 Se o prazo do mês atual já passou OU é hoje (deadline até hoje inclusive), avançar para o próximo ciclo.
+  // Quando prazo == hoje, o ciclo atual termina e o próximo prazo já é o do mês seguinte.
   // Nota: calcularDiasUteisEntre pode retornar 0 quando o prazo caiu num fim de semana/feriado
   // imediatamente antes de hoje, portanto usamos comparação de datas diretamente.
   // - nova competência aguardada = 1º dia do mês atual
   // - decimoDiaUtil = 10º dia útil do próximo mês (novo prazo)
   var hojeNorm = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth(), diaParaCalculo.getDate()).getTime();
   var prazoNorm = new Date(decimoDiaUtil.getFullYear(), decimoDiaUtil.getMonth(), decimoDiaUtil.getDate()).getTime();
-  if (prazoNorm < hojeNorm) {
+  if (prazoNorm <= hojeNorm) {
     var novoMesReferencia = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth(), 1);
     diaMesRef = formatarData(novoMesReferencia);
     var proximoMes = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth() + 1, 1);
     decimoDiaUtil = calcularDiaUtil(proximoMes, 10, ss);
     diaMesRef2 = formatarData(decimoDiaUtil);
     diasRestantes = calcularDiasUteisEntre(diaParaCalculo, decimoDiaUtil, ss);
-    Logger.log('  ⚡ Prazo do mês atual expirou. Avançando para o próximo ciclo.');
+    Logger.log('  ⚡ Prazo do mês atual venceu ou vence hoje. Avançando para o próximo ciclo.');
   }
   
   Logger.log('  1º dia mês referência: ' + diaMesRef);
@@ -115,21 +116,22 @@ function calcularDatasManualmente() {
   // Calcular dias restantes até o prazo
   var diasRestantes = calcularDiasUteisEntre(diaParaCalculo, decimoDiaUtil, ss);
   
-  // 🔥 Se o prazo do mês atual já passou (deadline estritamente antes de hoje), avançar para o próximo ciclo:
+  // 🔥 Se o prazo do mês atual já passou OU é hoje (deadline até hoje inclusive), avançar para o próximo ciclo.
+  // Quando prazo == hoje, o ciclo atual termina e o próximo prazo já é o do mês seguinte.
   // Nota: calcularDiasUteisEntre pode retornar 0 quando o prazo caiu num fim de semana/feriado
   // imediatamente antes de hoje, portanto usamos comparação de datas diretamente.
   // - competência aguardada passa a ser o 1º dia do mês atual
   // - decimoDiaUtil = 10º dia útil do próximo mês (novo prazo)
   var hojeNorm = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth(), diaParaCalculo.getDate()).getTime();
   var prazoNorm = new Date(decimoDiaUtil.getFullYear(), decimoDiaUtil.getMonth(), decimoDiaUtil.getDate()).getTime();
-  if (prazoNorm < hojeNorm) {
+  if (prazoNorm <= hojeNorm) {
     var mesReferenciaAtualizado = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth(), 1);
     diaMesRef = formatarData(mesReferenciaAtualizado);
     var mesProximoPrazo = new Date(diaParaCalculo.getFullYear(), diaParaCalculo.getMonth() + 1, 1);
     decimoDiaUtil = calcularDiaUtil(mesProximoPrazo, 10, ss);
     diaMesRef2 = formatarData(decimoDiaUtil);
     diasRestantes = calcularDiasUteisEntre(diaParaCalculo, decimoDiaUtil, ss);
-    Logger.log('  ⚡ Prazo do mês atual expirou. Avançando para o próximo ciclo.');
+    Logger.log('  ⚡ Prazo do mês atual venceu ou vence hoje. Avançando para o próximo ciclo.');
   }
   
   Logger.log('  10º dia útil (prazo): ' + diaMesRef2);
