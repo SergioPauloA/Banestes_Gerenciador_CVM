@@ -372,8 +372,8 @@ function calcularStatusOkDisplay(statusGeralAtual, diasRestantes) {
 /**
  * Calcula os dias úteis restantes até o prazo do próximo ciclo,
  * baseado na data de competência mais recente já registrada.
- * Regra para status OK: usar sempre o próximo ciclo da competência registrada,
- * isto é, 10º dia útil do mês X+2.
+ * Regra para status OK: usar sempre o próximo ciclo da competência registrada.
+ * Se a competência registrada é do mês X, o prazo mostrado é o 10º dia útil do mês X+2.
  * @param {string} competenciaDateStr - Data "DD/MM/YYYY" da última competência registrada
  * @returns {number|null} Dias úteis restantes até o próximo prazo, ou null se inválido
  */
