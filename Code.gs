@@ -118,6 +118,14 @@ function calcularStatusDashboardMensalDaAba(aba) {
   return calcularStatusDashboardMensalComPrazo(linhas);
 }
 
+function calcularStatusMensalDaAbaPelaCompetencia2(aba) {
+  var ultimaLinhaAba = aba.getLastRow();
+  if (ultimaLinhaAba < 4) return 'AGUARDANDO DADOS';
+  var linhasAba = aba.getRange(4, 1, ultimaLinhaAba - 3, 6).getValues(); // A:F
+  var competenciasAtuaisAba = linhasAba.map(function(l) { return (l[2] || '').toString().trim(); });
+  return calcularStatusGeralDaAbaComPrazo(linhasAba, 'mensal', competenciasAtuaisAba);
+}
+
 // ============================================
 // FUNÇÕES DE LEITURA POR ABA - ATUALIZADO PARA CÓDIGO BANESTES
 // ============================================
@@ -686,14 +694,6 @@ function atualizarStatusNaPlanilhaAutomatico() {
     Logger.log('   - diasRestantes: ' + datas.diasRestantes);
     Logger.log('   - prazoFinal: ' + datas.diaMesRef2);
 
-    function calcularStatusMensalDaAbaPelaCompetencia2(aba) {
-      var ultimaLinhaAba = aba.getLastRow();
-      if (ultimaLinhaAba < 4) return 'AGUARDANDO DADOS';
-      var linhasAba = aba.getRange(4, 1, ultimaLinhaAba - 3, 6).getValues(); // A:F
-      var competenciasAtuaisAba = linhasAba.map(function(l) { return (l[2] || '').toString().trim(); });
-      return calcularStatusGeralDaAbaComPrazo(linhasAba, 'mensal', competenciasAtuaisAba);
-    }
-    
     // ============================================
     // BALANCETE
     // ============================================
@@ -707,10 +707,10 @@ function atualizarStatusNaPlanilhaAutomatico() {
       Logger.log('   [' + (i+1) + '] "' + dadosBalancete[i][0] + '"');
     }
     
-    var statusBalancete = calcularStatusMensalDaAbaPelaCompetencia2(abaBalancete);
+    var statusBalanceteRotacao = calcularStatusMensalDaAbaPelaCompetencia2(abaBalancete);
     var statusBalanceteDashboard = calcularStatusDashboardMensalDaAba(abaBalancete);
-    Logger.log('   Status Geral calculado: "' + statusBalancete + '"');
-    abaBalancete.getRange('E1').setValue(statusBalancete);
+    Logger.log('   Status Geral calculado: "' + statusBalanceteRotacao + '"');
+    abaBalancete.getRange('E1').setValue(statusBalanceteRotacao);
     Logger.log('   ✅ Status Geral gravado na E1');
     
     // Atualizar status individuais
@@ -750,10 +750,10 @@ function atualizarStatusNaPlanilhaAutomatico() {
     Logger.log('\n📈 Processando Composição...');
     var abaComposicao = ss.getSheetByName('Composição');
     var dadosComposicao = abaComposicao.getRange('C4:C29').getDisplayValues();
-    var statusComposicao = calcularStatusMensalDaAbaPelaCompetencia2(abaComposicao);
+    var statusComposicaoRotacao = calcularStatusMensalDaAbaPelaCompetencia2(abaComposicao);
     var statusComposicaoDashboard = calcularStatusDashboardMensalDaAba(abaComposicao);
-    Logger.log('   Status Geral: "' + statusComposicao + '"');
-    abaComposicao.getRange('E1').setValue(statusComposicao);
+    Logger.log('   Status Geral: "' + statusComposicaoRotacao + '"');
+    abaComposicao.getRange('E1').setValue(statusComposicaoRotacao);
     
     var statusComposicaoArr = dadosComposicao.map(function(r) {
       return [calcularStatusIndividual(r[0], 'mensal')];
@@ -787,10 +787,10 @@ function atualizarStatusNaPlanilhaAutomatico() {
     Logger.log('\n📄 Processando Lâmina...');
     var abaLamina = ss.getSheetByName('Lâmina');
     var dadosLamina = abaLamina.getRange('C4:C29').getDisplayValues();
-    var statusLamina = calcularStatusMensalDaAbaPelaCompetencia2(abaLamina);
+    var statusLaminaRotacao = calcularStatusMensalDaAbaPelaCompetencia2(abaLamina);
     var statusLaminaDashboard = calcularStatusDashboardMensalDaAba(abaLamina);
-    Logger.log('   Status Geral: "' + statusLamina + '"');
-    abaLamina.getRange('E1').setValue(statusLamina);
+    Logger.log('   Status Geral: "' + statusLaminaRotacao + '"');
+    abaLamina.getRange('E1').setValue(statusLaminaRotacao);
     
     var statusLaminaArr = dadosLamina.map(function(r) {
       return [calcularStatusIndividual(r[0], 'mensal')];
@@ -806,10 +806,10 @@ function atualizarStatusNaPlanilhaAutomatico() {
     Logger.log('\n📊 Processando Perfil Mensal...');
     var abaPerfilMensal = ss.getSheetByName('Perfil Mensal');
     var dadosPerfilMensal = abaPerfilMensal.getRange('C4:C29').getDisplayValues();
-    var statusPerfilMensal = calcularStatusMensalDaAbaPelaCompetencia2(abaPerfilMensal);
+    var statusPerfilMensalRotacao = calcularStatusMensalDaAbaPelaCompetencia2(abaPerfilMensal);
     var statusPerfilMensalDashboard = calcularStatusDashboardMensalDaAba(abaPerfilMensal);
-    Logger.log('   Status Geral: "' + statusPerfilMensal + '"');
-    abaPerfilMensal.getRange('E1').setValue(statusPerfilMensal);
+    Logger.log('   Status Geral: "' + statusPerfilMensalRotacao + '"');
+    abaPerfilMensal.getRange('E1').setValue(statusPerfilMensalRotacao);
     
     var statusPerfilArr = dadosPerfilMensal.map(function(r) {
       return [calcularStatusIndividual(r[0], 'mensal')];
