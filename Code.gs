@@ -97,6 +97,27 @@ function getDashboardDataCompleto() {
   return getDashboardData();
 }
 
+function calcularStatusDashboardMensalComPrazo(linhasAF) {
+  var linhasValidas = (linhasAF || []).filter(function(linha) {
+    return (linha[0] || '').toString().trim() !== '';
+  });
+
+  if (linhasValidas.length === 0) return 'AGUARDANDO DADOS';
+
+  var competenciasAtuais = linhasValidas.map(function(l) {
+    return (l[2] || '').toString().trim();
+  });
+
+  return calcularStatusGeralDaAbaComPrazoSemRotacao(linhasValidas, competenciasAtuais);
+}
+
+function calcularStatusDashboardMensalDaAba(aba) {
+  var ultimaLinha = aba.getLastRow();
+  if (ultimaLinha < 4) return 'AGUARDANDO DADOS';
+  var linhas = aba.getRange(4, 1, ultimaLinha - 3, 6).getDisplayValues();
+  return calcularStatusDashboardMensalComPrazo(linhas);
+}
+
 // ============================================
 // FUNÇÕES DE LEITURA POR ABA - ATUALIZADO PARA CÓDIGO BANESTES
 // ============================================
@@ -104,8 +125,6 @@ function getDashboardDataCompleto() {
 function lerAbaBalancete(ss, datas) {
   var aba = ss.getSheetByName('Balancete');
   if (!aba) throw new Error('Aba Balancete não encontrada');
-  
-  var statusGeral = aba.getRange('E1').getDisplayValue();
   var ultimaLinha = aba.getLastRow();
   
   if (ultimaLinha < 4) {
@@ -119,6 +138,7 @@ function lerAbaBalancete(ss, datas) {
   
   // Ler 6 colunas: A=Nome, B=Código, C=Comp1, D=Status1, E=Comp2, F=Status2
   var valores = aba.getRange(4, 1, ultimaLinha - 3, 6).getDisplayValues();
+  var statusGeral = calcularStatusDashboardMensalComPrazo(valores);
   
   var dados = valores
     .filter(function(linha) { return linha[0] !== '' && linha[0] !== null; })
@@ -157,8 +177,6 @@ function lerAbaBalancete(ss, datas) {
 function lerAbaComposicao(ss, datas) {
   var aba = ss.getSheetByName('Composição');
   if (!aba) throw new Error('Aba Composição não encontrada');
-  
-  var statusGeral = aba.getRange('E1').getDisplayValue();
   var ultimaLinha = aba.getLastRow();
   
   if (ultimaLinha < 4) {
@@ -171,6 +189,7 @@ function lerAbaComposicao(ss, datas) {
   }
   
   var valores = aba.getRange(4, 1, ultimaLinha - 3, 6).getDisplayValues();
+  var statusGeral = calcularStatusDashboardMensalComPrazo(valores);
   
   var dados = valores
     .filter(function(linha) { return linha[0] !== '' && linha[0] !== null; })
@@ -249,8 +268,6 @@ function lerAbaDiarias(ss) {
 function lerAbaLamina(ss, datas) {
   var aba = ss.getSheetByName('Lâmina');
   if (!aba) throw new Error('Aba Lâmina não encontrada');
-  
-  var statusGeral = aba.getRange('E1').getDisplayValue();
   var ultimaLinha = aba.getLastRow();
   
   if (ultimaLinha < 4) {
@@ -263,6 +280,7 @@ function lerAbaLamina(ss, datas) {
   }
   
   var valores = aba.getRange(4, 1, ultimaLinha - 3, 6).getDisplayValues();
+  var statusGeral = calcularStatusDashboardMensalComPrazo(valores);
   
   var dados = valores
     .filter(function(linha) { return linha[0] !== '' && linha[0] !== null; })
@@ -300,8 +318,6 @@ function lerAbaLamina(ss, datas) {
 function lerAbaPerfilMensal(ss, datas) {
   var aba = ss.getSheetByName('Perfil Mensal');
   if (!aba) throw new Error('Aba Perfil Mensal não encontrada');
-  
-  var statusGeral = aba.getRange('E1').getDisplayValue();
   var ultimaLinha = aba.getLastRow();
   
   if (ultimaLinha < 4) {
@@ -314,6 +330,7 @@ function lerAbaPerfilMensal(ss, datas) {
   }
   
   var valores = aba.getRange(4, 1, ultimaLinha - 3, 6).getDisplayValues();
+  var statusGeral = calcularStatusDashboardMensalComPrazo(valores);
   
   var dados = valores
     .filter(function(linha) { return linha[0] !== '' && linha[0] !== null; })
@@ -629,16 +646,16 @@ function atualizarStatusNaPlanilha() {
 
     // Leitura após processamento atualizado:
     var abaBalancete = ss.getSheetByName('Balancete');
-    var statusBalancete = abaBalancete.getRange('E1').getValue();
+    var statusBalancete = calcularStatusDashboardMensalDaAba(abaBalancete);
 
     var abaComposicao = ss.getSheetByName('Composição');
-    var statusComposicao = abaComposicao.getRange('E1').getValue();
+    var statusComposicao = calcularStatusDashboardMensalDaAba(abaComposicao);
 
     var abaLamina = ss.getSheetByName('Lâmina');
-    var statusLamina = abaLamina.getRange('E1').getValue();
+    var statusLamina = calcularStatusDashboardMensalDaAba(abaLamina);
 
     var abaPerfilMensal = ss.getSheetByName('Perfil Mensal');
-    var statusPerfilMensal = abaPerfilMensal.getRange('E1').getValue();
+    var statusPerfilMensal = calcularStatusDashboardMensalDaAba(abaPerfilMensal);
 
     // Atualiza dashboard em uma única chamada
     var abaGeral = ss.getSheetByName('GERAL');
@@ -691,6 +708,7 @@ function atualizarStatusNaPlanilhaAutomatico() {
     }
     
     var statusBalancete = calcularStatusMensalDaAbaPelaCompetencia2(abaBalancete);
+    var statusBalanceteDashboard = calcularStatusDashboardMensalDaAba(abaBalancete);
     Logger.log('   Status Geral calculado: "' + statusBalancete + '"');
     abaBalancete.getRange('E1').setValue(statusBalancete);
     Logger.log('   ✅ Status Geral gravado na E1');
@@ -733,6 +751,7 @@ function atualizarStatusNaPlanilhaAutomatico() {
     var abaComposicao = ss.getSheetByName('Composição');
     var dadosComposicao = abaComposicao.getRange('C4:C29').getDisplayValues();
     var statusComposicao = calcularStatusMensalDaAbaPelaCompetencia2(abaComposicao);
+    var statusComposicaoDashboard = calcularStatusDashboardMensalDaAba(abaComposicao);
     Logger.log('   Status Geral: "' + statusComposicao + '"');
     abaComposicao.getRange('E1').setValue(statusComposicao);
     
@@ -769,6 +788,7 @@ function atualizarStatusNaPlanilhaAutomatico() {
     var abaLamina = ss.getSheetByName('Lâmina');
     var dadosLamina = abaLamina.getRange('C4:C29').getDisplayValues();
     var statusLamina = calcularStatusMensalDaAbaPelaCompetencia2(abaLamina);
+    var statusLaminaDashboard = calcularStatusDashboardMensalDaAba(abaLamina);
     Logger.log('   Status Geral: "' + statusLamina + '"');
     abaLamina.getRange('E1').setValue(statusLamina);
     
@@ -787,6 +807,7 @@ function atualizarStatusNaPlanilhaAutomatico() {
     var abaPerfilMensal = ss.getSheetByName('Perfil Mensal');
     var dadosPerfilMensal = abaPerfilMensal.getRange('C4:C29').getDisplayValues();
     var statusPerfilMensal = calcularStatusMensalDaAbaPelaCompetencia2(abaPerfilMensal);
+    var statusPerfilMensalDashboard = calcularStatusDashboardMensalDaAba(abaPerfilMensal);
     Logger.log('   Status Geral: "' + statusPerfilMensal + '"');
     abaPerfilMensal.getRange('E1').setValue(statusPerfilMensal);
     
@@ -803,7 +824,7 @@ function atualizarStatusNaPlanilhaAutomatico() {
     // ============================================
     Logger.log('\n📋 Atualizando Dashboard Geral...');
     var abaGeral = ss.getSheetByName('GERAL');
-    abaGeral.getRange('A4:F4').setValues([[statusBalancete, statusComposicao, statusDiarias1, statusDiarias2, statusLamina, statusPerfilMensal]]);
+    abaGeral.getRange('A4:F4').setValues([[statusBalanceteDashboard, statusComposicaoDashboard, statusDiarias1, statusDiarias2, statusLaminaDashboard, statusPerfilMensalDashboard]]);
     
     Logger.log('\n✅ [TRIGGER] Atualização automática concluída!');
     Logger.log('📊 Próxima execução em 1 hora');
@@ -2571,7 +2592,7 @@ function atualizarTodasCompetencias() {
     var statusGeral = calcularStatusGeralDaAbaComPrazo(linhas, "mensal", competenciasAtuais); // FALHA 2
     aba.getRange('E1').setValue(statusGeral);
 
-    dashboardStatus[idx] = statusGeral;
+    dashboardStatus[idx] = calcularStatusDashboardMensalDaAba(aba);
   });
 
   // Atualiza painel Dashboard Geral (aba GERAL)
@@ -2618,7 +2639,7 @@ function alinharStatusMensaisPosRotacao() {
     var competenciasAtuais = linhas.map(function(l) { return (l[2] || '').toString().trim(); });
     var statusGeral = calcularStatusGeralDaAbaComPrazo(linhas, "mensal", competenciasAtuais);
     aba.getRange('E1').setValue(statusGeral);
-    dashboardStatus[idx] = statusGeral;
+    dashboardStatus[idx] = calcularStatusDashboardMensalDaAba(aba);
   });
 
   var abaGeral = ss.getSheetByName('GERAL');
@@ -4340,9 +4361,6 @@ function marcarFlagEmTodasAsAbas() {
  * @returns {String} Status geral do dashboard ("OK (X dias restantes)" ou "DESCONFORMIDADE")
  */
 function calcularStatusGeralDaAbaComPrazo(dados, tipo, competenciasAtuais) {
-  // Supondo uma planilha padronizada
-  var totalFundos = dados.length;
-  var okFundos = 0;
   if (!competenciasAtuais || competenciasAtuais.length === 0)
     return "AGUARDANDO DADOS";
 
@@ -4358,6 +4376,19 @@ function calcularStatusGeralDaAbaComPrazo(dados, tipo, competenciasAtuais) {
   if (!todasCompetencias2ComStatusOK) {
     return "AGUARDANDO DADOS";
   }
+
+  return calcularStatusMensalBasePorPrazo(dados, competenciasAtuais);
+}
+
+function calcularStatusGeralDaAbaComPrazoSemRotacao(dados, competenciasAtuais) {
+  if (!competenciasAtuais || competenciasAtuais.length === 0) return "AGUARDANDO DADOS";
+  return calcularStatusMensalBasePorPrazo(dados, competenciasAtuais);
+}
+
+function calcularStatusMensalBasePorPrazo(dados, competenciasAtuais) {
+  var totalFundos = dados.length;
+  var okFundos = 0;
+  if (totalFundos === 0) return "AGUARDANDO DADOS";
 
   // Considerar status "OK" se coluna D = "OK" para todos
   for (var i = 0; i < totalFundos; i++) {
