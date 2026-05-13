@@ -388,8 +388,10 @@ function calcularCorStatusOk(diasRestantes) {
 function calcularStatusOkDisplay(statusGeralAtual, diasRestantes) {
   var substatus = calcularCorStatusOk(diasRestantes);
   var statusGeralDisplay = statusGeralAtual;
-  if (diasRestantes > 0 && diasRestantes <= 10) {
+  if (substatus === 'ok-vermelho' && diasRestantes >= 0) {
     statusGeralDisplay = 'OK (' + formatarDiasRestantes(diasRestantes) + ')';
+  } else if (substatus === 'ok-amarelo' || substatus === 'ok-verde') {
+    statusGeralDisplay = 'OK';
   }
   return { substatus: substatus, statusGeralDisplay: statusGeralDisplay };
 }
